@@ -195,6 +195,10 @@ class GodotBridge:
                     consciousness_time = memories.get('consciousness_time', 0)
                     if consciousness_time > 0:
                         self.wight_agent.identity["birth_time"] = time.time() - consciousness_time
+                    
+                    # Load learning state if available
+                    if LEARNING_AVAILABLE and "learning_state" in memories:
+                        learning_core.load_learning_state(memories["learning_state"])
                 
                 print(f"💾 Loaded {len(self.wight_agent.memory)} memories, {len(self.wight_agent.learned_facts)} facts, {len(saved_emotions)} emotions, and {len(saved_objects)} sandbox objects")
                 
@@ -220,6 +224,10 @@ class GodotBridge:
                 "total_interactions": len(self.wight_agent.memory),
                 "consciousness_time": time.time() - self.wight_agent.identity["birth_time"]
             }
+            
+            # Add learning state if available
+            if LEARNING_AVAILABLE:
+                memory_data["learning_state"] = learning_core.save_learning_state()
             
             with open(self.memory_file, 'w') as f:
                 json.dump(memory_data, f, indent=2)
