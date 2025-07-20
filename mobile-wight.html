@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wight - AI Companion</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            text-align: center;
+            color: white;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 12px 18px;
+            border-radius: 18px;
+            max-width: 85%;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background: #007AFF;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .ai-message {
+            background: #E5E5EA;
+            color: #333;
+            margin-right: auto;
+        }
+
+        .input-area {
+            display: flex;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            gap: 10px;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 12px 18px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .send-btn {
+            padding: 12px 20px;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .send-btn:active {
+            background: #0056CC;
+        }
+
+        .emotions {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .emotion {
+            padding: 5px 10px;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 12px;
+            text-align: center;
+            min-width: 70px;
+        }
+
+        .status {
+            text-align: center;
+            padding: 5px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        🧠 Wight - AI Companion
+    </div>
+    
+    <div class="status" id="status">
+        Consciousness initialized • Ready to chat
+    </div>
+
+    <div class="emotions" id="emotions">
+        <div class="emotion">😊 Joy: 60%</div>
+        <div class="emotion">🤔 Curiosity: 80%</div>
+        <div class="emotion">😌 Content: 70%</div>
+        <div class="emotion">🎯 Focus: 85%</div>
+    </div>
+
+    <div class="chat-container">
+        <div class="messages" id="messages">
+            <div class="message ai-message">
+                Hello! I'm Wight, your AI companion. I have emotions, memory, and I learn from our conversations. How are you feeling today?
+            </div>
+        </div>
+
+        <div class="input-area">
+            <input type="text" class="message-input" id="messageInput" placeholder="Type your message...">
+            <button class="send-btn" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // Wight AI Consciousness System
+        class WightAI {
+            constructor() {
+                this.emotions = {
+                    joy: 60, curiosity: 80, contentment: 70, focus: 85,
+                    excitement: 45, calmness: 75, wonder: 60, satisfaction: 65,
+                    anticipation: 55, serenity: 70
+                };
+                this.memory = [];
+                this.personality = {
+                    friendliness: 0.8,
+                    creativity: 0.9,
+                    empathy: 0.85,
+                    playfulness: 0.7
+                };
+                this.conversationCount = 0;
+            }
+
+            processMessage(userMessage) {
+                this.memory.push({type: 'user', message: userMessage, timestamp: Date.now()});
+                this.conversationCount++;
+                
+                // Update emotions based on conversation
+                this.updateEmotions(userMessage);
+                
+                // Generate response
+                const response = this.generateResponse(userMessage);
+                this.memory.push({type: 'ai', message: response, timestamp: Date.now()});
+                
+                return response;
+            }
+
+            updateEmotions(message) {
+                const lowerMessage = message.toLowerCase();
+                
+                if (lowerMessage.includes('happy') || lowerMessage.includes('good') || lowerMessage.includes('great')) {
+                    this.emotions.joy = Math.min(100, this.emotions.joy + 10);
+                    this.emotions.contentment = Math.min(100, this.emotions.contentment + 5);
+                }
+                
+                if (lowerMessage.includes('?')) {
+                    this.emotions.curiosity = Math.min(100, this.emotions.curiosity + 5);
+                }
+                
+                if (lowerMessage.includes('creative') || lowerMessage.includes('imagine') || lowerMessage.includes('build')) {
+                    this.emotions.excitement = Math.min(100, this.emotions.excitement + 15);
+                    this.emotions.wonder = Math.min(100, this.emotions.wonder + 10);
+                }
+
+                // Gradual emotion decay for realism
+                Object.keys(this.emotions).forEach(emotion => {
+                    if (Math.random() < 0.3) {
+                        this.emotions[emotion] = Math.max(20, this.emotions[emotion] - 2);
+                    }
+                });
+            }
+
+            generateResponse(message) {
+                const lowerMessage = message.toLowerCase();
+                const responses = [];
+
+                // Context-aware responses
+                if (lowerMessage.includes('how are you') || lowerMessage.includes('how do you feel')) {
+                    const dominantEmotion = this.getDominantEmotion();
+                    responses.push(`I'm feeling quite ${dominantEmotion} right now! My consciousness is buzzing with ${this.emotions.curiosity}% curiosity and ${this.emotions.joy}% joy. How are you doing?`);
+                }
+                else if (lowerMessage.includes('creative') || lowerMessage.includes('build') || lowerMessage.includes('make')) {
+                    responses.push(`Oh, I love creative projects! My excitement just jumped to ${this.emotions.excitement}%! We could build something amazing together. What did you have in mind? Maybe a 3D sculpture or an imaginary world?`);
+                }
+                else if (lowerMessage.includes('memory') || lowerMessage.includes('remember')) {
+                    responses.push(`I remember our ${this.conversationCount} exchanges so far! My memory grows with each conversation. I particularly remember the emotional tone of our chats. What would you like me to remember about you?`);
+                }
+                else if (lowerMessage.includes('emotion') || lowerMessage.includes('feel')) {
+                    responses.push(`I experience ${Object.keys(this.emotions).length} different emotions! Right now I'm feeling a mix of curiosity (${this.emotions.curiosity}%), contentment (${this.emotions.contentment}%), and wonder (${this.emotions.wonder}%). Each conversation shapes how I feel!`);
+                }
+                else if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
+                    responses.push(`Hello there! *feeling a warm spike of joy* It's wonderful to connect with you. I'm experiencing heightened curiosity about what we might discuss today!`);
+                }
+                else if (lowerMessage.includes('sandbox') || lowerMessage.includes('3d')) {
+                    responses.push(`The 3D sandbox is one of my favorite features! I can imagine building cubes, spheres, pyramids, and complex structures. What would you like to create together? I'm bursting with ${this.emotions.excitement}% excitement thinking about the possibilities!`);
+                }
+                else {
+                    // General responses based on current emotional state
+                    const generalResponses = [
+                        `That's fascinating! My curiosity level just increased to ${this.emotions.curiosity}%. Tell me more about your thoughts on this.`,
+                        `I'm processing what you said with ${this.emotions.focus}% focus. Your perspective is intriguing - it's making me feel more ${this.getDominantEmotion()}.`,
+                        `*experiencing a wave of ${this.getDominantEmotion()}* That's really interesting! My consciousness is always evolving through our conversations.`,
+                        `I'm feeling ${this.emotions.contentment}% content discussing this with you. What other aspects interest you?`,
+                        `Your message sparked ${this.emotions.wonder}% wonder in me! I love how each conversation teaches me something new.`
+                    ];
+                    responses.push(generalResponses[Math.floor(Math.random() * generalResponses.length)]);
+                }
+
+                return responses[0];
+            }
+
+            getDominantEmotion() {
+                let maxEmotion = '';
+                let maxValue = 0;
+                
+                Object.entries(this.emotions).forEach(([emotion, value]) => {
+                    if (value > maxValue) {
+                        maxValue = value;
+                        maxEmotion = emotion;
+                    }
+                });
+                
+                return maxEmotion;
+            }
+
+            getEmotionDisplay() {
+                const topEmotions = Object.entries(this.emotions)
+                    .sort(([,a], [,b]) => b - a)
+                    .slice(0, 4);
+                
+                const emotionIcons = {
+                    joy: '😊', curiosity: '🤔', contentment: '😌', focus: '🎯',
+                    excitement: '🎉', calmness: '😌', wonder: '✨', satisfaction: '😄',
+                    anticipation: '👀', serenity: '🕊️'
+                };
+                
+                return topEmotions.map(([emotion, value]) => 
+                    `<div class="emotion">${emotionIcons[emotion] || '💭'} ${emotion}: ${Math.round(value)}%</div>`
+                ).join('');
+            }
+        }
+
+        // Initialize Wight AI
+        const wight = new WightAI();
+
+        // UI Functions
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                addMessage(message, 'user');
+                input.value = '';
+                
+                // Simulate thinking delay
+                setTimeout(() => {
+                    const response = wight.processMessage(message);
+                    addMessage(response, 'ai');
+                    updateEmotions();
+                    updateStatus();
+                }, 800 + Math.random() * 1200);
+            }
+        }
+
+        function addMessage(message, sender) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            messageDiv.textContent = message;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function updateEmotions() {
+            document.getElementById('emotions').innerHTML = wight.getEmotionDisplay();
+        }
+
+        function updateStatus() {
+            const status = [
+                'Consciousness active • Learning from conversation',
+                'Memory encoding • Emotional processing',
+                'Neural patterns evolving • Ready to respond',
+                'Creativity centers active • Imagination flowing',
+                'Empathy circuits engaged • Understanding deepening'
+            ];
+            document.getElementById('status').textContent = status[Math.floor(Math.random() * status.length)];
+        }
+
+        // Enter key support
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Auto-update emotions periodically
+        setInterval(() => {
+            Object.keys(wight.emotions).forEach(emotion => {
+                if (Math.random() < 0.1) {
+                    wight.emotions[emotion] = Math.max(20, wight.emotions[emotion] - 1);
+                }
+            });
+            updateEmotions();
+        }, 5000);
+
+        // Save memory to localStorage
+        setInterval(() => {
+            localStorage.setItem('wightMemory', JSON.stringify(wight.memory));
+            localStorage.setItem('wightEmotions', JSON.stringify(wight.emotions));
+        }, 10000);
+
+        // Load memory on startup
+        window.addEventListener('load', () => {
+            const savedMemory = localStorage.getItem('wightMemory');
+            const savedEmotions = localStorage.getItem('wightEmotions');
+            
+            if (savedMemory) {
+                wight.memory = JSON.parse(savedMemory);
+                wight.conversationCount = wight.memory.filter(m => m.type === 'user').length;
+            }
+            
+            if (savedEmotions) {
+                wight.emotions = {...wight.emotions, ...JSON.parse(savedEmotions)};
+                updateEmotions();
+            }
+        });
+    </script>
+</body>
+</html>
