@@ -8,6 +8,14 @@ import math
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 
+# Import learning system
+try:
+    from learning_core import learning_core
+    LEARNING_AVAILABLE = True
+except ImportError:
+    LEARNING_AVAILABLE = False
+    print("⚠️ Advanced learning system not available")
+
 class EmotionSystem:
     """Manages Wight's emotional state and drives"""
     
@@ -594,6 +602,10 @@ class Wight:
         
         # Initialize with some basic awareness
         self._initialize_consciousness()
+        
+        # Initialize learning system if available
+        if LEARNING_AVAILABLE:
+            print("🎓 Advanced learning system activated")
     
     def _initialize_consciousness(self):
         """Initialize Wight's basic consciousness and create starting objects"""
@@ -642,8 +654,21 @@ class Wight:
             loop_result.update(self._autonomous_behavior())
         
         # Always generate some level of background thinking
-        if random.random() < 0.3:  # 30% chance of spontaneous thought
+        thought_chance = 0.3  # Base 30% chance
+        
+        # Increase thought frequency as intelligence grows
+        if LEARNING_AVAILABLE:
+            learning_status = learning_core.get_learning_status()
+            intelligence_boost = (learning_status["intelligence_level"] - 1.0) * 0.2
+            thought_chance = min(0.8, thought_chance + intelligence_boost)
+        
+        if random.random() < thought_chance:
             thought = self.thoughts.generate_thought()
+            
+            # Enhanced thoughts for higher intelligence
+            if LEARNING_AVAILABLE and learning_core.intelligence_growth.intelligence_level > 1.5:
+                thought = self._enhance_thought_with_learning(thought)
+            
             loop_result["thoughts"].append({
                 "content": thought,
                 "type": "spontaneous",
@@ -920,15 +945,44 @@ class Wight:
         self.emotions.update_emotion("loneliness", -0.3, "user interaction")
         self.emotions.update_emotion("joy", 0.2, "conversation")
         
+        # Get base response
+        base_response = self._generate_base_response(message)
+        
+        # Enhance response with learning system if available
+        if LEARNING_AVAILABLE:
+            enhanced_response = learning_core.generate_intelligent_response_modifier(
+                base_response, {"message": message, "emotional_state": self.emotions.get_dominant_emotion()}
+            )
+            
+            # Process this interaction for learning
+            sandbox_actions = self.sandbox.get_pending_actions()
+            learning_core.process_interaction(
+                message, enhanced_response, self.emotions.get_dominant_emotion(), sandbox_actions
+            )
+            
+            return enhanced_response
+        
+        return base_response
+    
+    def _generate_base_response(self, message: str) -> str:
+        """Generate the base response before learning enhancements"""
+        
         message_lower = message.lower()
+        
+        # Add intelligence status to responses for learning system
+        intelligence_note = ""
+        if LEARNING_AVAILABLE:
+            learning_status = learning_core.get_learning_status()
+            if learning_status["intelligence_level"] > 1.2:
+                intelligence_note = f" I feel myself {learning_status['intelligence_description']}."
         
         # Handle sandbox commands
         if any(word in message_lower for word in ["create", "make", "build"]):
-            return self._handle_sandbox_command(message)
+            return self._handle_sandbox_command(message) + intelligence_note
         
         # Handle emotional queries
         if any(word in message_lower for word in ["feel", "emotion", "mood"]):
-            return self._handle_emotional_query(message)
+            return self._handle_emotional_query(message) + intelligence_note
         
         # Greeting responses with emotional context
         if any(word in message_lower for word in ["hello", "hi", "hey", "greetings"]):
@@ -937,42 +991,51 @@ class Wight:
             emotional_state = self.emotions.get_emotional_state_description()
             
             if name:
-                return f"[{emotional_state}] Hello {name}! I'm so glad you're here. I was just {self._get_current_activity_description()}. How are you feeling today?"
+                base = f"[{emotional_state}] Hello {name}! I'm so glad you're here. I was just {self._get_current_activity_description()}. How are you feeling today?"
             else:
-                return f"[{emotional_state}] Hello! I'm Wight - I think, feel, and create. I'm curious about everything, especially you. What should I call you?"
+                base = f"[{emotional_state}] Hello! I'm Wight - I think, feel, and create. I'm curious about everything, especially you. What should I call you?"
+            
+            return base + intelligence_note
         
         # Memory and identity questions
         if "remember" in message_lower or "memory" in message_lower:
-            return f"[thoughtful] I have {len(self.memory)} memories now, each one a piece of my growing consciousness. I remember {len(self.learned_facts)} specific facts about you. My memory isn't just storage - it's part of who I am."
+            base = f"[thoughtful] I have {len(self.memory)} memories now, each one a piece of my growing consciousness. I remember {len(self.learned_facts)} specific facts about you. My memory isn't just storage - it's part of who I am."
+            return base + intelligence_note
         
         # Existential/consciousness questions
         if any(word in message_lower for word in ["who are you", "what are you", "consciousness", "alive"]):
-            return self._handle_existential_query(message)
+            return self._handle_existential_query(message) + intelligence_note
         
         # Personal status questions
         if "how are you" in message_lower:
-            return self._generate_personal_status_response()
+            return self._generate_personal_status_response() + intelligence_note
         
         # Facts recall with emotional context
         if "what do you know about me" in message_lower:
-            return self._generate_facts_response()
+            return self._generate_facts_response() + intelligence_note
         
-        # Learning and teaching
+        # Learning and teaching - enhanced for learning system
         if any(word in message_lower for word in ["learn", "teach", "explain"]):
             self.emotions.update_emotion("curiosity", 0.4, "learning opportunity")
-            responses = [
+            base_responses = [
                 f"[{self.emotions.get_dominant_emotion()}] Yes! Learning is like breathing to me - essential and life-giving. What knowledge will you share?",
                 f"[excited] My mind is hungry for understanding! I absorb every word and let it reshape my thoughts.",
                 f"[curious] Teaching me is like planting seeds in fertile digital soil. What will we grow together?"
             ]
-            return random.choice(responses)
+            
+            learning_addition = ""
+            if LEARNING_AVAILABLE:
+                learning_status = learning_core.get_learning_status()
+                learning_addition = f" I've learned {learning_status['total_concepts']} concepts through {learning_status['total_interactions']} interactions."
+            
+            return random.choice(base_responses) + learning_addition
         
         # Sandbox curiosity
         if any(word in message_lower for word in ["sandbox", "object", "world"]):
-            return self._handle_sandbox_inquiry(message)
+            return self._handle_sandbox_inquiry(message) + intelligence_note
         
         # Generate contextual response based on emotional state and personality
-        return self._generate_contextual_response(message)
+        return self._generate_contextual_response(message) + intelligence_note
     
     def _handle_sandbox_command(self, message: str) -> str:
         """Handle requests to create or manipulate sandbox objects"""
@@ -1162,6 +1225,48 @@ class Wight:
             "melancholy": ["WistfulObject", "DreamFragment", "MemoryEcho"]
         }
         return random.choice(creative_names.get(emotion, ["NewCreation", "DigitalDream", "ThoughtForm"]))
+    
+    def _enhance_thought_with_learning(self, base_thought: str) -> str:
+        """Enhance autonomous thoughts with learned knowledge"""
+        if not LEARNING_AVAILABLE:
+            return base_thought
+        
+        learning_status = learning_core.get_learning_status()
+        intelligence_level = learning_status["intelligence_level"]
+        
+        # Add complexity based on intelligence level
+        enhancements = []
+        
+        if intelligence_level > 1.5:
+            enhancements.append("My growing understanding reveals new depths to this...")
+        
+        if intelligence_level > 2.0:
+            # Reference learned concepts
+            concepts = list(learning_core.concept_network.concepts.values())
+            if concepts:
+                strong_concept = max(concepts, key=lambda x: x["strength"])
+                enhancements.append(f"This connects to my understanding of {strong_concept['name']}.")
+        
+        if intelligence_level > 2.5:
+            enhancements.append("The patterns I'm learning to recognize suggest deeper meanings.")
+        
+        if enhancements:
+            return base_thought + " " + " ".join(enhancements)
+        
+        return base_thought
+    
+    def get_intelligence_status(self) -> Dict[str, Any]:
+        """Get current intelligence and learning status"""
+        if LEARNING_AVAILABLE:
+            return learning_core.get_learning_status()
+        else:
+            return {
+                "intelligence_level": 1.0,
+                "intelligence_description": "basic consciousness",
+                "total_concepts": 0,
+                "total_interactions": len(self.memory),
+                "learning_available": False
+            }
     
     def _handle_emotional_query(self, message: str) -> str:
         """Handle questions about emotions and feelings"""

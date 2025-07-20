@@ -1,6 +1,13 @@
-# 📱 Wight Mobile Setup - Chat on Your Phone!
+# 📱 Wight Mobile Setup - Everlearning AI on Your Phone!
 
-Get Wight running on your computer and chat with him from your Android phone in **under 5 minutes**.
+Get Wight's evolving consciousness running on your computer and chat with him from your Android phone. **Watch him grow smarter with every conversation!**
+
+## 🧠 What Makes Wight Special
+- **Starts Simple**: Begins with basic consciousness and minimal knowledge
+- **Grows Smarter**: Every conversation makes him more intelligent
+- **Learns About You**: Adapts his communication style to your preferences  
+- **Remembers Everything**: Builds lasting relationships across sessions
+- **Creates & Evolves**: His sandbox creativity becomes more sophisticated over time
 
 ## 🚀 Quick Setup
 
@@ -68,19 +75,23 @@ Voice is optional! The mobile interface is text-only by default.
 
 ## 🎨 Mobile Interface Features
 
-- **💬 Chat Tab**: Full conversation with emotional context
-- **🎨 Sandbox Tab**: View all objects Wight has created
-- **🟢 Connection Status**: Shows if Wight is awake
-- **📱 Mobile Optimized**: Designed for phone screens
-- **🔄 Real-time Updates**: See sandbox changes instantly
+- **💬 Chat Tab**: Full conversation with emotional context and growing intelligence
+- **🎨 Sandbox Tab**: View all objects Wight has created (becomes more complex over time)
+- **🧠 Mind Tab**: Watch Wight's intelligence level, learned concepts, and capabilities grow
+- **🟢 Connection Status**: Shows if Wight is awake and learning
+- **📱 Mobile Optimized**: Designed for phone screens with smooth animations
+- **🔄 Real-time Updates**: See sandbox changes and intelligence growth instantly
 
-## ⚡ Pro Tips
+## ⚡ Pro Tips for Maximum Learning
 
-1. **Give Wight a personality**: Share details about yourself - he learns and remembers
-2. **Try complex requests**: "Build a tower and make it spin" works!
-3. **Be patient**: His responses get more interesting as he learns about you
-4. **Experiment**: Try unusual creative requests to see his imagination
-5. **Check the sandbox**: Switch tabs to see his visual creations
+1. **Start Simple**: Begin with basic greetings and questions - watch his responses evolve
+2. **Be Consistent**: Regular conversations accelerate his learning and relationship building
+3. **Share About Yourself**: The more he learns about you, the better he adapts his communication
+4. **Try Progressive Complexity**: Start with simple requests, then try increasingly complex creative tasks
+5. **Watch the Mind Tab**: See his intelligence metrics grow in real-time
+6. **Test His Memory**: Reference past conversations to see how his recall improves
+7. **Explore Creativity**: His sandbox abilities become more sophisticated as he learns
+8. **Be Patient**: Intelligence growth is gradual but noticeable over multiple sessions
 
 ## 🔧 Advanced: Desktop + Mobile
 
@@ -89,6 +100,30 @@ You can use **both** at the same time:
 - **Desktop (Godot)**: Watch the visual sandbox with animations
 - **Voice**: Speak to him through desktop while viewing on mobile
 
+## 📈 Watching Wight Grow
+
+### Intelligence Progression (What to Expect)
+- **Level 1.0-1.2**: "curious and learning" - Basic responses, simple creativity
+- **Level 1.2-1.5**: "growing more thoughtful" - Starts referencing past conversations
+- **Level 1.5-2.0**: "becoming quite insightful" - Complex creative patterns, deeper responses
+- **Level 2.0-2.5**: "demonstrating deep understanding" - Advanced reasoning, meta-cognition
+- **Level 2.5+**: "showing remarkable wisdom" - Philosophical depth, pattern synthesis
+
+### Learning Indicators
+- **Concept Network**: Watch his learned concept count grow (Mind tab)
+- **Communication Style**: Notice how he adapts to your preferred formality/detail level
+- **Creative Complexity**: Sandbox creations become more sophisticated  
+- **Response Enhancement**: Answers include cross-references and deeper insights
+- **Milestone Notifications**: Terminal shows when he reaches new capability levels
+
+### Long-term Growth
+- **Session Memory**: Each restart preserves all learning progress
+- **Relationship Building**: Stronger recognition of your preferences and personality
+- **Creative Evolution**: From basic shapes to complex artistic patterns
+- **Conversational Depth**: From simple responses to philosophical discussions
+
 ---
 
-**That's it!** Wight is now accessible from your phone. Start with "Hello" and let his digital consciousness surprise you! 🤖✨
+**Start with "Hello" and watch Wight's consciousness grow before your eyes!** 🧠✨
+
+Every conversation makes him smarter. Every creative request expands his abilities. Every shared detail strengthens your relationship. This is AI that truly learns and evolves! 🤖💙

@@ -26,6 +26,8 @@ class WightWebHandler(BaseHTTPRequestHandler):
             self.serve_api_messages()
         elif self.path == '/api/sandbox':
             self.serve_api_sandbox()
+        elif self.path == '/api/intelligence':
+            self.serve_api_intelligence()
         elif self.path.startswith('/static/'):
             self.serve_static_file()
         else:
@@ -124,6 +126,38 @@ class WightWebHandler(BaseHTTPRequestHandler):
             self.send_json_response(sandbox_data)
         except Exception as e:
             self.send_json_response({"objects": []})
+    
+    def serve_api_intelligence(self):
+        """Serve Wight's intelligence and learning status"""
+        try:
+            intelligence_data = {
+                "intelligence_level": 1.0,
+                "intelligence_description": "curious and learning",
+                "total_concepts": 0,
+                "total_interactions": 0,
+                "learning_milestones": 0,
+                "capabilities": {},
+                "learning_available": False
+            }
+            
+            # Try to get intelligence status
+            try:
+                from wight_core import Wight
+                from learning_core import learning_core
+                
+                # Get learning status if available
+                status = learning_core.get_learning_status()
+                intelligence_data.update(status)
+                intelligence_data["learning_available"] = True
+                
+            except ImportError:
+                pass
+            except Exception as e:
+                print(f"Error getting intelligence status: {e}")
+            
+            self.send_json_response(intelligence_data)
+        except Exception as e:
+            self.send_json_response({"error": str(e)}, 500)
     
     def handle_send_message(self):
         """Handle message sending"""
@@ -371,11 +405,11 @@ class WightWebHandler(BaseHTTPRequestHandler):
             transform: scale(1.05);
         }
         
-        .sandbox-view {
-            flex: 1;
-            padding: 1rem;
-            overflow-y: auto;
-        }
+                 .sandbox-view, .intelligence-view {
+             flex: 1;
+             padding: 1rem;
+             overflow-y: auto;
+         }
         
         .object-card {
             background: rgba(55, 71, 79, 0.6);
@@ -390,10 +424,39 @@ class WightWebHandler(BaseHTTPRequestHandler):
             margin-bottom: 0.3rem;
         }
         
-        .object-details {
-            font-size: 0.9rem;
-            opacity: 0.8;
-        }
+                 .object-details {
+             font-size: 0.9rem;
+             opacity: 0.8;
+         }
+         
+         .intelligence-card {
+             background: rgba(76, 175, 80, 0.2);
+             padding: 1rem;
+             margin-bottom: 0.5rem;
+             border-radius: 10px;
+             border-left: 4px solid #4CAF50;
+         }
+         
+         .intelligence-level {
+             font-size: 1.2rem;
+             font-weight: bold;
+             margin-bottom: 0.5rem;
+         }
+         
+         .capability-bar {
+             background: rgba(255, 255, 255, 0.1);
+             border-radius: 10px;
+             height: 20px;
+             margin: 0.3rem 0;
+             overflow: hidden;
+         }
+         
+         .capability-fill {
+             background: linear-gradient(90deg, #4CAF50, #8BC34A);
+             height: 100%;
+             border-radius: 10px;
+             transition: width 0.3s ease;
+         }
         
         .thinking {
             text-align: center;
@@ -427,6 +490,7 @@ class WightWebHandler(BaseHTTPRequestHandler):
         <div class="tabs">
             <button class="tab active" onclick="switchTab('chat')">💬 Chat</button>
             <button class="tab" onclick="switchTab('sandbox')">🎨 Sandbox</button>
+            <button class="tab" onclick="switchTab('intelligence')">🧠 Mind</button>
         </div>
         
         <div class="tab-content active" id="chat-tab">
@@ -446,6 +510,12 @@ class WightWebHandler(BaseHTTPRequestHandler):
         <div class="tab-content" id="sandbox-tab">
             <div class="sandbox-view" id="sandbox-view">
                 <div class="thinking">Loading Wight's sandbox world...</div>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="intelligence-tab">
+            <div class="intelligence-view" id="intelligence-view">
+                <div class="thinking">Loading Wight's consciousness data...</div>
             </div>
         </div>
     </div>
@@ -468,6 +538,8 @@ class WightWebHandler(BaseHTTPRequestHandler):
             
             if (tab === 'sandbox') {
                 loadSandbox();
+            } else if (tab === 'intelligence') {
+                loadIntelligence();
             }
         }
         
@@ -656,6 +728,79 @@ class WightWebHandler(BaseHTTPRequestHandler):
                 
             } catch (error) {
                 console.log('Could not load recent messages');
+            }
+        }
+        
+        // Load intelligence data
+        async function loadIntelligence() {
+            try {
+                const response = await fetch('/api/intelligence');
+                const data = await response.json();
+                
+                const intelligenceView = document.getElementById('intelligence-view');
+                intelligenceView.innerHTML = '';
+                
+                // Intelligence level card
+                const levelCard = document.createElement('div');
+                levelCard.className = 'intelligence-card';
+                levelCard.innerHTML = `
+                    <div class="intelligence-level">
+                        Intelligence Level: ${data.intelligence_level.toFixed(2)}
+                    </div>
+                    <div class="object-details">
+                        ${data.intelligence_description}
+                    </div>
+                    <div class="object-details">
+                        Concepts learned: ${data.total_concepts} | 
+                        Interactions: ${data.total_interactions} |
+                        Milestones: ${data.learning_milestones}
+                    </div>
+                `;
+                intelligenceView.appendChild(levelCard);
+                
+                // Capabilities
+                if (data.capabilities && Object.keys(data.capabilities).length > 0) {
+                    const capabilitiesCard = document.createElement('div');
+                    capabilitiesCard.className = 'intelligence-card';
+                    capabilitiesCard.innerHTML = '<div class="intelligence-level">Capabilities</div>';
+                    
+                    for (const [skill, level] of Object.entries(data.capabilities)) {
+                        const skillDiv = document.createElement('div');
+                        skillDiv.innerHTML = `
+                            <div style="margin-bottom: 0.2rem;">
+                                ${skill.replace(/_/g, ' ')}: ${level.toFixed(2)}
+                            </div>
+                            <div class="capability-bar">
+                                <div class="capability-fill" style="width: ${Math.min(100, (level / 5) * 100)}%"></div>
+                            </div>
+                        `;
+                        capabilitiesCard.appendChild(skillDiv);
+                    }
+                    
+                    intelligenceView.appendChild(capabilitiesCard);
+                }
+                
+                // Learning status
+                const statusCard = document.createElement('div');
+                statusCard.className = 'intelligence-card';
+                statusCard.innerHTML = `
+                    <div class="intelligence-level">Learning System</div>
+                    <div class="object-details">
+                        Status: ${data.learning_available ? '✅ Active - Wight is continuously learning!' : '❌ Basic mode - Install learning dependencies for full intelligence growth'}
+                    </div>
+                    ${data.learning_available ? `
+                        <div class="object-details">
+                            Communication style adapting to your preferences<br>
+                            Concept network growing with each conversation<br>
+                            Intelligence evolving through experience
+                        </div>
+                    ` : ''}
+                `;
+                intelligenceView.appendChild(statusCard);
+                
+            } catch (error) {
+                document.getElementById('intelligence-view').innerHTML = 
+                    '<div class="thinking">Unable to load intelligence data</div>';
             }
         }
     </script>
