@@ -25,6 +25,11 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
       
+    - name: Accept Android SDK Licenses
+      run: |
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
+      
     - name: Cache Godot
       id: cache-godot
       uses: actions/cache@v3
@@ -48,6 +53,7 @@ jobs:
         mkdir -p ~/.local/share/godot/export_templates/4.2.2.stable
         unzip Godot_v4.2.2-stable_export_templates.tpz -d ~/.local/share/godot/export_templates/4.2.2.stable
         mv ~/.local/share/godot/export_templates/4.2.2.stable/templates/* ~/.local/share/godot/export_templates/4.2.2.stable/
+        ls -la ~/.local/share/godot/export_templates/4.2.2.stable/
         
     - name: Setup Godot Export Settings
       run: |
@@ -57,18 +63,41 @@ jobs:
         export/android/android_sdk_path = "'$ANDROID_HOME'"
         export/android/debug_keystore = "'$HOME'/.android/debug.keystore"
         export/android/debug_keystore_user = "androiddebugkey"
-        export/android/debug_keystore_pass = "android"' > ~/.config/godot/editor_settings-4.tres
+        export/android/debug_keystore_pass = "android"
+        export/android/jarsigner = "'$JAVA_HOME'/bin/jarsigner"
+        export/android/adb = "'$ANDROID_HOME'/platform-tools/adb"' > ~/.config/godot/editor_settings-4.tres
+        
+        cat ~/.config/godot/editor_settings-4.tres
         
     - name: Generate Debug Keystore
       run: |
         mkdir -p ~/.android
         keytool -genkeypair -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Debug,O=Android,C=US"
         
+        # Verify keystore was created
+        ls -la ~/.android/
+        keytool -list -keystore ~/.android/debug.keystore -storepass android
+        
     - name: Build APK
       run: |
         cd ${{ github.workspace }}/WightAndroid
         mkdir -p builds
-        ~/godot/Godot_v4.2.2-stable_linux.x86_64 --headless --export-release "Android" builds/WightAndroid.apk
+        
+        # Set environment variables for Godot
+        export ANDROID_HOME=$ANDROID_HOME
+        export JAVA_HOME=$JAVA_HOME
+        
+        # Debug info
+        echo "ANDROID_HOME: $ANDROID_HOME"
+        echo "JAVA_HOME: $JAVA_HOME"
+        echo "Current directory: $(pwd)"
+        echo "Project files:"
+        ls -la
+        echo "Export presets:"
+        cat export_presets.cfg
+        
+        # Build the APK
+        ~/godot/Godot_v4.2.2-stable_linux.x86_64 --headless --export-release "Android" builds/WightAndroid.apk --verbose
         
     - name: Create Release Zip
       run: |
