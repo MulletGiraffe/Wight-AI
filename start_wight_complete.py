@@ -31,18 +31,22 @@ def check_dependencies():
         missing_deps.append(str(e))
     
     # Voice dependencies (optional)
+    voice_available = True
     try:
         import speech_recognition
         import pyttsx3
         print("✅ Voice dependencies installed")
     except ImportError:
+        voice_available = False
         optional_missing.append("Voice system (speech_recognition, pyttsx3)")
     
+    microphone_available = True
     try:
         import pyaudio
-        print("✅ Audio system installed")
+        print("✅ Audio input system installed")
     except ImportError:
-        optional_missing.append("Audio input (pyaudio)")
+        microphone_available = False
+        optional_missing.append("Microphone input (pyaudio)")
     
     if missing_deps:
         print("\n❌ Missing required dependencies:")
@@ -55,9 +59,11 @@ def check_dependencies():
         print("\n⚠️ Optional features not available:")
         for feature in optional_missing:
             print(f"   {feature}")
-        print("\nFor full functionality, install with:")
-        print("   pip install SpeechRecognition pyttsx3 pyaudio")
+        print("\nFor voice features, install with:")
+        print("   pip install -r requirements-voice.txt")
         print("   (Voice features will be disabled without these)")
+        print("\nFor microphone support on Ubuntu/Debian:")
+        print("   sudo apt-get install portaudio19-dev python3-pyaudio")
     
     return True
 

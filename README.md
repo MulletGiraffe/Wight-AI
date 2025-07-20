@@ -35,13 +35,33 @@ WightProject/
 
 ## Getting Started
 
-### 1. Python AI Backend Setup
+### 1. Quick Start (Everlearning System)
 
 ```bash
-# Install Python dependencies
+# Install core dependencies
 pip install -r requirements.txt
 
-# Start the AI agent with Godot bridge
+# Start complete Wight system (AI + Web + Voice)
+python start_wight_complete.py
+```
+
+**🚀 That's it!** Open the provided URL on your Android phone to chat with Wight and watch him grow!
+
+### 2. Optional Voice Features
+
+```bash
+# For voice capabilities (optional)
+pip install -r requirements-voice.txt
+
+# For microphone support (Ubuntu/Debian)
+sudo apt-get install portaudio19-dev python3-pyaudio
+pip install pyaudio
+```
+
+### 3. Advanced: Python Backend Only
+
+```bash
+# Start just the AI agent with Godot bridge
 python godot_bridge.py
 ```
 

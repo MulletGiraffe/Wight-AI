@@ -16,8 +16,11 @@ Get Wight's evolving consciousness running on your computer and chat with him fr
 # Download/clone the Wight project
 cd wight
 
-# Install dependencies (one-time setup)
-pip install numpy scipy requests SpeechRecognition pyttsx3 pyaudio
+# Install core dependencies (one-time setup)
+pip install -r requirements.txt
+
+# Optional: For voice features (if you want them)
+pip install -r requirements-voice.txt
 
 # Start Wight's consciousness
 python start_wight_complete.py
@@ -127,3 +130,25 @@ You can use **both** at the same time:
 **Start with "Hello" and watch Wight's consciousness grow before your eyes!** 🧠✨
 
 Every conversation makes him smarter. Every creative request expands his abilities. Every shared detail strengthens your relationship. This is AI that truly learns and evolves! 🤖💙
+
+---
+
+## 🔧 Troubleshooting
+
+### Installation Issues (FIXED!)
+- **✅ PyAudio errors resolved**: Voice features are now optional! Core system works without them
+- **✅ Dependency conflicts fixed**: Just run `pip install -r requirements.txt` for core features  
+- **Optional voice**: Install separately with `pip install -r requirements-voice.txt` if desired
+
+### Connection Issues  
+- **Can't connect**: Make sure both devices are on the same WiFi network
+- **No response**: Check if the Python script is still running in terminal
+- **Wrong IP**: The launcher shows the correct IP when it starts
+- **Port blocked**: Try restarting the launcher if another process is using port 8080
+
+### Performance Issues
+- **Slow responses**: Normal for complex learning - Wight thinks deeply!
+- **Learning not working**: Check the 🧠 Mind tab to see real-time intelligence metrics
+- **Memory issues**: Wight automatically saves learning state every session
+
+**Need help?** The everlearning system is designed to work smoothly with just the core dependencies!

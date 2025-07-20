@@ -1,0 +1,20 @@
+# Voice capabilities for Wight (optional)
+# Install these only if you want voice communication
+
+# Basic voice support (works on most systems)
+SpeechRecognition>=3.10.0
+pyttsx3>=2.90
+
+# Advanced microphone support (requires system libraries)
+# pyaudio>=0.2.11
+
+# Installation instructions:
+# 1. Basic voice (text-to-speech only): pip install -r requirements-voice.txt
+# 2. Full voice with microphone on Ubuntu/Debian: 
+#    sudo apt-get install portaudio19-dev python3-pyaudio
+#    pip install pyaudio
+# 3. Full voice on macOS: brew install portaudio && pip install pyaudio
+# 4. Full voice on Windows: pip install pyaudio (usually works)
+
+# Note: Voice features will be automatically disabled if dependencies are missing
+# The everlearning system works perfectly without voice capabilities
