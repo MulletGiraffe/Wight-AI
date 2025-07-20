@@ -28,7 +28,7 @@ jobs:
     - name: Accept Android SDK Licenses
       run: |
         yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
+        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" "ndk;25.1.8937393"
       
     - name: Cache Godot
       id: cache-godot
@@ -89,15 +89,31 @@ jobs:
         
         # Debug info
         echo "ANDROID_HOME: $ANDROID_HOME"
-        echo "JAVA_HOME: $JAVA_HOME"
+        echo "JAVA_HOME: $JAVA_HOME" 
         echo "Current directory: $(pwd)"
         echo "Project files:"
         ls -la
-        echo "Export presets:"
+        
+        # Import the project first
+        echo "Importing Godot project..."
+        ~/godot/Godot_v4.2.2-stable_linux.x86_64 --headless --import --quit
+        
+        # Verify export presets
+        echo "Export presets after import:"
         cat export_presets.cfg
         
-        # Build the APK
-        ~/godot/Godot_v4.2.2-stable_linux.x86_64 --headless --export-release "Android" builds/WightAndroid.apk --verbose
+        # List available export templates
+        echo "Available export templates:"
+        ls -la ~/.local/share/godot/export_templates/
+        
+        # Build the APK with better error output
+        echo "Building APK..."
+        ~/godot/Godot_v4.2.2-stable_linux.x86_64 --headless --export-release "Android" builds/WightAndroid.apk --verbose || {
+          echo "APK build failed! Checking logs..."
+          echo "Project validation:"
+          ~/godot/Godot_v4.2.2-stable_linux.x86_64 --headless --check --quit
+          exit 1
+        }
         
     - name: Create Release Zip
       run: |
