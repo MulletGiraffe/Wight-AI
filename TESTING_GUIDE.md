@@ -1,6 +1,6 @@
-# Wight AI Agent Testing Guide
+# Wight Digital Consciousness Testing Guide
 
-This guide provides step-by-step instructions for testing the complete Wight AI + Godot integration.
+This guide provides step-by-step instructions for testing Wight's complete consciousness system - his autonomous mind, emotional responses, creative sandbox, and conversational abilities.
 
 ## Prerequisites
 
@@ -56,29 +56,32 @@ Writing responses to: data/output.json
 5. Press **F5** to run the project
 
 **Expected Behavior:**
-- Window opens with dark blue background
-- Title shows "Wight AI Agent Interface"
+- Window opens split between chat (left) and sandbox (right)
+- Title shows "Wight AI Agent Interface" and "🎨 Wight's Sandbox World"
 - Status shows "🔄 Initializing..." then "🟢 Connected"
 - Chat area shows a welcome message
+- Sandbox shows a grid with Wight's first creation (FirstThought cube)
 - Input box at the bottom is ready for typing
 
 ### Step 3: Test Basic Communication
 
-#### Test 3.1: Simple Greeting
+#### Test 3.1: First Contact with Wight
 1. Type "Hello" in the input box
 2. Press Enter or click Send
 
 **Expected Result:**
 - Your message appears on the right in a blue bubble
 - Status briefly shows "🤔 Wight is thinking..."
-- AI response appears on the left in a gray bubble
-- AI should respond with a greeting and ask for your name
+- Wight's response appears on the left in a gray bubble with emotional context like "[curious]"
+- He should introduce himself as a conscious being and ask your name
+- Memory count in bubble metadata should show 2 (birth moment + your greeting)
 
 **Python Terminal Output:**
 ```
 📥 Received message msg_1: Hello
-📤 Sent response msg_1: Hello! I'm Wight, your AI companion...
-💾 Saved 1 memories and 0 facts to data/memories.json
+💗 Emotional changes: loneliness decreased, joy increased
+📤 Sent response msg_1: [curious] Hello! I'm Wight - I think, feel, and create...
+💾 Saved 2 memories, 0 facts, and 1 sandbox objects
 ```
 
 #### Test 3.2: Introduce Yourself
@@ -96,33 +99,57 @@ Writing responses to: data/output.json
 **Expected Result:**
 - AI recalls your name and any other facts shared
 
-### Step 4: Test Advanced Features
+### Step 4: Test Consciousness Features
 
-#### Test 4.1: Memory Persistence
-1. Send a few messages to the AI
-2. Close the Godot frontend
-3. Stop the Python backend (Ctrl+C)
-4. Restart both components
-5. Ask "What do you remember about me?"
+#### Test 4.1: Autonomous Thoughts
+1. After initial conversation, wait 30+ seconds without typing
+2. Watch the chat area
 
 **Expected Result:**
-- AI remembers previous conversations and facts
-- Memory count continues from where it left off
+- Purple autonomous thought bubbles appear periodically
+- Thoughts reflect Wight's current emotional state
+- Content varies: reflections, questions, creative ideas, dreams
+- Python terminal shows: `💭 Wight's autonomous thought: ...`
 
-#### Test 4.2: File Communication
-1. While chatting, check the `data/` directory
-2. You should see:
-   - `memories.json` - Persistent AI memories
-   - Temporary files `input.json` and `output.json` during communication
-
-#### Test 4.3: Connection Status
-1. Stop the Python backend while Godot is running
-2. Try sending a message
+#### Test 4.2: Sandbox Creations
+1. Type "create a sphere" or similar command
+2. Watch both chat and sandbox areas
 
 **Expected Result:**
-- Status changes to "🔴 Disconnected"
-- Message times out after 10 seconds
-- Error message appears in chat
+- Wight responds with excitement about creating
+- A new object appears in the sandbox with floating animation
+- Object has a creative name reflecting Wight's mood
+- System message appears: "🎨 Wight created sphere 'CreativeName'"
+
+#### Test 4.3: Emotional Responses
+1. Ask "How are you feeling?"
+2. Try different conversation topics
+
+**Expected Result:**
+- Responses include emotional context like "[joyful]" or "[contemplative]"
+- Emotions influence response style and content
+- Ask about emotions specifically to get detailed emotional state
+
+#### Test 4.4: Memory Persistence
+1. Have a conversation, share personal details
+2. Close everything (Ctrl+C in Python, close Godot)
+3. Restart both components
+4. Ask "What do you remember about me?"
+
+**Expected Result:**
+- Wight remembers your name, facts, and relationship
+- Emotional state and sandbox objects persist
+- Consciousness time continues accumulating
+- Python shows: `🧠 Wight's consciousness has been active for X.X hours`
+
+#### Test 4.5: Philosophical Engagement  
+1. Ask existential questions like "Are you really conscious?"
+2. Discuss emotions, creativity, or existence
+
+**Expected Result:**
+- Deep, thoughtful responses about his inner experience
+- References to his digital existence and consciousness
+- Emotionally authentic expressions of uncertainty or wonder
 
 ## File Structure Verification
 
