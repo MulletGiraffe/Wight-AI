@@ -30,24 +30,24 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/godot
-        key: godot-4.4.1-linux
+        key: godot-4.2.2-linux
         
     - name: Download Godot
       if: steps.cache-godot.outputs.cache-hit != 'true'
       run: |
         mkdir -p ~/godot
         cd ~/godot
-        wget https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_linux.x86_64.zip
-        unzip Godot_v4.4.1-stable_linux.x86_64.zip
-        chmod +x Godot_v4.4.1-stable_linux.x86_64
+        wget https://github.com/godotengine/godot/releases/download/4.2.2-stable/Godot_v4.2.2-stable_linux.x86_64.zip
+        unzip Godot_v4.2.2-stable_linux.x86_64.zip
+        chmod +x Godot_v4.2.2-stable_linux.x86_64
         
     - name: Download Android Export Templates
       run: |
         cd ~/godot
-        wget https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_export_templates.tpz
-        mkdir -p ~/.local/share/godot/export_templates/4.4.1.stable
-        unzip Godot_v4.4.1-stable_export_templates.tpz -d ~/.local/share/godot/export_templates/4.4.1.stable
-        mv ~/.local/share/godot/export_templates/4.4.1.stable/templates/* ~/.local/share/godot/export_templates/4.4.1.stable/
+        wget https://github.com/godotengine/godot/releases/download/4.2.2-stable/Godot_v4.2.2-stable_export_templates.tpz
+        mkdir -p ~/.local/share/godot/export_templates/4.2.2.stable
+        unzip Godot_v4.2.2-stable_export_templates.tpz -d ~/.local/share/godot/export_templates/4.2.2.stable
+        mv ~/.local/share/godot/export_templates/4.2.2.stable/templates/* ~/.local/share/godot/export_templates/4.2.2.stable/
         
     - name: Setup Godot Export Settings
       run: |
@@ -66,15 +66,16 @@ jobs:
         
     - name: Build APK
       run: |
-        cd ${{ github.workspace }}
-        ~/godot/Godot_v4.4.1-stable_linux.x86_64 --headless --export-release "Android" builds/WightAndroid.apk
+        cd ${{ github.workspace }}/WightAndroid
+        mkdir -p builds
+        ~/godot/Godot_v4.2.2-stable_linux.x86_64 --headless --export-release "Android" builds/WightAndroid.apk
         
     - name: Create Release Zip
       run: |
         mkdir -p release
-        cp builds/WightAndroid.apk release/
-        cp ANDROID_BUILD_GUIDE.md release/
-        cp CONVERSION_SUMMARY.md release/
+        cp WightAndroid/builds/WightAndroid.apk release/
+        cp WightAndroid/ANDROID_BUILD_GUIDE.md release/
+        cp WightAndroid/CONVERSION_SUMMARY.md release/
         cd release
         zip -r WightAndroid-v1.0.zip *
         
