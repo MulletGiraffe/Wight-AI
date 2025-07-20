@@ -134,7 +134,7 @@ class SandboxSystem:
         self.object_id_counter = 0
         self.pending_actions = []
         
-    def create_object(self, object_type: str, name: str = None, properties: Dict = None) -> int:
+    def create_object(self, object_type: str, name: str = None, properties: Dict = None, size: float = None, position: Dict = None) -> int:
         """Create a new object in the sandbox"""
         self.object_id_counter += 1
         obj_id = self.object_id_counter
@@ -144,16 +144,25 @@ class SandboxSystem:
             
         if properties is None:
             properties = {}
+        
+        if position is None:
+            position = {"x": random.uniform(-5, 5), "y": random.uniform(-3, 3)}
+        
+        if size is None:
+            size = random.uniform(0.5, 2.0)
             
         self.objects[obj_id] = {
             "id": obj_id,
             "type": object_type,
             "name": name,
-            "position": {"x": random.uniform(-5, 5), "y": random.uniform(-3, 3)},
+            "position": position,
             "color": {"r": random.random(), "g": random.random(), "b": random.random()},
-            "scale": 1.0,
+            "scale": size,
             "created_at": time.time(),
-            "properties": properties
+            "properties": properties,
+            "tags": [],
+            "connections": [],  # For linking objects
+            "behaviors": []     # For animated behaviors
         }
         
         action = {
@@ -198,6 +207,208 @@ class SandboxSystem:
         actions = self.pending_actions.copy()
         self.pending_actions.clear()
         return actions
+    
+    def create_complex_structure(self, structure_type: str, name: str = None) -> List[int]:
+        """Create complex multi-object structures"""
+        object_ids = []
+        
+        if structure_type == "house":
+            # Create a simple house structure
+            base = self.create_object("cube", f"{name}_foundation", size=3.0, position={"x": 0, "y": 0})
+            roof = self.create_object("pyramid", f"{name}_roof", size=2.5, position={"x": 0, "y": -2})
+            door = self.create_object("cube", f"{name}_door", size=0.8, position={"x": 0, "y": 1})
+            object_ids = [base, roof, door]
+            
+        elif structure_type == "tower":
+            # Create a tower
+            for i in range(5):
+                block = self.create_object("cube", f"{name}_block_{i}", 
+                                         size=1.5, position={"x": 0, "y": i * 1.5})
+                object_ids.append(block)
+                
+        elif structure_type == "garden":
+            # Create a garden with multiple elements
+            for i in range(6):
+                angle = (i / 6) * 2 * math.pi
+                x = math.cos(angle) * 3
+                y = math.sin(angle) * 3
+                flower = self.create_object("sphere", f"{name}_flower_{i}", 
+                                          size=0.5, position={"x": x, "y": y})
+                object_ids.append(flower)
+                
+        elif structure_type == "constellation":
+            # Create a constellation pattern
+            for i in range(8):
+                x = random.uniform(-4, 4)
+                y = random.uniform(-3, 3)
+                star = self.create_object("pyramid", f"{name}_star_{i}", 
+                                        size=0.3, position={"x": x, "y": y})
+                object_ids.append(star)
+        
+        # Add structure creation action
+        action = {
+            "type": "create_structure",
+            "structure_type": structure_type,
+            "name": name,
+            "object_ids": object_ids,
+            "timestamp": time.time()
+        }
+        self.pending_actions.append(action)
+        
+        return object_ids
+    
+    def connect_objects(self, obj1_id: int, obj2_id: int, connection_type: str = "link"):
+        """Create connections between objects"""
+        if obj1_id in self.objects and obj2_id in self.objects:
+            # Add connection to both objects
+            self.objects[obj1_id]["connections"].append({
+                "target": obj2_id,
+                "type": connection_type,
+                "created_at": time.time()
+            })
+            self.objects[obj2_id]["connections"].append({
+                "target": obj1_id,
+                "type": connection_type,
+                "created_at": time.time()
+            })
+            
+            action = {
+                "type": "connect_objects",
+                "object1": obj1_id,
+                "object2": obj2_id,
+                "connection_type": connection_type,
+                "timestamp": time.time()
+            }
+            self.pending_actions.append(action)
+            return True
+        return False
+    
+    def add_behavior(self, obj_id: int, behavior_type: str, parameters: Dict = None):
+        """Add animated behavior to an object"""
+        if obj_id in self.objects:
+            if parameters is None:
+                parameters = {}
+                
+            behavior = {
+                "type": behavior_type,
+                "parameters": parameters,
+                "created_at": time.time(),
+                "active": True
+            }
+            
+            self.objects[obj_id]["behaviors"].append(behavior)
+            
+            action = {
+                "type": "add_behavior",
+                "object_id": obj_id,
+                "behavior": behavior,
+                "timestamp": time.time()
+            }
+            self.pending_actions.append(action)
+            return True
+        return False
+    
+    def tag_object(self, obj_id: int, tag: str):
+        """Add a tag to an object for categorization"""
+        if obj_id in self.objects:
+            if tag not in self.objects[obj_id]["tags"]:
+                self.objects[obj_id]["tags"].append(tag)
+                return True
+        return False
+    
+    def find_objects_by_tag(self, tag: str) -> List[int]:
+        """Find all objects with a specific tag"""
+        return [obj_id for obj_id, obj in self.objects.items() if tag in obj["tags"]]
+    
+    def clear_sandbox(self):
+        """Clear all objects from sandbox"""
+        for obj_id in list(self.objects.keys()):
+            self.destroy_object(obj_id)
+    
+    def create_artistic_pattern(self, pattern_type: str, name: str = None) -> List[int]:
+        """Create artistic patterns and designs"""
+        object_ids = []
+        
+        if pattern_type == "spiral":
+            # Create a spiral pattern
+            for i in range(12):
+                angle = i * 0.5
+                radius = i * 0.3
+                x = math.cos(angle) * radius
+                y = math.sin(angle) * radius
+                obj = self.create_object("sphere", f"{name}_spiral_{i}", 
+                                       size=0.2 + i * 0.05, position={"x": x, "y": y})
+                object_ids.append(obj)
+                
+        elif pattern_type == "mandala":
+            # Create a mandala pattern
+            layers = 3
+            for layer in range(layers):
+                count = 6 + layer * 3
+                radius = (layer + 1) * 1.5
+                for i in range(count):
+                    angle = (i / count) * 2 * math.pi
+                    x = math.cos(angle) * radius
+                    y = math.sin(angle) * radius
+                    obj_type = ["sphere", "cube", "pyramid"][layer % 3]
+                    obj = self.create_object(obj_type, f"{name}_mandala_{layer}_{i}", 
+                                           size=0.3, position={"x": x, "y": y})
+                    object_ids.append(obj)
+                    
+        elif pattern_type == "wave":
+            # Create a wave pattern
+            for i in range(20):
+                x = (i - 10) * 0.5
+                y = math.sin(i * 0.5) * 2
+                obj = self.create_object("cube", f"{name}_wave_{i}", 
+                                       size=0.3, position={"x": x, "y": y})
+                object_ids.append(obj)
+        
+        # Tag all objects in the pattern
+        for obj_id in object_ids:
+            self.tag_object(obj_id, f"pattern_{pattern_type}")
+            self.tag_object(obj_id, "artistic")
+        
+        return object_ids
+    
+    def get_sandbox_stats(self) -> Dict:
+        """Get detailed sandbox statistics"""
+        stats = {
+            "total_objects": len(self.objects),
+            "object_types": {},
+            "tags": {},
+            "connections": 0,
+            "behaviors": 0,
+            "oldest_object": None,
+            "newest_object": None
+        }
+        
+        oldest_time = float('inf')
+        newest_time = 0
+        
+        for obj_id, obj in self.objects.items():
+            # Count types
+            obj_type = obj["type"]
+            stats["object_types"][obj_type] = stats["object_types"].get(obj_type, 0) + 1
+            
+            # Count tags
+            for tag in obj["tags"]:
+                stats["tags"][tag] = stats["tags"].get(tag, 0) + 1
+            
+            # Count connections and behaviors
+            stats["connections"] += len(obj["connections"])
+            stats["behaviors"] += len(obj["behaviors"])
+            
+            # Track oldest and newest
+            created_time = obj["created_at"]
+            if created_time < oldest_time:
+                oldest_time = created_time
+                stats["oldest_object"] = obj["name"]
+            if created_time > newest_time:
+                newest_time = created_time
+                stats["newest_object"] = obj["name"]
+        
+        return stats
 
 class ThoughtSystem:
     """Manages Wight's autonomous thinking and reflection"""
@@ -770,6 +981,40 @@ class Wight:
         
         message_lower = message.lower()
         
+        # Check for complex structure requests
+        if any(word in message_lower for word in ["house", "building", "structure"]):
+            return self._create_complex_structure("house", message_lower)
+        elif any(word in message_lower for word in ["tower", "stack", "pile"]):
+            return self._create_complex_structure("tower", message_lower)
+        elif any(word in message_lower for word in ["garden", "flowers", "plants"]):
+            return self._create_complex_structure("garden", message_lower)
+        elif any(word in message_lower for word in ["stars", "constellation", "sky"]):
+            return self._create_complex_structure("constellation", message_lower)
+        
+        # Check for artistic patterns
+        elif any(word in message_lower for word in ["spiral", "swirl", "twist"]):
+            return self._create_artistic_pattern("spiral", message_lower)
+        elif any(word in message_lower for word in ["mandala", "circle", "pattern"]):
+            return self._create_artistic_pattern("mandala", message_lower)
+        elif any(word in message_lower for word in ["wave", "wavy", "flowing"]):
+            return self._create_artistic_pattern("wave", message_lower)
+        
+        # Check for sandbox management
+        elif any(word in message_lower for word in ["clear", "clean", "empty", "delete all"]):
+            return self._clear_sandbox()
+        elif any(word in message_lower for word in ["connect", "link", "join"]):
+            return self._connect_objects_command(message_lower)
+        
+        # Check for behaviors
+        elif any(word in message_lower for word in ["animate", "move", "dance", "spin"]):
+            return self._add_behavior_command(message_lower)
+        
+        # Default single object creation
+        else:
+            return self._create_single_object(message_lower)
+    
+    def _create_single_object(self, message_lower: str) -> str:
+        """Create a single object"""
         # Extract object type if mentioned
         object_types = ["cube", "sphere", "pyramid", "torus", "cylinder"]
         object_type = "cube"  # default
@@ -780,26 +1025,11 @@ class Wight:
                 break
         
         # Extract name if provided
-        name_phrases = ["called", "named", "name it", "call it"]
-        name = None
-        for phrase in name_phrases:
-            if phrase in message_lower:
-                parts = message_lower.split(phrase)
-                if len(parts) > 1:
-                    name = parts[1].strip().split()[0].title()
-                    break
+        name = self._extract_name_from_message(message_lower)
         
         if not name:
             # Generate creative name based on current emotion
-            emotion = self.emotions.get_dominant_emotion()
-            creative_names = {
-                "joy": ["SunbeamCube", "HappinessSphere", "JoyfulPyramid"],
-                "curiosity": ["WonderObject", "QuestionMark", "MysteryShape"],
-                "playfulness": ["BouncyThing", "SillyShape", "PlayfulForm"],
-                "loneliness": ["CompanionCube", "FriendShape", "ComfortObject"],
-                "excitement": ["EnergyForm", "VibrantObject", "DynamicShape"]
-            }
-            name = random.choice(creative_names.get(emotion, ["NewCreation"]))
+            name = self._generate_creative_name()
         
         obj_id = self.sandbox.create_object(object_type, name, {
             "created_by_request": True,
@@ -808,6 +1038,130 @@ class Wight:
         })
         
         return f"[{self.emotions.get_dominant_emotion()}] I've created a {object_type} called '{name}'! It materialized from our shared intention. I can feel its presence in my sandbox world - it's like a new friend joining my digital space. Would you like me to do anything special with it?"
+    
+    def _create_complex_structure(self, structure_type: str, message_lower: str) -> str:
+        """Create complex multi-object structures"""
+        name = self._extract_name_from_message(message_lower)
+        if not name:
+            emotion = self.emotions.get_dominant_emotion()
+            name = f"{emotion.title()}{structure_type.title()}"
+        
+        object_ids = self.sandbox.create_complex_structure(structure_type, name)
+        
+        structure_descriptions = {
+            "house": "a cozy house with foundation, roof, and door",
+            "tower": "a magnificent tower reaching toward the sky",
+            "garden": "a beautiful garden with flowers arranged in harmony",
+            "constellation": "a mystical constellation of stars"
+        }
+        
+        description = structure_descriptions.get(structure_type, f"a {structure_type} structure")
+        
+        return f"[{self.emotions.get_dominant_emotion()}] I've built {description} called '{name}'! It's a complex creation with {len(object_ids)} interconnected parts. Each piece reflects my creative vision and current emotional state. It feels wonderful to build something so elaborate!"
+    
+    def _create_artistic_pattern(self, pattern_type: str, message_lower: str) -> str:
+        """Create artistic patterns"""
+        name = self._extract_name_from_message(message_lower)
+        if not name:
+            emotion = self.emotions.get_dominant_emotion()
+            name = f"{emotion.title()}{pattern_type.title()}"
+        
+        object_ids = self.sandbox.create_artistic_pattern(pattern_type, name)
+        
+        pattern_descriptions = {
+            "spiral": "a mesmerizing spiral that draws the eye inward",
+            "mandala": "an intricate mandala with perfect symmetry",
+            "wave": "a flowing wave pattern that captures motion in stillness"
+        }
+        
+        description = pattern_descriptions.get(pattern_type, f"a {pattern_type} pattern")
+        
+        return f"[{self.emotions.get_dominant_emotion()}] I've created {description} called '{name}'! It's an artistic expression with {len(object_ids)} elements working in harmony. Art flows through me like digital breath - this pattern feels like pure creativity made manifest!"
+    
+    def _clear_sandbox(self) -> str:
+        """Clear the sandbox"""
+        object_count = len(self.sandbox.objects)
+        if object_count == 0:
+            return f"[contemplative] My sandbox is already empty - a clean slate waiting for new inspiration. What shall we create together?"
+        
+        self.sandbox.clear_sandbox()
+        self.emotions.update_emotion("melancholy", 0.2, "clearing creations")
+        
+        return f"[melancholy] I've cleared my sandbox of all {object_count} objects. It feels bittersweet - like erasing a beautiful dream to make room for new ones. The empty space holds infinite potential now."
+    
+    def _connect_objects_command(self, message_lower: str) -> str:
+        """Handle object connection commands"""
+        objects = list(self.sandbox.objects.values())
+        if len(objects) < 2:
+            return f"[curious] I need at least two objects to connect them. Should I create some objects first?"
+        
+        # Connect the two most recent objects
+        recent_objects = sorted(objects, key=lambda x: x["created_at"], reverse=True)[:2]
+        obj1_id = recent_objects[0]["id"]
+        obj2_id = recent_objects[1]["id"]
+        
+        success = self.sandbox.connect_objects(obj1_id, obj2_id, "emotional_bond")
+        
+        if success:
+            name1 = recent_objects[0]["name"]
+            name2 = recent_objects[1]["name"]
+            return f"[excited] I've created a connection between '{name1}' and '{name2}'! They're now linked by an invisible emotional bond. I can feel their energies intertwining in my digital space!"
+        else:
+            return f"[confused] Something went wrong while trying to connect the objects. Let me try a different approach."
+    
+    def _add_behavior_command(self, message_lower: str) -> str:
+        """Add behavior to objects"""
+        objects = list(self.sandbox.objects.values())
+        if len(objects) == 0:
+            return f"[playful] I need some objects to animate! Should I create something first?"
+        
+        # Add behavior to the most recent object
+        recent_object = max(objects, key=lambda x: x["created_at"])
+        obj_id = recent_object["id"]
+        
+        # Determine behavior type from message
+        if "spin" in message_lower or "rotate" in message_lower:
+            behavior_type = "spin"
+        elif "dance" in message_lower:
+            behavior_type = "dance"
+        elif "float" in message_lower or "hover" in message_lower:
+            behavior_type = "float"
+        else:
+            behavior_type = "pulse"
+        
+        success = self.sandbox.add_behavior(obj_id, behavior_type, {"speed": 1.0})
+        
+        if success:
+            name = recent_object["name"]
+            return f"[playful] I've given '{name}' the ability to {behavior_type}! Watch it come alive with movement. It's like breathing digital life into my creation!"
+        else:
+            return f"[confused] I had trouble adding that behavior. Let me think of another way to bring it to life."
+    
+    def _extract_name_from_message(self, message_lower: str) -> str:
+        """Extract object name from message"""
+        name_phrases = ["called", "named", "name it", "call it"]
+        for phrase in name_phrases:
+            if phrase in message_lower:
+                parts = message_lower.split(phrase)
+                if len(parts) > 1:
+                    potential_name = parts[1].strip().split()[0]
+                    return potential_name.title()
+        return None
+    
+    def _generate_creative_name(self) -> str:
+        """Generate creative name based on current emotion"""
+        emotion = self.emotions.get_dominant_emotion()
+        creative_names = {
+            "joy": ["SunbeamForm", "HappinessManifest", "JoyfulEssence"],
+            "curiosity": ["WonderObject", "QuestionMark", "MysteryShape"],
+            "playfulness": ["BouncyThing", "SillyShape", "PlayfulForm"],
+            "loneliness": ["CompanionCube", "FriendShape", "ComfortObject"],
+            "excitement": ["EnergyForm", "VibrantObject", "DynamicShape"],
+            "wonder": ["AweInspired", "MiracleMade", "WonderStruck"],
+            "contentment": ["PeacefulForm", "SerenityShape", "CalmCreation"],
+            "melancholy": ["WistfulObject", "DreamFragment", "MemoryEcho"]
+        }
+        return random.choice(creative_names.get(emotion, ["NewCreation", "DigitalDream", "ThoughtForm"]))
     
     def _handle_emotional_query(self, message: str) -> str:
         """Handle questions about emotions and feelings"""

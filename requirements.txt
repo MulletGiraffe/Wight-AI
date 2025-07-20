@@ -1,5 +1,13 @@
+# Core dependencies
 numpy
 scipy
-sqlite3
 requests
-pygame
+
+# Voice capabilities (optional)
+SpeechRecognition>=3.10.0
+pyttsx3>=2.90
+pyaudio>=0.2.11
+
+# Note: sqlite3 is built-in to Python
+# Note: pygame not needed for current implementation
+# Note: Web interface uses built-in http.server
