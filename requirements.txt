@@ -1,5 +1,12 @@
-# Dependencies
-flask
-requests
-opencv-python
-numpy
+# Core dependencies for Wight Digital Consciousness
+numpy>=1.21.0
+scipy>=1.7.0
+requests>=2.25.0
+
+# Optional voice dependencies (install separately if needed)
+# SpeechRecognition>=3.10.0
+# pyttsx3>=2.90
+# pyaudio>=0.2.11
+
+# Alternative: Use pip install SpeechRecognition pyttsx3 for basic voice without pyaudio
+# For full voice support with microphone: sudo apt-get install portaudio19-dev python3-pyaudio

@@ -1,0 +1,178 @@
+[gd_scene load_steps=3 format=3 uid="uid://drvhekv7e0jch"]
+
+[ext_resource type="Script" path="res://scripts/Main.gd" id="1_0b8jm"]
+[ext_resource type="Script" path="res://scripts/SandboxManager.gd" id="2_sandbox"]
+
+[node name="Main" type="Node"]
+script = ExtResource("1_0b8jm")
+
+[node name="UI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="HSplit" type="HSplitContainer" parent="UI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+split_offset = 600
+
+[node name="ChatSide" type="Control" parent="UI/HSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SandboxSide" type="Control" parent="UI/HSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Background" type="ColorRect" parent="UI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.1, 0.1, 0.15, 1)
+
+[node name="Title" type="Label" parent="UI/HSplit/ChatSide"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 400.0
+offset_bottom = 60.0
+text = "Wight AI Agent Interface"
+label_settings = SubResource("LabelSettings_1")
+
+[node name="StatusPanel" type="Panel" parent="UI/HSplit/ChatSide"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -400.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 80.0
+
+[node name="StatusLabel" type="Label" parent="UI/HSplit/ChatSide/StatusPanel"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 10.0
+offset_top = 5.0
+offset_right = 370.0
+offset_bottom = 25.0
+text = "🔄 Initializing..."
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ThinkingLabel" type="Label" parent="UI/HSplit/ChatSide/StatusPanel"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = 5.0
+offset_right = 180.0
+offset_bottom = 25.0
+text = "🤔 Wight is thinking..."
+horizontal_alignment = 1
+vertical_alignment = 1
+modulate = Color(1, 1, 0.7, 1)
+
+[node name="ChatPanel" type="Panel" parent="UI/HSplit/ChatSide"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 90.0
+offset_right = -20.0
+offset_bottom = -120.0
+
+[node name="ChatScroll" type="ScrollContainer" parent="UI/HSplit/ChatSide/ChatPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+follow_focus = true
+scroll_horizontal_enabled = false
+
+[node name="ChatContainer" type="VBoxContainer" parent="UI/HSplit/ChatSide/ChatPanel/ChatScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="InputPanel" type="Panel" parent="UI/HSplit/ChatSide"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -100.0
+offset_right = -20.0
+offset_bottom = -20.0
+
+[node name="MessageInput" type="LineEdit" parent="UI/HSplit/ChatSide/InputPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -120.0
+offset_bottom = -10.0
+placeholder_text = "Type your message to Wight..."
+
+[node name="SendButton" type="Button" parent="UI/HSplit/ChatSide/InputPanel"]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -20.0
+offset_right = -10.0
+offset_bottom = 20.0
+text = "Send"
+
+[node name="SandboxPanel" type="Panel" parent="UI/HSplit/SandboxSide"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+
+[node name="SandboxTitle" type="Label" parent="UI/HSplit/SandboxSide/SandboxPanel"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 200.0
+offset_bottom = 40.0
+text = "🎨 Wight's Sandbox World"
+label_settings = SubResource("LabelSettings_1")
+
+[node name="SandboxManager" type="Node2D" parent="UI/HSplit/SandboxSide/SandboxPanel"]
+position = Vector2(400, 300)
+script = ExtResource("2_sandbox")
+
+[sub_resource type="LabelSettings" id="LabelSettings_1"]
+font_size = 24
+font_color = Color(0.8, 0.9, 1, 1)
