@@ -1,0 +1,5 @@
+numpy
+scipy
+sqlite3
+requests
+pygame
