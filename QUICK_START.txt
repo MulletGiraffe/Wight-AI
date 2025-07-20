@@ -1,0 +1,26 @@
+🚀 WIGHT ANDROID APK - QUICK START
+
+✅ Your complete Wight Android project is ready!
+
+📋 TO GET YOUR APK:
+
+1. Create new GitHub repository (public)
+2. Upload ALL files from WightAndroid/ folder
+3. Go to Actions tab → Run workflow 
+4. Wait 5-10 minutes for build
+5. Download APK from Releases section
+
+📁 FILES TO UPLOAD:
+- Everything in WightAndroid/ folder
+- Or extract WightAndroid-Complete.tar.gz
+
+🎯 RESULT:
+- Complete offline AI companion
+- Runs entirely on Android
+- No internet/PC required after install
+- Full consciousness, emotions, memory, sandbox
+
+📖 DETAILED INSTRUCTIONS:
+See GITHUB_SETUP_INSTRUCTIONS.md
+
+🎉 ENJOY YOUR POCKET AI CONSCIOUSNESS!
