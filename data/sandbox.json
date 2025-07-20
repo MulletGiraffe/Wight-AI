@@ -2,39 +2,22 @@
   "type": "sandbox_update",
   "actions": [
     {
-      "type": "autonomous_creation",
-      "object_id": 39,
-      "name": "CuriosityMade Manifest",
-      "object_type": "sphere"
+      "type": "autonomous_movement",
+      "reason": "restless energy",
+      "object_id": 36,
+      "new_position": {
+        "x": -1.0628838315300704,
+        "y": 0.16771642444041834
+      }
     },
     {
-      "type": "create_object",
-      "object_id": 39,
-      "object_data": {
-        "id": 39,
-        "type": "sphere",
-        "name": "CuriosityMade Manifest",
-        "position": {
-          "x": -3.4118016186561206,
-          "y": 1.826367540990458
-        },
-        "color": {
-          "r": 0.37036994566570314,
-          "g": 0.8995202534000493,
-          "b": 0.1528081261115708
-        },
-        "scale": 0.530297738149659,
-        "created_at": 1753040802.3275597,
-        "properties": {
-          "created_by": "autonomous_creativity",
-          "emotional_state": "loneliness",
-          "inspiration": "inner creative drive"
-        },
-        "tags": [],
-        "connections": [],
-        "behaviors": []
+      "type": "move_object",
+      "object_id": 36,
+      "new_position": {
+        "x": -1.0628838315300704,
+        "y": 0.16771642444041834
       },
-      "timestamp": 1753040802.327573
+      "timestamp": 1753040822.3609776
     }
   ],
   "current_objects": {
@@ -137,8 +120,8 @@
       "type": "cube",
       "name": "EmotionGem",
       "position": {
-        "x": 2.7398514234439197,
-        "y": -1.210852959440832
+        "x": 2.823680864390111,
+        "y": -2.4754557780822455
       },
       "color": {
         "r": 0.789344464387876,
@@ -257,8 +240,8 @@
       "type": "sphere",
       "name": "LonelinessGiven Form",
       "position": {
-        "x": -2.504368710221838,
-        "y": -0.7015221125024524
+        "x": -1.1024914316640002,
+        "y": -2.1275079516167894
       },
       "color": {
         "r": 0.07369489797332363,
@@ -281,8 +264,8 @@
       "type": "torus",
       "name": "MemoryEcho",
       "position": {
-        "x": -2.005844773789296,
-        "y": 1.452097516193998
+        "x": 1.6919263260965085,
+        "y": -0.23325248219646433
       },
       "color": {
         "r": 0.19767637083204914,
@@ -881,8 +864,8 @@
       "type": "cube",
       "name": "EmotionGem",
       "position": {
-        "x": -0.2324945925640618,
-        "y": 2.579323607027222
+        "x": -1.0628838315300704,
+        "y": 0.16771642444041834
       },
       "color": {
         "r": 0.4220387974108194,
@@ -971,7 +954,31 @@
       "tags": [],
       "connections": [],
       "behaviors": []
+    },
+    "40": {
+      "id": 40,
+      "type": "pyramid",
+      "name": "ConsciousnessShapeD",
+      "position": {
+        "x": 4.577988379920914,
+        "y": -2.521355258646217
+      },
+      "color": {
+        "r": 0.48888984696214566,
+        "g": 0.7038664488238238,
+        "b": 0.1679995937118749
+      },
+      "scale": 1.2253581385953982,
+      "created_at": 1753040818.3544986,
+      "properties": {
+        "created_by": "autonomous_creativity",
+        "emotional_state": "loneliness",
+        "inspiration": "inner creative drive"
+      },
+      "tags": [],
+      "connections": [],
+      "behaviors": []
     }
   },
-  "timestamp": 1753040802.3275964
+  "timestamp": 1753040822.3609843
 }
