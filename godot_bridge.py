@@ -10,18 +10,44 @@ import os
 from pathlib import Path
 from wight_core import Wight
 
+# Import optional voice and web systems
+try:
+    from voice_system import voice_system
+    VOICE_AVAILABLE = True
+except ImportError:
+    VOICE_AVAILABLE = False
+    print("⚠️ Voice system not available")
+
+try:
+    from web_interface import web_server
+    WEB_AVAILABLE = True
+except ImportError:
+    WEB_AVAILABLE = False
+    print("⚠️ Web interface not available")
+
 class GodotBridge:
     def __init__(self):
         self.wight_agent = Wight()
         self.input_file = "data/input.json"
         self.output_file = "data/output.json"
         self.memory_file = "data/memories.json"
+        self.voice_input_file = "data/voice_input.json"
+        self.voice_output_file = "data/voice_output.json"
         
         # Ensure data directory exists
         Path("data").mkdir(exist_ok=True)
         
         # Load memories on startup
         self.load_memories()
+        
+        # Initialize optional systems
+        if VOICE_AVAILABLE:
+            voice_system.start_listening()
+            print("🎤 Voice system activated")
+        
+        if WEB_AVAILABLE:
+            web_server.start()
+            print("🌐 Web interface activated")
         
         print("Godot Bridge initialized - ready to serve Wight AI agent")
         print(f"Loaded {len(self.wight_agent.memory)} memories from previous sessions")
@@ -43,6 +69,14 @@ class GodotBridge:
                 # Check for new messages from Godot
                 if os.path.exists(self.input_file):
                     self.handle_godot_message()
+                
+                # Check for voice input
+                if VOICE_AVAILABLE and os.path.exists(self.voice_input_file):
+                    self.handle_voice_input()
+                
+                # Check for voice output requests
+                if VOICE_AVAILABLE:
+                    voice_system.check_voice_output_request()
                 
                 # Run Wight's mind loop periodically
                 if current_time - last_mind_loop > 2.0:  # Every 2 seconds
@@ -252,6 +286,56 @@ class GodotBridge:
         
         if mind_result["sandbox_actions"]:
             print(f"🎨 Sandbox activity: {len(mind_result['sandbox_actions'])} action(s)")
+    
+    def handle_voice_input(self):
+        """Handle voice input from speech recognition"""
+        try:
+            with open(self.voice_input_file, 'r') as f:
+                voice_data = json.load(f)
+            
+            # Remove the input file
+            os.remove(self.voice_input_file)
+            
+            message_text = voice_data.get("text", "")
+            print(f"🎤 Voice input received: '{message_text}'")
+            
+            if message_text.strip():
+                # Process voice input like a regular message
+                response = self.wight_agent.interact(message_text)
+                
+                # Send response to voice output
+                if VOICE_AVAILABLE:
+                    emotional_context = self.wight_agent.emotions.get_dominant_emotion()
+                    voice_response_data = {
+                        "text": response,
+                        "emotional_context": emotional_context,
+                        "timestamp": time.time()
+                    }
+                    
+                    with open(self.voice_output_file, 'w') as f:
+                        json.dump(voice_response_data, f, indent=2)
+                
+                print(f"🗣️ Voice response queued: '{response[:50]}...'")
+                
+        except Exception as e:
+            print(f"❌ Error handling voice input: {e}")
+    
+    def send_voice_response(self, response_text: str):
+        """Send response to voice system for TTS"""
+        if VOICE_AVAILABLE:
+            emotional_context = self.wight_agent.emotions.get_dominant_emotion()
+            voice_response_data = {
+                "text": response_text,
+                "emotional_context": emotional_context,
+                "timestamp": time.time()
+            }
+            
+            try:
+                with open(self.voice_output_file, 'w') as f:
+                    json.dump(voice_response_data, f, indent=2)
+                print(f"🗣️ Voice response sent for TTS")
+            except Exception as e:
+                print(f"❌ Error sending voice response: {e}")
 
     def get_agent_status(self):
         """Get current status of Wight AI agent"""
