@@ -1,0 +1,65 @@
+[gd_scene load_steps=2 format=3 uid="uid://bwc8ld4p0yk8u"]
+
+[ext_resource type="Script" path="res://scripts/MessageBubble.gd" id="1_y4h8s"]
+
+[node name="MessageBubble" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -600.0
+offset_bottom = -900.0
+script = ExtResource("1_y4h8s")
+
+[node name="Background" type="NinePatchRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = 5.0
+offset_right = -5.0
+offset_bottom = -5.0
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 15.0
+offset_top = 10.0
+offset_right = -15.0
+offset_bottom = -10.0
+
+[node name="MessageLabel" type="RichTextLabel" parent="VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+text = "Sample message content"
+fit_content = true
+
+[node name="BottomRow" type="HBoxContainer" parent="VBox"]
+layout_mode = 2
+size_flags_vertical = 8
+
+[sub_resource type="LabelSettings" id="LabelSettings_1"]
+font_size = 10
+font_color = Color(0.7, 0.7, 0.7, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_2"]
+font_size = 9
+font_color = Color(0.6, 0.6, 0.6, 1)
+
+[node name="TimestampLabel" type="Label" parent="VBox/BottomRow"]
+layout_mode = 2
+text = "12:34"
+label_settings = SubResource("LabelSettings_1")
+
+[node name="Spacer" type="Control" parent="VBox/BottomRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MetadataLabel" type="Label" parent="VBox/BottomRow"]
+layout_mode = 2
+text = "Memories: 5"
+label_settings = SubResource("LabelSettings_2")
