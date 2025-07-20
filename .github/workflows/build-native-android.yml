@@ -26,20 +26,152 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
       
-    - name: Grant execute permission for gradlew
-      run: chmod +x WightAndroidNative/gradlew
-      
-    - name: Create missing resource files
+    - name: Create complete Android project structure
       run: |
         cd WightAndroidNative
         
-        # Create missing directories
+        # Create all required directories
         mkdir -p app/src/main/res/values
         mkdir -p app/src/main/res/drawable
         mkdir -p app/src/main/res/xml
+        mkdir -p app/src/main/res/mipmap-hdpi
+        mkdir -p app/src/main/res/mipmap-mdpi 
+        mkdir -p app/src/main/res/mipmap-xhdpi
+        mkdir -p app/src/main/res/mipmap-xxhdpi
+        mkdir -p app/src/main/res/mipmap-xxxhdpi
         mkdir -p app/src/main/java/com/wight/ai/adapters
+        mkdir -p gradle/wrapper
         
-        # Create colors.xml
+        # Create Gradle wrapper properties
+        cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
+        distributionBase=GRADLE_USER_HOME
+        distributionPath=wrapper/dists
+        distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-bin.zip
+        networkTimeout=10000
+        validateDistributionUrl=true
+        zipStoreBase=GRADLE_USER_HOME
+        zipStorePath=wrapper/dists
+        EOF
+        
+        # Download and create gradlew
+        curl -o gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.4.0/gradle/wrapper/gradle-wrapper.jar
+        
+        cat > gradlew << 'EOF'
+        #!/bin/sh
+        APP_NAME="Gradle"
+        APP_BASE_NAME=`basename "$0"`
+        GRADLE_OPTS="$GRADLE_OPTS \"-Xdock:name=$APP_NAME\" \"-Xdock:icon=$APP_HOME/media/gradle.icns\""
+        GRADLE_USER_HOME="${GRADLE_USER_HOME:-$HOME/.gradle}"
+        DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
+        JAVA_OPTS="$JAVA_OPTS $DEFAULT_JVM_OPTS"
+        
+        # Resolve links: $0 may be a link
+        PRG="$0"
+        while [ -h "$PRG" ] ; do
+            ls=`ls -ld "$PRG"`
+            link=`expr "$ls" : '.*-> \(.*\)$'`
+            if expr "$link" : '/.*' > /dev/null; then
+                PRG="$link"
+            else
+                PRG=`dirname "$PRG"`"/$link"
+            fi
+        done
+        
+        SAVED="`pwd`"
+        cd "`dirname \"$PRG\"`/" >/dev/null
+        APP_HOME="`pwd -P`"
+        cd "$SAVED" >/dev/null
+        
+        CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
+        
+        exec "$JAVACMD" $DEFAULT_JVM_OPTS $JAVA_OPTS $GRADLE_OPTS \
+             -classpath "$CLASSPATH" \
+             org.gradle.wrapper.GradleWrapperMain \
+             "$@"
+        EOF
+        
+        chmod +x gradlew
+        
+        # Update build.gradle to use legacy plugin application
+        cat > build.gradle << 'EOF'
+        buildscript {
+            ext.kotlin_version = '1.8.10'
+            repositories {
+                google()
+                mavenCentral()
+            }
+            dependencies {
+                classpath 'com.android.tools.build:gradle:8.1.4'
+                classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+            }
+        }
+        
+        allprojects {
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        EOF
+        
+        # Update app build.gradle
+        cat > app/build.gradle << 'EOF'
+        apply plugin: 'com.android.application'
+        apply plugin: 'kotlin-android'
+        
+        android {
+            namespace 'com.wight.ai'
+            compileSdk 34
+        
+            defaultConfig {
+                applicationId "com.wight.ai"
+                minSdk 24
+                targetSdk 34
+                versionCode 1
+                versionName "1.0"
+                testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+            }
+        
+            buildTypes {
+                release {
+                    minifyEnabled false
+                    proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+                    signingConfig signingConfigs.debug
+                }
+            }
+            
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_1_8
+                targetCompatibility JavaVersion.VERSION_1_8
+            }
+            
+            kotlinOptions {
+                jvmTarget = '1.8'
+            }
+            
+            buildFeatures {
+                viewBinding true
+            }
+        }
+        
+        dependencies {
+            implementation 'androidx.core:core-ktx:1.12.0'
+            implementation 'androidx.appcompat:appcompat:1.6.1'
+            implementation 'com.google.android.material:material:1.11.0'
+            implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+            implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0'
+            implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.7.0'
+            implementation 'androidx.recyclerview:recyclerview:1.3.2'
+            implementation 'com.google.code.gson:gson:2.10.1'
+            implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
+            
+            testImplementation 'junit:junit:4.13.2'
+            androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+            androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+        }
+        EOF
+        
+        # Create missing resource files
         cat > app/src/main/res/values/colors.xml << 'EOF'
         <?xml version="1.0" encoding="utf-8"?>
         <resources>
@@ -53,14 +185,12 @@ jobs:
         </resources>
         EOF
         
-        # Create strings.xml
         cat > app/src/main/res/values/strings.xml << 'EOF'
         <resources>
             <string name="app_name">Wight AI Companion</string>
         </resources>
         EOF
         
-        # Create themes.xml
         cat > app/src/main/res/values/themes.xml << 'EOF'
         <resources>
             <style name="Theme.WightAI" parent="Theme.Material3.DayNight.NoActionBar">
@@ -69,7 +199,7 @@ jobs:
         </resources>
         EOF
         
-        # Create drawable backgrounds
+        # Create drawable files
         cat > app/src/main/res/drawable/input_background.xml << 'EOF'
         <?xml version="1.0" encoding="utf-8"?>
         <shape xmlns:android="http://schemas.android.com/apk/res/android">
@@ -102,6 +232,18 @@ jobs:
         </shape>
         EOF
         
+        # Create simple launcher icons (PNG files as base64)
+        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" | base64 -d > app/src/main/res/mipmap-hdpi/ic_launcher.png
+        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" | base64 -d > app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" | base64 -d > app/src/main/res/mipmap-mdpi/ic_launcher.png
+        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" | base64 -d > app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" | base64 -d > app/src/main/res/mipmap-xhdpi/ic_launcher.png
+        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" | base64 -d > app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" | base64 -d > app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" | base64 -d > app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" | base64 -d > app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" | base64 -d > app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+        
         # Create required XML files
         cat > app/src/main/res/xml/data_extraction_rules.xml << 'EOF'
         <?xml version="1.0" encoding="utf-8"?>
@@ -117,6 +259,12 @@ jobs:
         <full-backup-content />
         EOF
         
+        # Create proguard rules
+        cat > app/proguard-rules.pro << 'EOF'
+        # Add project specific ProGuard rules here.
+        -keep class com.wight.ai.** { *; }
+        EOF
+        
         # Create ChatAdapter
         cat > app/src/main/java/com/wight/ai/adapters/ChatAdapter.kt << 'EOF'
         package com.wight.ai.adapters
@@ -127,7 +275,6 @@ jobs:
         import android.widget.TextView
         import androidx.recyclerview.widget.RecyclerView
         import com.wight.ai.models.ChatMessage
-        import com.wight.ai.R
         
         class ChatAdapter(private val messages: List<ChatMessage>) : RecyclerView.Adapter<ChatAdapter.MessageViewHolder>() {
             
@@ -174,36 +321,16 @@ jobs:
         }
         EOF
         
-        # Create gradle.properties
-        cat > gradle.properties << 'EOF'
-        android.useAndroidX=true
-        android.enableJetifier=true
-        org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
-        EOF
-        
-        # Create settings.gradle
-        cat > settings.gradle << 'EOF'
-        include ':app'
-        rootProject.name = "WightAI"
-        EOF
-        
-        # Create build.gradle (project level)
-        cat > build.gradle << 'EOF'
-        plugins {
-            id 'com.android.application' version '8.1.4' apply false
-            id 'org.jetbrains.kotlin.android' version '1.8.10' apply false
-        }
-        EOF
-        
     - name: Build debug APK
       run: |
         cd WightAndroidNative
-        ./gradlew assembleDebug
+        echo "Starting Gradle build..."
+        ./gradlew clean assembleDebug --no-daemon --stacktrace
         
     - name: Create Release Package
       run: |
         mkdir -p release
-        cp WightAndroidNative/app/build/outputs/apk/debug/app-debug.apk release/WightAI-Native.apk
+        find WightAndroidNative -name "*.apk" -exec cp {} release/WightAI-Native.apk \;
         
         # Create installation guide
         cat > release/INSTALL_GUIDE.md << 'EOF'
