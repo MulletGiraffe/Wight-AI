@@ -61,10 +61,13 @@ The Python AI agent and Godot frontend communicate via JSON files in the `data/`
 
 ## Usage
 
-1. Start the Python backend: `python godot_bridge.py`
-2. Launch the Godot frontend
-3. Type messages in the chat interface to interact with Wight
-4. The AI agent learns from every interaction and stores memories
+### Quick Start
+1. **Start the AI backend:** `python start_wight.py`
+2. **Launch Godot frontend:** Import `godot_frontend/project.godot` and press F5
+3. **Chat with Wight:** Type messages in the interface - Wight learns and remembers!
+
+### Testing
+See [TESTING_GUIDE.md](TESTING_GUIDE.md) for comprehensive testing instructions.
 
 ## Next Steps
 
