@@ -1,5 +1,0 @@
-# Dependencies
-flask
-requests
-opencv-python
-numpy
