@@ -44,6 +44,20 @@ func configure_appearance(sender: String):
 			background.modulate = Color(0.3, 0.3, 0.3, 0.9)  # Dark gray
 			message_label.add_theme_color_override("default_color", Color.WHITE)
 			
+		"ai_autonomous":
+			# Autonomous AI thoughts on the left, purple/mystical
+			set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+			background.modulate = Color(0.4, 0.2, 0.6, 0.8)  # Purple
+			message_label.add_theme_color_override("default_color", Color.WHITE)
+			
+			# Add a subtle glow effect for autonomous thoughts
+			var glow_effect = ColorRect.new()
+			glow_effect.color = Color(0.6, 0.4, 0.8, 0.3)
+			glow_effect.size = background.size + Vector2(4, 4)
+			glow_effect.position = background.position - Vector2(2, 2)
+			add_child(glow_effect)
+			move_child(glow_effect, 0)  # Behind background
+			
 		"system":
 			# System messages centered, yellow
 			set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)

@@ -10,9 +10,11 @@ extends Node
 @onready var send_button: Button
 @onready var status_label: Label
 @onready var thinking_label: Label
+@onready var sandbox_manager: SandboxManager
 
 var conversation_history: Array[Dictionary] = []
 var message_bubble_scene = preload("res://scenes/MessageBubble.tscn")
+var autonomous_thoughts_enabled: bool = true
 
 func _ready():
 	print("Wight AI Frontend initialized")
@@ -31,22 +33,31 @@ func setup_ai_bridge():
 	ai_bridge.ai_response_received.connect(_on_ai_response)
 	ai_bridge.ai_connection_changed.connect(_on_ai_connection_changed)
 	ai_bridge.ai_thinking_changed.connect(_on_ai_thinking_changed)
+	ai_bridge.autonomous_thought_received.connect(_on_autonomous_thought)
+	ai_bridge.sandbox_update_received.connect(_on_sandbox_update)
 
 func setup_ui_connections():
 	# Find UI nodes
-	chat_scroll = $UI/ChatPanel/ChatScroll
-	chat_container = $UI/ChatPanel/ChatScroll/ChatContainer
-	message_input = $UI/InputPanel/MessageInput
-	send_button = $UI/InputPanel/SendButton
-	status_label = $UI/StatusPanel/StatusLabel
-	thinking_label = $UI/StatusPanel/ThinkingLabel
+	chat_scroll = $UI/HSplit/ChatSide/ChatPanel/ChatScroll
+	chat_container = $UI/HSplit/ChatSide/ChatPanel/ChatScroll/ChatContainer
+	message_input = $UI/HSplit/ChatSide/InputPanel/MessageInput
+	send_button = $UI/HSplit/ChatSide/InputPanel/SendButton
+	status_label = $UI/HSplit/ChatSide/StatusPanel/StatusLabel
+	thinking_label = $UI/HSplit/ChatSide/StatusPanel/ThinkingLabel
+	sandbox_manager = $UI/HSplit/SandboxSide/SandboxPanel/SandboxManager
 	
 	# Connect UI signals
 	send_button.pressed.connect(_on_send_button_pressed)
 	message_input.text_submitted.connect(_on_message_submitted)
 	
+	# Connect sandbox signals
+	if sandbox_manager:
+		sandbox_manager.object_created.connect(_on_sandbox_object_created)
+		sandbox_manager.object_moved.connect(_on_sandbox_object_moved)
+		sandbox_manager.object_destroyed.connect(_on_sandbox_object_destroyed)
+	
 	# Set initial status
-	status_label.text = "Connecting to AI agent..."
+	status_label.text = "🔄 Connecting to AI agent..."
 	thinking_label.text = ""
 	thinking_label.visible = false
 
@@ -132,9 +143,77 @@ func create_message_bubble(message_data: Dictionary):
 	await get_tree().process_frame
 	chat_scroll.scroll_vertical = chat_scroll.get_v_scroll_bar().max_value
 
+func _on_autonomous_thought(thought_data: Dictionary):
+	"""Handle autonomous thoughts from Wight"""
+	if autonomous_thoughts_enabled:
+		var content = thought_data.get("content", "")
+		var thought_type = thought_data.get("thought_type", "autonomous")
+		var emotional_state = thought_data.get("emotional_state", "contemplative")
+		
+		# Create a special autonomous message
+		var message_data = {
+			"sender": "ai_autonomous",
+			"content": content,
+			"timestamp": Time.get_unix_time_from_system(),
+			"metadata": {
+				"thought_type": thought_type,
+				"emotional_state": emotional_state,
+				"autonomous": true
+			}
+		}
+		
+		conversation_history.append(message_data)
+		create_message_bubble(message_data)
+		
+		print(f"💭 Autonomous thought: {content}")
+
+func _on_sandbox_update(sandbox_data: Dictionary):
+	"""Handle sandbox updates from Wight"""
+	if sandbox_manager:
+		sandbox_manager.update_from_sandbox_data(sandbox_data)
+		
+		# Add a system message about the sandbox activity
+		var actions = sandbox_data.get("actions", [])
+		if actions.size() > 0:
+			var action_descriptions = []
+			for action in actions:
+				var action_type = action.get("type", "unknown")
+				match action_type:
+					"create_object":
+						var obj_data = action.get("object_data", {})
+						action_descriptions.append(f"created {obj_data.get('type', 'object')} '{obj_data.get('name', 'Unknown')}'")
+					"move_object":
+						action_descriptions.append("moved an object")
+					"destroy_object":
+						action_descriptions.append("destroyed an object")
+			
+			if action_descriptions.size() > 0:
+				var description = "🎨 Wight " + action_descriptions[0]
+				if action_descriptions.size() > 1:
+					description += f" (and {action_descriptions.size() - 1} more actions)"
+				
+				add_system_message(description)
+
+func _on_sandbox_object_created(object_data: Dictionary):
+	"""Handle sandbox object creation"""
+	print(f"🎨 Sandbox object created: {object_data}")
+
+func _on_sandbox_object_moved(object_id: int, new_position: Vector2):
+	"""Handle sandbox object movement"""
+	print(f"🎨 Object {object_id} moved to {new_position}")
+
+func _on_sandbox_object_destroyed(object_id: int):
+	"""Handle sandbox object destruction"""
+	print(f"🎨 Object {object_id} destroyed")
+
 func _input(event):
 	# Handle global input
 	if event.is_action_pressed("ui_cancel"):
 		get_tree().quit()
 	elif event.is_action_pressed("interact"):
 		message_input.grab_focus()
+	elif event.is_action_just_pressed("ui_accept") and Input.is_key_pressed(KEY_CTRL):
+		# Ctrl+Enter to toggle autonomous thoughts
+		autonomous_thoughts_enabled = !autonomous_thoughts_enabled
+		var status = "enabled" if autonomous_thoughts_enabled else "disabled"
+		add_system_message(f"Autonomous thoughts {status}")
