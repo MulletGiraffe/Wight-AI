@@ -79,15 +79,15 @@ custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 24
-text = "UI Scale: 100%"
+text = "UI Scale: 300%"
 
 [node name="UIScaleSlider" type="HSlider" parent="UI/SettingsPanel/SettingsContainer"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 60)
-min_value = 0.5
-max_value = 3.0
-step = 0.1
-value = 1.0
+min_value = 3.0
+max_value = 6.0
+step = 0.2
+value = 3.0
 
 [node name="Spacer1" type="Control" parent="UI/SettingsPanel/SettingsContainer"]
 layout_mode = 2

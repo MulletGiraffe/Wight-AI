@@ -627,7 +627,7 @@ func add_to_conversation(text: String):
 func load_ui_settings():
 	"""Load UI settings from file or set defaults"""
 	# For now, just set defaults - could expand to save/load from file
-	ui_scale = 1.5  # Start with larger scale for mobile
+	ui_scale = 3.0  # Start at maximum scale for mobile readability
 	high_contrast_mode = false
 	
 	# Update UI to reflect current settings
@@ -649,7 +649,7 @@ func _on_contrast_toggled(pressed: bool):
 
 func _on_settings_cancel():
 	"""Cancel settings and use defaults"""
-	ui_scale = 1.5
+	ui_scale = 3.0  # Use minimum readable scale
 	high_contrast_mode = false
 	apply_ui_settings()
 	hide_settings_panel()
@@ -669,26 +669,24 @@ func update_contrast_preview():
 	if ui_elements.has("preview_text"):
 		if high_contrast_mode:
 			ui_elements.preview_text.add_theme_color_override("font_color", Color.WHITE)
-			ui_elements.preview_text.text = "High Contrast Mode: Bold white text on dark backgrounds for maximum readability."
+			ui_elements.preview_text.text = "High Contrast Mode: Bold white text on dark backgrounds for maximum readability. Font scaling now properly enlarges text without breaking layout."
 		else:
 			ui_elements.preview_text.add_theme_color_override("font_color", Color(0.8, 1, 1, 1))
-			ui_elements.preview_text.text = "Normal Mode: Softer colors with good contrast for comfortable viewing."
+			ui_elements.preview_text.text = "Normal Mode: Softer colors with good contrast for comfortable viewing. Fonts scale from 300% (minimum) to 600% (maximum)."
 
 func apply_ui_settings():
 	"""Apply the selected UI settings to the main interface"""
 	if not ui_elements.has("main_interface"):
 		return
 	
+	# DON'T scale the entire interface - instead scale individual font sizes
+	# Keep the interface at normal size and anchoring
 	var main_interface = ui_elements.main_interface
+	main_interface.scale = Vector2(1.0, 1.0)  # Always normal scale
+	main_interface.position = Vector2.ZERO    # Always normal position
 	
-	# Apply scale to entire main interface
-	main_interface.scale = Vector2(ui_scale, ui_scale)
-	
-	# Adjust position to keep it centered after scaling
-	var viewport_size = get_viewport().size
-	var scaled_size = viewport_size * ui_scale
-	var offset = (viewport_size - scaled_size) * 0.5
-	main_interface.position = offset
+	# Scale all font sizes individually
+	scale_all_font_sizes()
 	
 	# Apply contrast settings
 	if high_contrast_mode:
@@ -744,6 +742,91 @@ func update_element_color(element_name: String, color: Color):
 		var element = ui_elements[element_name]
 		if element.has_method("add_theme_color_override"):
 			element.add_theme_color_override("font_color", color)
+
+func scale_all_font_sizes():
+	"""Scale all font sizes in the main interface without changing layout"""
+	# Base font sizes (what they are at scale 1.0)
+	var base_sizes = {
+		"title": 24,
+		"status_label": 16, 
+		"emotion_label": 14,
+		"thoughts_title": 18,
+		"thoughts_display": 16,
+		"chat_title": 18,
+		"conversation_history": 14,
+		"text_input": 16,
+		"send_button": 16,
+		"voice_button": 16,
+		"create_button": 16,
+		"clear_button": 16,
+		"memory_button": 16
+	}
+	
+	# Calculate scaled font sizes
+	var scaled_sizes = {}
+	for key in base_sizes:
+		scaled_sizes[key] = int(base_sizes[key] * ui_scale)
+	
+	# Apply scaled font sizes to all elements
+	apply_font_size("title", scaled_sizes.title)
+	apply_font_size("status_label", scaled_sizes.status_label)
+	apply_font_size("emotion_label", scaled_sizes.emotion_label) 
+	apply_font_size("thoughts_title", scaled_sizes.thoughts_title)
+	apply_font_size("thoughts_display", scaled_sizes.thoughts_display)
+	apply_font_size("chat_title", scaled_sizes.chat_title)
+	apply_font_size("conversation_history", scaled_sizes.conversation_history)
+	apply_font_size("text_input", scaled_sizes.text_input)
+	apply_font_size("send_button", scaled_sizes.send_button)
+	apply_font_size("voice_button", scaled_sizes.voice_button)
+	apply_font_size("create_button", scaled_sizes.create_button)
+	apply_font_size("clear_button", scaled_sizes.clear_button)
+	apply_font_size("memory_button", scaled_sizes.memory_button)
+	
+	# Also scale minimum button heights for better touch targets
+	var button_height = int(50 * ui_scale)
+	scale_button_heights(button_height)
+
+func apply_font_size(element_key: String, font_size: int):
+	"""Apply font size to a specific UI element"""
+	var element_map = {
+		"title": "UI/MainInterface/TopPanel/StatusContainer/Title",
+		"status_label": "UI/MainInterface/TopPanel/StatusContainer/StatusLabel", 
+		"emotion_label": "UI/MainInterface/TopPanel/StatusContainer/EmotionLabel",
+		"thoughts_title": "UI/MainInterface/ThoughtsPanel/ThoughtsContainer/ThoughtsTitle",
+		"thoughts_display": "UI/MainInterface/ThoughtsPanel/ThoughtsContainer/WightThoughts",
+		"chat_title": "UI/MainInterface/ChatPanel/ChatContainer/ChatTitle",
+		"conversation_history": "UI/MainInterface/ChatPanel/ChatContainer/ConversationHistory",
+		"text_input": "UI/MainInterface/ChatPanel/ChatContainer/InputRow/TextInput",
+		"send_button": "UI/MainInterface/ChatPanel/ChatContainer/InputRow/SendButton",
+		"voice_button": "UI/MainInterface/ChatPanel/ChatContainer/InputRow/VoiceButton", 
+		"create_button": "UI/MainInterface/BottomPanel/ActionContainer/CreateButton",
+		"clear_button": "UI/MainInterface/BottomPanel/ActionContainer/ClearButton",
+		"memory_button": "UI/MainInterface/BottomPanel/ActionContainer/InfoButton"
+	}
+	
+	if element_map.has(element_key):
+		var element = get_node(element_map[element_key])
+		if element:
+			if element.has_method("add_theme_font_size_override"):
+				if element_key == "thoughts_display" or element_key == "conversation_history":
+					element.add_theme_font_size_override("normal_font_size", font_size)
+				else:
+					element.add_theme_font_size_override("font_size", font_size)
+
+func scale_button_heights(height: int):
+	"""Scale button minimum heights for better touch targets"""
+	var buttons = [
+		"UI/MainInterface/ChatPanel/ChatContainer/InputRow/SendButton",
+		"UI/MainInterface/ChatPanel/ChatContainer/InputRow/VoiceButton",
+		"UI/MainInterface/BottomPanel/ActionContainer/CreateButton", 
+		"UI/MainInterface/BottomPanel/ActionContainer/ClearButton",
+		"UI/MainInterface/BottomPanel/ActionContainer/InfoButton"
+	]
+	
+	for button_path in buttons:
+		var button = get_node(button_path)
+		if button:
+			button.custom_minimum_size.y = height
 
 func hide_settings_panel():
 	"""Hide settings panel and show main interface"""
