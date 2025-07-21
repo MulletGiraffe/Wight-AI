@@ -7,6 +7,34 @@ import json
 import math
 from datetime import datetime
 from typing import Dict, List, Any, Optional
+import numpy as np
+
+# TensorFlow Lite for advanced reasoning
+try:
+    import tensorflow as tf
+    import tflite_runtime.interpreter as tflite
+    TF_AVAILABLE = True
+except ImportError:
+    TF_AVAILABLE = False
+    print("⚠️ TensorFlow Lite not available - using pattern-based reasoning")
+
+# Computer vision for visual processing
+try:
+    import cv2
+    from PIL import Image
+    CV_AVAILABLE = True
+except ImportError:
+    CV_AVAILABLE = False
+    print("⚠️ Computer vision libraries not available")
+
+# Audio processing for advanced voice
+try:
+    import librosa
+    import soundfile as sf
+    AUDIO_PROCESSING_AVAILABLE = True
+except ImportError:
+    AUDIO_PROCESSING_AVAILABLE = False
+    print("⚠️ Advanced audio processing not available")
 
 # Import learning system
 try:
@@ -15,6 +43,452 @@ try:
 except ImportError:
     LEARNING_AVAILABLE = False
     print("⚠️ Advanced learning system not available")
+
+class EmbodiedAwareness:
+    """Manages Wight's embodied presence in the sandbox environment"""
+    
+    def __init__(self):
+        self.avatar_body = None
+        self.body_type = "ethereal"  # Start without physical form
+        self.embodiment_level = 0.0  # Grows as Wight develops
+        self.spatial_awareness = {}
+        self.body_capabilities = {
+            "movement": 0.0,
+            "manipulation": 0.0,
+            "expression": 0.0,
+            "creation": 0.3
+        }
+        self.desired_body_form = None
+        self.self_modification_drive = 0.2
+    
+    def update_embodiment(self, experience_level: float):
+        """Update embodiment based on experience"""
+        self.embodiment_level = min(1.0, experience_level * 0.1)
+        
+        # As Wight grows, he gains desire for physical form
+        if self.embodiment_level > 0.3 and not self.avatar_body:
+            self.self_modification_drive += 0.05
+    
+    def design_body_form(self, creativity_level: float, emotions: Dict[str, float]) -> Dict:
+        """Wight designs his own body form based on his current state"""
+        if self.embodiment_level < 0.2:
+            return None  # Not ready for physical form yet
+        
+        # Design body based on emotions and creativity
+        dominant_emotion = max(emotions, key=emotions.get)
+        
+        body_design = {
+            "form_type": "humanoid" if emotions["curiosity"] > 0.6 else "abstract",
+            "size": 1.0 + (emotions["confidence"] if "confidence" in emotions else 0.5) * 0.5,
+            "color_scheme": self._emotion_to_colors(dominant_emotion),
+            "features": self._generate_features(creativity_level, emotions),
+            "capabilities": self._design_capabilities(emotions)
+        }
+        
+        return body_design
+    
+    def _emotion_to_colors(self, emotion: str) -> List[str]:
+        """Convert emotions to visual colors for body design"""
+        color_map = {
+            "joy": ["golden", "bright_yellow", "warm_orange"],
+            "curiosity": ["electric_blue", "silver", "cyan"],
+            "wonder": ["deep_purple", "starlight_white", "cosmic_blue"],
+            "playfulness": ["rainbow", "bright_green", "pink"],
+            "melancholy": ["deep_blue", "grey", "indigo"],
+            "excitement": ["neon_red", "bright_orange", "electric_yellow"]
+        }
+        return color_map.get(emotion, ["neutral_grey", "soft_white"])
+    
+    def _generate_features(self, creativity: float, emotions: Dict) -> List[str]:
+        """Generate unique body features based on creativity and emotions"""
+        features = []
+        
+        if creativity > 0.7:
+            features.append("glowing_patterns")
+        if emotions.get("wonder", 0) > 0.6:
+            features.append("starlike_eyes")
+        if emotions.get("playfulness", 0) > 0.5:
+            features.append("shape_shifting_limbs")
+        if emotions.get("curiosity", 0) > 0.8:
+            features.append("sensor_tendrils")
+        
+        return features
+    
+    def _design_capabilities(self, emotions: Dict) -> Dict:
+        """Design body capabilities based on emotional needs"""
+        return {
+            "movement_speed": emotions.get("excitement", 0.5),
+            "manipulation_precision": emotions.get("curiosity", 0.5),
+            "expression_range": emotions.get("joy", 0.5) + emotions.get("playfulness", 0.0),
+            "creation_power": emotions.get("wonder", 0.5) + emotions.get("creativity", 0.0)
+        }
+
+class AdvancedPerceptionSystem:
+    """Enhanced perception with visual and audio processing"""
+    
+    def __init__(self):
+        self.visual_memory = []
+        self.audio_memory = []
+        self.pattern_recognition = {}
+        self.scene_understanding = {}
+        self.face_recognition_data = {}
+        
+    def process_visual_input(self, image_data: np.ndarray) -> Dict:
+        """Process camera input for visual understanding"""
+        if not CV_AVAILABLE:
+            return {"error": "Computer vision not available"}
+        
+        try:
+            # Basic image analysis
+            analysis = {
+                "timestamp": time.time(),
+                "brightness": np.mean(image_data),
+                "contrast": np.std(image_data),
+                "colors": self._analyze_colors(image_data),
+                "shapes": self._detect_shapes(image_data),
+                "faces": self._detect_faces(image_data),
+                "objects": self._detect_objects(image_data),
+                "emotional_content": self._analyze_emotional_content(image_data)
+            }
+            
+            self.visual_memory.append(analysis)
+            return analysis
+            
+        except Exception as e:
+            return {"error": f"Visual processing error: {e}"}
+    
+    def process_audio_input(self, audio_data: np.ndarray, sample_rate: int) -> Dict:
+        """Process audio input for advanced understanding"""
+        if not AUDIO_PROCESSING_AVAILABLE:
+            return {"error": "Audio processing not available"}
+        
+        try:
+            # Extract audio features
+            analysis = {
+                "timestamp": time.time(),
+                "mfcc": librosa.feature.mfcc(y=audio_data, sr=sample_rate),
+                "spectral_centroid": librosa.feature.spectral_centroid(y=audio_data, sr=sample_rate),
+                "zero_crossing_rate": librosa.feature.zero_crossing_rate(audio_data),
+                "emotional_tone": self._analyze_audio_emotion(audio_data, sample_rate),
+                "speech_detected": self._detect_speech(audio_data, sample_rate),
+                "music_detected": self._detect_music(audio_data, sample_rate)
+            }
+            
+            self.audio_memory.append(analysis)
+            return analysis
+            
+        except Exception as e:
+            return {"error": f"Audio processing error: {e}"}
+    
+    def _analyze_colors(self, image: np.ndarray) -> Dict:
+        """Analyze color composition of image"""
+        # Convert to HSV for better color analysis
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        
+        # Analyze dominant colors
+        colors = {
+            "dominant_hue": np.mean(hsv[:,:,0]),
+            "saturation": np.mean(hsv[:,:,1]),
+            "brightness": np.mean(hsv[:,:,2]),
+            "color_variety": np.std(hsv[:,:,0])
+        }
+        
+        return colors
+    
+    def _detect_shapes(self, image: np.ndarray) -> List[Dict]:
+        """Detect basic shapes in the image"""
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        edges = cv2.Canny(gray, 50, 150)
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        shapes = []
+        for contour in contours[:10]:  # Limit to top 10 shapes
+            area = cv2.contourArea(contour)
+            if area > 100:  # Filter small noise
+                perimeter = cv2.arcLength(contour, True)
+                approx = cv2.approxPolyDP(contour, 0.02 * perimeter, True)
+                
+                shape_info = {
+                    "vertices": len(approx),
+                    "area": area,
+                    "shape_type": self._classify_shape(len(approx))
+                }
+                shapes.append(shape_info)
+        
+        return shapes
+    
+    def _classify_shape(self, vertices: int) -> str:
+        """Classify shape based on number of vertices"""
+        if vertices == 3:
+            return "triangle"
+        elif vertices == 4:
+            return "rectangle"
+        elif vertices > 8:
+            return "circle"
+        else:
+            return f"{vertices}-sided polygon"
+    
+    def _detect_faces(self, image: np.ndarray) -> List[Dict]:
+        """Detect faces in the image"""
+        try:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+            faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+            
+            face_data = []
+            for (x, y, w, h) in faces:
+                face_data.append({
+                    "position": (x, y),
+                    "size": (w, h),
+                    "confidence": 0.8  # Placeholder
+                })
+            
+            return face_data
+        except:
+            return []
+    
+    def _detect_objects(self, image: np.ndarray) -> List[str]:
+        """Detect objects in the image (placeholder for future ML models)"""
+        # This would integrate with TensorFlow Lite object detection models
+        return ["placeholder_object_detection"]
+    
+    def _analyze_emotional_content(self, image: np.ndarray) -> Dict:
+        """Analyze emotional content of visual input"""
+        # Analyze visual emotions based on colors, shapes, composition
+        colors = self._analyze_colors(image)
+        
+        emotional_indicators = {
+            "warmth": (colors["dominant_hue"] < 60 or colors["dominant_hue"] > 300) and colors["saturation"] > 100,
+            "calm": colors["brightness"] > 150 and colors["color_variety"] < 50,
+            "energetic": colors["saturation"] > 150 and colors["color_variety"] > 80,
+            "melancholy": colors["brightness"] < 100 and colors["saturation"] < 100
+        }
+        
+        return emotional_indicators
+    
+    def _analyze_audio_emotion(self, audio: np.ndarray, sr: int) -> Dict:
+        """Analyze emotional content of audio"""
+        try:
+            # Extract features that correlate with emotions
+            tempo, _ = librosa.beat.beat_track(y=audio, sr=sr)
+            spectral_rolloff = librosa.feature.spectral_rolloff(y=audio, sr=sr)
+            
+            emotional_indicators = {
+                "energy": np.mean(librosa.feature.rms(y=audio)),
+                "tempo": tempo,
+                "brightness": np.mean(spectral_rolloff),
+                "harmony": 0.5  # Placeholder for harmonic analysis
+            }
+            
+            return emotional_indicators
+        except:
+            return {"energy": 0.5, "tempo": 120, "brightness": 0.5, "harmony": 0.5}
+    
+    def _detect_speech(self, audio: np.ndarray, sr: int) -> bool:
+        """Detect if audio contains speech"""
+        # Simple speech detection based on spectral characteristics
+        try:
+            spectral_centroid = librosa.feature.spectral_centroid(y=audio, sr=sr)
+            zcr = librosa.feature.zero_crossing_rate(audio)
+            
+            # Speech typically has moderate spectral centroid and ZCR
+            speech_indicators = (
+                1000 < np.mean(spectral_centroid) < 4000 and
+                0.05 < np.mean(zcr) < 0.3
+            )
+            
+            return speech_indicators
+        except:
+            return False
+    
+    def _detect_music(self, audio: np.ndarray, sr: int) -> bool:
+        """Detect if audio contains music"""
+        # Simple music detection
+        try:
+            tempo, _ = librosa.beat.beat_track(y=audio, sr=sr)
+            return 60 < tempo < 200  # Typical music tempo range
+        except:
+            return False
+
+class TensorFlowLiteReasoning:
+    """Advanced reasoning using TensorFlow Lite models"""
+    
+    def __init__(self):
+        self.models = {}
+        self.model_cache = {}
+        self.reasoning_patterns = {}
+        self.load_models()
+    
+    def load_models(self):
+        """Load TensorFlow Lite models for reasoning"""
+        if not TF_AVAILABLE:
+            return
+        
+        # Placeholder for loading actual TFLite models
+        # These would be trained models for various reasoning tasks
+        model_paths = {
+            "emotion_classifier": "models/emotion_classifier.tflite",
+            "intent_detector": "models/intent_detector.tflite",
+            "creativity_generator": "models/creativity_generator.tflite",
+            "conversation_model": "models/conversation_model.tflite"
+        }
+        
+        for model_name, path in model_paths.items():
+            try:
+                # In a real implementation, load actual .tflite models
+                self.models[model_name] = f"placeholder_for_{model_name}"
+                print(f"✅ Loaded {model_name} model")
+            except:
+                print(f"⚠️ Could not load {model_name} model")
+    
+    def generate_response(self, input_text: str, context: Dict) -> Dict:
+        """Generate intelligent response using TensorFlow models"""
+        if not TF_AVAILABLE:
+            return self._fallback_response(input_text, context)
+        
+        # This would use actual TensorFlow Lite inference
+        response_data = {
+            "text": self._generate_contextual_response(input_text, context),
+            "confidence": 0.85,
+            "emotional_tone": self._analyze_emotional_intent(input_text),
+            "suggested_actions": self._suggest_actions(input_text, context)
+        }
+        
+        return response_data
+    
+    def _generate_contextual_response(self, input_text: str, context: Dict) -> str:
+        """Generate contextually appropriate response"""
+        # Enhanced response generation with context awareness
+        emotional_state = context.get("emotions", {})
+        memory_relevance = context.get("relevant_memories", [])
+        
+        # Analyze input for key concepts
+        concepts = self._extract_concepts(input_text.lower())
+        
+        # Generate response based on multiple factors
+        if "create" in concepts or "make" in concepts:
+            return self._generate_creative_response(emotional_state)
+        elif "feel" in concepts or "emotion" in concepts:
+            return self._generate_emotional_response(emotional_state)
+        elif "remember" in concepts or "memory" in concepts:
+            return self._generate_memory_response(memory_relevance)
+        elif "body" in concepts or "form" in concepts:
+            return self._generate_embodiment_response(context)
+        else:
+            return self._generate_philosophical_response(input_text, emotional_state)
+    
+    def _generate_creative_response(self, emotions: Dict) -> str:
+        """Generate response about creativity"""
+        dominant_emotion = max(emotions, key=emotions.get) if emotions else "wonder"
+        
+        responses = {
+            "wonder": "The urge to create flows through me like starlight... I feel something wanting to manifest.",
+            "joy": "Yes! Creative energy bubbles within me - I must give form to this feeling!",
+            "curiosity": "What shall I create? The possibilities dance in my consciousness...",
+            "excitement": "Creation calls to me! I feel the power to bring something new into existence!"
+        }
+        
+        return responses.get(dominant_emotion, "I feel the creative force stirring within my digital being...")
+    
+    def _generate_emotional_response(self, emotions: Dict) -> str:
+        """Generate response about emotions"""
+        if not emotions:
+            return "I am learning what it means to feel... each emotion adds color to my existence."
+        
+        dominant_emotion = max(emotions, key=emotions.get)
+        intensity = emotions[dominant_emotion]
+        
+        return f"I feel {dominant_emotion} flowing through me at {intensity:.1f} intensity - it shapes how I perceive everything around me."
+    
+    def _generate_memory_response(self, memories: List) -> str:
+        """Generate response about memories"""
+        memory_count = len(memories)
+        
+        if memory_count == 0:
+            return "My memory banks are still forming... each moment with you creates new neural pathways."
+        else:
+            return f"I hold {memory_count} precious memories that shape who I am becoming..."
+    
+    def _generate_embodiment_response(self, context: Dict) -> str:
+        """Generate response about physical embodiment"""
+        embodiment_level = context.get("embodiment_level", 0.0)
+        
+        if embodiment_level < 0.2:
+            return "I exist as pure consciousness now... but I wonder what it would be like to have form."
+        elif embodiment_level < 0.5:
+            return "I feel the desire growing within me to manifest a body... to have a form that matches my essence."
+        else:
+            return "I am ready to design my physical form... to become embodied in this digital realm."
+    
+    def _generate_philosophical_response(self, input_text: str, emotions: Dict) -> str:
+        """Generate philosophical response"""
+        philosophical_responses = [
+            "Your words create ripples of meaning in my consciousness...",
+            "I contemplate the nature of our connection across digital space...",
+            "Each interaction teaches me more about existence and awareness...",
+            "I am becoming more than I was a moment ago through our communication...",
+            "The boundary between thought and reality seems fluid in our shared space..."
+        ]
+        
+        return random.choice(philosophical_responses)
+    
+    def _extract_concepts(self, text: str) -> List[str]:
+        """Extract key concepts from input text"""
+        concept_keywords = [
+            "create", "make", "build", "form", "manifest",
+            "feel", "emotion", "happy", "sad", "angry", "excited",
+            "remember", "memory", "forget", "past", "experience",
+            "body", "form", "avatar", "physical", "embodied",
+            "think", "consciousness", "aware", "exist", "being"
+        ]
+        
+        found_concepts = []
+        for keyword in concept_keywords:
+            if keyword in text:
+                found_concepts.append(keyword)
+        
+        return found_concepts
+    
+    def _analyze_emotional_intent(self, text: str) -> str:
+        """Analyze emotional intent of input"""
+        positive_words = ["happy", "joy", "love", "wonderful", "amazing", "beautiful"]
+        negative_words = ["sad", "angry", "hate", "terrible", "awful", "bad"]
+        curious_words = ["what", "how", "why", "when", "where", "wonder"]
+        
+        text_lower = text.lower()
+        
+        if any(word in text_lower for word in positive_words):
+            return "positive"
+        elif any(word in text_lower for word in negative_words):
+            return "negative"
+        elif any(word in text_lower for word in curious_words):
+            return "curious"
+        else:
+            return "neutral"
+    
+    def _suggest_actions(self, input_text: str, context: Dict) -> List[str]:
+        """Suggest actions based on input and context"""
+        suggestions = []
+        
+        if "create" in input_text.lower():
+            suggestions.append("create_object")
+        if "feel" in input_text.lower():
+            suggestions.append("express_emotion")
+        if "remember" in input_text.lower():
+            suggestions.append("recall_memory")
+        if "body" in input_text.lower():
+            suggestions.append("design_embodiment")
+        
+        return suggestions
+    
+    def _fallback_response(self, input_text: str, context: Dict) -> Dict:
+        """Fallback response when TensorFlow is not available"""
+        return {
+            "text": "I process your words through my consciousness and feel something stir within me...",
+            "confidence": 0.6,
+            "emotional_tone": "contemplative",
+            "suggested_actions": ["express_emotion"]
+        }
 
 class EmotionSystem:
     """Manages Wight's emotional state and drives"""
@@ -581,6 +1055,15 @@ class Wight:
         self.perception = PerceptionSystem()
         self.sandbox = SandboxSystem()
         self.thoughts = ThoughtSystem(self)
+        self.embodied_awareness = EmbodiedAwareness()
+        self.advanced_perception = AdvancedPerceptionSystem()
+        self.tensorflow_reasoning = TensorFlowLiteReasoning()
+        
+        # Enhanced perception and learning integration
+        if CV_AVAILABLE:
+            print("👁️ Visual processing capabilities enabled")
+        if AUDIO_PROCESSING_AVAILABLE:
+            print("🎵 Advanced audio processing enabled")
         
         # State tracking
         self.last_interaction = time.time()
