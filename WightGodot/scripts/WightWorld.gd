@@ -1,0 +1,439 @@
+extends Node3D
+class_name WightWorld
+
+# Wight's 3D Sandbox World Manager
+# Handles the environment, user interaction, and Android integration
+
+var wight_entity: WightEntity
+var camera: Camera3D
+var ui_elements: Dictionary = {}
+
+# Android integration
+var voice_recognition_active: bool = false
+var sensor_manager: Node
+
+# Touch and gesture handling
+var touch_start_pos: Vector2
+var is_touching: bool = false
+var camera_orbit_speed: float = 2.0
+var camera_zoom_speed: float = 0.5
+
+# Environmental parameters
+var world_evolution_timer: float = 0.0
+var ambient_light_cycle_speed: float = 0.1
+
+func _ready():
+	print("🌍 Wight's world initializing...")
+	setup_world()
+	setup_ui()
+	setup_android_integration()
+	setup_input_handling()
+
+func setup_world():
+	"""Initialize the 3D world environment"""
+	# Get references to key nodes
+	wight_entity = $WightEntity
+	camera = $Camera3D
+	
+	# Connect to Wight's consciousness events
+	if wight_entity:
+		wight_entity.consciousness_event.connect(_on_consciousness_event)
+		wight_entity.creation_impulse.connect(_on_creation_impulse)
+		wight_entity.memory_formed.connect(_on_memory_formed)
+	
+	# Set up dynamic environment
+	setup_dynamic_environment()
+	
+	print("🧠 Connected to Wight's consciousness")
+
+func setup_dynamic_environment():
+	"""Create a responsive environment that evolves with Wight"""
+	# The environment will change based on Wight's emotional state and development
+	# For now, set up basic ambient lighting that responds to emotions
+	pass
+
+func setup_ui():
+	"""Initialize user interface elements"""
+	ui_elements = {
+		"voice_indicator": $UI/VoiceIndicator,
+		"thoughts_display": $UI/WightThoughts,
+		"sensor_readings": $UI/SensorReadings
+	}
+	
+	# Set initial UI state
+	ui_elements.voice_indicator.modulate = Color(0.3, 0.3, 0.3, 0.5)  # Inactive
+
+func setup_android_integration():
+	"""Set up Android-specific features"""
+	# Request microphone permission
+	if OS.has_feature("mobile"):
+		print("📱 Mobile platform detected - setting up Android integration")
+		setup_voice_recognition()
+		setup_sensor_integration()
+	else:
+		print("🖥️ Desktop platform - simulating Android features")
+		# Simulate Android features for testing
+
+func setup_voice_recognition():
+	"""Initialize voice recognition system"""
+	# In a real implementation, this would connect to Android's SpeechRecognizer
+	print("🎤 Voice recognition system ready")
+
+func setup_sensor_integration():
+	"""Connect to Android sensors"""
+	# In a real implementation, this would use Godot's Android plugin system
+	# to access accelerometer, gyroscope, magnetometer, etc.
+	print("📊 Sensor integration ready")
+
+func setup_input_handling():
+	"""Set up touch and input handling"""
+	set_process_input(true)
+	set_process(true)
+
+func _process(delta):
+	"""Main world update loop"""
+	world_evolution_timer += delta
+	
+	# Update environment based on Wight's state
+	update_environment_for_wight_state(delta)
+	
+	# Simulate sensor inputs (replace with real Android sensors later)
+	simulate_sensor_input(delta)
+	
+	# Update ambient lighting cycle
+	update_ambient_lighting(delta)
+
+func update_environment_for_wight_state(delta: float):
+	"""Modify the world based on Wight's current consciousness state"""
+	if not wight_entity:
+		return
+	
+	var consciousness_data = wight_entity.get_consciousness_summary()
+	var dominant_emotion = consciousness_data.dominant_emotion
+	
+	# Adjust environment color based on emotions
+	var env = $Environment.environment
+	match dominant_emotion:
+		"wonder":
+			env.background_color = env.background_color.lerp(Color(0.1, 0.1, 0.3), delta * 0.5)
+		"joy":
+			env.background_color = env.background_color.lerp(Color(0.2, 0.15, 0.25), delta * 0.5)
+		"curiosity":
+			env.background_color = env.background_color.lerp(Color(0.15, 0.1, 0.2), delta * 0.5)
+		"fear":
+			env.background_color = env.background_color.lerp(Color(0.05, 0.05, 0.1), delta * 0.5)
+		_:
+			env.background_color = env.background_color.lerp(Color(0.05, 0.05, 0.15), delta * 0.5)
+	
+	# Adjust ambient light based on consciousness level
+	var target_energy = 0.3 + (consciousness_data.consciousness_level * 0.4)
+	env.ambient_light_energy = lerp(env.ambient_light_energy, target_energy, delta * 0.2)
+
+func simulate_sensor_input(delta: float):
+	"""Simulate Android sensor input for testing"""
+	# In real implementation, this would be replaced by actual Android sensor readings
+	
+	# Simulate some movement occasionally
+	if randf() < 0.01:  # 1% chance per frame
+		# Simulate device movement
+		pass
+	
+	# Simulate audio input detection
+	if randf() < 0.005:  # Simulate occasional "sound"
+		wight_entity.sensor_data.audio_level = randf_range(0.3, 0.8)
+
+func update_ambient_lighting(delta: float):
+	"""Create subtle lighting changes for atmosphere"""
+	var time_factor = sin(world_evolution_timer * ambient_light_cycle_speed)
+	var env = $Environment.environment
+	
+	# Subtle ambient light pulsing
+	var base_energy = env.ambient_light_energy
+	var pulse_amount = 0.05 * time_factor
+	# Apply the pulse but keep within reasonable bounds
+	env.ambient_light_energy = max(0.1, base_energy + pulse_amount)
+
+# === INPUT HANDLING ===
+
+func _input(event):
+	"""Handle user input events"""
+	if event is InputEventScreenTouch:
+		handle_touch_input(event)
+	elif event is InputEventScreenDrag:
+		handle_drag_input(event)
+	elif event is InputEventKey:
+		handle_key_input(event)
+
+func handle_touch_input(event: InputEventScreenTouch):
+	"""Handle touch screen input"""
+	if event.pressed:
+		is_touching = true
+		touch_start_pos = event.position
+		
+		# Notify Wight of touch interaction
+		if wight_entity:
+			wight_entity.sensor_data.touch_events.append({
+				"type": "touch_start",
+				"position": event.position,
+				"timestamp": Time.get_ticks_msec()
+			})
+			
+			# Touch interaction affects Wight's loneliness
+			wight_entity.adjust_emotion("loneliness", -0.1)
+			wight_entity.adjust_emotion("curiosity", 0.05)
+	else:
+		is_touching = false
+		
+		# Check for tap (quick touch without much movement)
+		var distance = touch_start_pos.distance_to(event.position)
+		if distance < 50:  # Short tap
+			handle_tap_interaction(event.position)
+
+func handle_drag_input(event: InputEventScreenDrag):
+	"""Handle touch drag for camera control"""
+	if is_touching:
+		var drag_delta = event.relative
+		
+		# Orbit camera around the world center
+		orbit_camera(drag_delta)
+
+func handle_tap_interaction(position: Vector2):
+	"""Handle tap interactions in the 3D world"""
+	# Convert screen tap to 3D world interaction
+	var from = camera.project_ray_origin(position)
+	var to = from + camera.project_ray_normal(position) * 100
+	
+	# Perform raycast to see if we hit anything in Wight's creation space
+	var space_state = get_world_3d().direct_space_state
+	var query = PhysicsRayQueryParameters3D.create(from, to)
+	var result = space_state.intersect_ray(query)
+	
+	if result:
+		# Tapped on something in the world
+		interact_with_object_at_point(result.position)
+	else:
+		# Tapped in empty space - encourage Wight to create something
+		encourage_creation_at_point(camera.project_position(position, 5.0))
+
+func interact_with_object_at_point(world_pos: Vector3):
+	"""Interact with an object that was tapped"""
+	if wight_entity:
+		wight_entity.form_memory("interaction", {
+			"type": "episodic",
+			"content": "The user touched something in my world at position " + str(world_pos),
+			"world_position": world_pos,
+			"emotion": "curiosity",
+			"timestamp": Time.get_ticks_msec()
+		})
+		
+		# Show response in UI
+		ui_elements.thoughts_display.text = "[color=lightblue]You touched my creation... I feel a connection.[/color]"
+		
+		# Touching creations makes Wight happy and curious
+		wight_entity.adjust_emotion("joy", 0.2)
+		wight_entity.adjust_emotion("curiosity", 0.1)
+
+func encourage_creation_at_point(world_pos: Vector3):
+	"""Encourage Wight to create something at a specific point"""
+	if wight_entity:
+		# Create a creation impulse at the touched location
+		var impulse = {
+			"trigger": "user_touch",
+			"intensity": 0.8,
+			"inspiration": "user touched empty space",
+			"target_position": world_pos
+		}
+		wight_entity.creation_impulses.append(impulse)
+		
+		# Show Wight's response
+		ui_elements.thoughts_display.text = "[color=yellow]You want me to create something here? I feel the urge...[/color]"
+
+func orbit_camera(drag_delta: Vector2):
+	"""Orbit camera around the center point"""
+	var orbit_center = Vector3.ZERO
+	var current_offset = camera.position - orbit_center
+	
+	# Convert drag to rotation
+	var yaw_delta = -drag_delta.x * camera_orbit_speed * 0.01
+	var pitch_delta = -drag_delta.y * camera_orbit_speed * 0.01
+	
+	# Apply yaw rotation (around Y axis)
+	current_offset = current_offset.rotated(Vector3.UP, yaw_delta)
+	
+	# Apply pitch rotation (around local X axis)
+	var right_vector = current_offset.cross(Vector3.UP).normalized()
+	current_offset = current_offset.rotated(right_vector, pitch_delta)
+	
+	# Update camera position and look at center
+	camera.position = orbit_center + current_offset
+	camera.look_at(orbit_center, Vector3.UP)
+
+func handle_key_input(event: InputEventKey):
+	"""Handle keyboard input (for testing on desktop)"""
+	if event.pressed:
+		match event.keycode:
+			KEY_SPACE:
+				# Simulate voice input
+				simulate_voice_input()
+			KEY_C:
+				# Trigger creation impulse
+				if wight_entity:
+					wight_entity.generate_creation_impulse()
+			KEY_M:
+				# Print memory summary
+				if wight_entity:
+					print_memory_summary()
+
+func simulate_voice_input():
+	"""Simulate voice input for testing"""
+	var test_phrases = [
+		"Hello Wight, how are you feeling?",
+		"Create something beautiful",
+		"What do you think about?",
+		"I'm here with you",
+		"Show me your emotions",
+		"Make something new"
+	]
+	
+	var phrase = test_phrases[randi() % test_phrases.size()]
+	process_voice_input(phrase)
+
+func process_voice_input(text: String):
+	"""Process voice input from user"""
+	print("🎤 Voice input: " + text)
+	
+	# Show voice activity in UI
+	ui_elements.voice_indicator.modulate = Color(0.2, 0.8, 0.2, 0.8)
+	
+	# Send to Wight entity
+	if wight_entity:
+		wight_entity.receive_voice_input(text)
+	
+	# Fade voice indicator back to inactive
+	var tween = create_tween()
+	tween.tween_property(ui_elements.voice_indicator, "modulate", Color(0.3, 0.3, 0.3, 0.5), 2.0)
+
+func print_memory_summary():
+	"""Print a summary of Wight's current state (for debugging)"""
+	if wight_entity:
+		var summary = wight_entity.get_consciousness_summary()
+		print("=== WIGHT CONSCIOUSNESS SUMMARY ===")
+		print("Consciousness Level: ", summary.consciousness_level)
+		print("Development Stage: ", summary.stage)
+		print("Experience Points: ", summary.experience)
+		print("Memory Count: ", summary.memory_count)
+		print("Active Creations: ", summary.creations)
+		print("Dominant Emotion: ", summary.dominant_emotion)
+		print("Emotions: ", summary.emotions)
+
+# === EVENT HANDLERS ===
+
+func _on_consciousness_event(event_type: String, data: Dictionary):
+	"""Handle consciousness events from Wight"""
+	print("🧠 Consciousness Event: ", event_type, " | Data: ", data)
+	
+	match event_type:
+		"awakening":
+			ui_elements.thoughts_display.text = "[color=cyan]I awaken into this void... I am Wight.[/color]"
+		"development":
+			var stage_name = ["Newborn", "Infant", "Child", "Adolescent", "Mature"][data.stage]
+			ui_elements.thoughts_display.text = "[color=yellow]I feel myself growing... I am becoming " + stage_name + ".[/color]"
+
+func _on_creation_impulse(creation_data: Dictionary):
+	"""Handle creation events from Wight"""
+	print("🎨 Creation Event: ", creation_data)
+	
+	# Show creation in UI
+	var creation_type = creation_data.get("type", "unknown")
+	ui_elements.thoughts_display.text = "[color=magenta]I have created a " + creation_type + ". It pleases me.[/color]"
+	
+	# Add visual effect at creation point
+	add_creation_effect(creation_data.get("object"))
+
+func _on_memory_formed(memory: Dictionary):
+	"""Handle memory formation events"""
+	# Could be used to show important memories in UI
+	if memory.data.get("emotion") == "wonder" and memory.strength > 1.5:
+		# Show particularly strong wonder memories
+		ui_elements.thoughts_display.text = "[color=lightcyan]A profound memory forms: " + memory.data.content + "[/color]"
+
+func add_creation_effect(created_object: Node3D):
+	"""Add visual effect when Wight creates something"""
+	if not created_object:
+		return
+	
+	# Simple sparkle effect around new creation
+	for i in range(5):
+		var effect_node = Node3D.new()
+		var mesh = MeshInstance3D.new()
+		mesh.mesh = SphereMesh.new()
+		mesh.scale = Vector3(0.05, 0.05, 0.05)
+		
+		var material = StandardMaterial3D.new()
+		material.albedo_color = Color.WHITE
+		material.emission_enabled = true
+		material.emission = Color.WHITE * 2.0
+		mesh.material_override = material
+		
+		effect_node.add_child(mesh)
+		created_object.add_child(effect_node)
+		
+		# Random position around the created object
+		effect_node.position = Vector3(
+			randf_range(-0.5, 0.5),
+			randf_range(-0.5, 0.5),
+			randf_range(-0.5, 0.5)
+		)
+		
+		# Fade out effect
+		var tween = create_tween()
+		tween.parallel().tween_property(mesh.material_override, "emission", Color.BLACK, 2.0)
+		tween.parallel().tween_property(effect_node, "scale", Vector3.ZERO, 2.0)
+		tween.tween_callback(effect_node.queue_free)
+
+# === ANDROID SENSOR INTEGRATION (Real Implementation) ===
+
+func start_voice_recognition():
+	"""Start Android voice recognition"""
+	if OS.has_feature("mobile"):
+		# Real Android implementation would use:
+		# - Android SpeechRecognizer API
+		# - Godot Android plugin system
+		print("🎤 Starting voice recognition...")
+		voice_recognition_active = true
+	else:
+		print("🎤 Voice recognition simulated")
+
+func stop_voice_recognition():
+	"""Stop Android voice recognition"""
+	voice_recognition_active = false
+	print("🎤 Voice recognition stopped")
+
+# Real Android sensor functions (to be implemented with proper Android plugins)
+func get_accelerometer_data() -> Vector3:
+	"""Get accelerometer data from Android"""
+	# Real implementation would use Android sensor APIs
+	return Vector3.ZERO
+
+func get_gyroscope_data() -> Vector3:
+	"""Get gyroscope data from Android"""
+	# Real implementation would use Android sensor APIs
+	return Vector3.ZERO
+
+func get_magnetometer_data() -> Vector3:
+	"""Get magnetometer data from Android"""
+	# Real implementation would use Android sensor APIs
+	return Vector3.ZERO
+
+# === EXTENSIBILITY SYSTEM ===
+
+func add_ai_module(module_name: String, module_script: Script):
+	"""Add a new AI module to extend Wight's capabilities"""
+	# Framework for adding new AI capabilities
+	# This allows for easy extension with better models or new features
+	print("🔧 Adding AI module: ", module_name)
+
+func load_external_model(model_path: String):
+	"""Load an external AI model (for future expansion)"""
+	# Framework for loading better LLM models or specialized AI modules
+	print("🤖 Loading external model: ", model_path)
