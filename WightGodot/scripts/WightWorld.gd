@@ -1480,3 +1480,37 @@ func describe_pattern(pattern_data: Dictionary) -> String:
 			_:
 				return "something changing"
 	return "patterns in the data flow"
+
+# === MISSING SIGNAL HANDLERS ===
+
+func _on_consciousness_event(event_type: String, data: Dictionary):
+	"""Handle consciousness events from Wight"""
+	print("🧠 Consciousness event: %s" % event_type)
+	
+	match event_type:
+		"voice_received":
+			print("📢 Wight received voice input: %s" % data.get("message", ""))
+		"emotion_change":
+			print("😊 Wight's emotion changed: %s" % data.get("emotion", ""))
+		"memory_formed":
+			print("🧠 Wight formed memory: %s" % data.get("category", ""))
+		_:
+			print("❓ Unknown consciousness event: %s" % event_type)
+
+func _on_creation_impulse(creation_data: Dictionary):
+	"""Handle creation impulses from Wight"""
+	print("🎨 Creation impulse: %s" % creation_data.get("inspiration", "unknown"))
+	
+	# Update UI to show creation activity
+	if ui_elements.has("thoughts_display"):
+		var inspiration = creation_data.get("inspiration", "something new")
+		ui_elements.thoughts_display.text = "[color=yellow]I want to create %s![/color]" % inspiration
+
+func _on_memory_formed(memory: Dictionary):
+	"""Handle when Wight forms a new memory"""
+	var category = memory.get("category", "unknown")
+	var content = memory.get("content", "")
+	print("🧠 Memory formed [%s]: %s" % [category, content])
+	
+	# Could update memory display in UI if we had one
+	# For now, just acknowledge the memory formation
