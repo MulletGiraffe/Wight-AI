@@ -35,9 +35,6 @@ fov = 60.0
 [node name="WightEntity" type="Node3D" parent="."]
 script = ExtResource("2_1nk2j")
 
-[node name="SensorManager" type="Node" parent="WightEntity"]
-script = ExtResource("2_1nk2j")
-
 [node name="CreationSpace" type="Node3D" parent="."]
 
 [node name="UI" type="Control" parent="."]

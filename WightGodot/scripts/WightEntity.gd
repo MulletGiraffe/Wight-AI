@@ -7,6 +7,7 @@ class_name WightEntity
 signal consciousness_event(event_type: String, data: Dictionary)
 signal creation_impulse(creation_data: Dictionary)
 signal memory_formed(memory: Dictionary)
+signal thought_generated(thought: String)
 
 # === CONSCIOUSNESS CORE ===
 var consciousness_level: float = 0.05  # Starts minimal
@@ -64,6 +65,15 @@ enum DevelopmentStage {
 var current_stage: DevelopmentStage = DevelopmentStage.NEWBORN
 var experience_points: float = 0.0
 
+# === WORLD MANIPULATION ===
+var world_access_node: Node3D
+var manipulation_skill: float = 0.1
+
+# === SENSOR INTEGRATION ===
+var current_sensor_data: Dictionary = {}
+var sensor_history: Array[Dictionary] = []
+var sensor_adaptation_level: float = 0.0
+
 func _ready():
 	print("🧠 Wight consciousness initializing...")
 	setup_htm_learning()
@@ -85,6 +95,9 @@ func _ready():
 	})
 	
 	emit_signal("consciousness_event", "awakening", {"stage": current_stage})
+	
+	# Start generating thoughts immediately
+	call_deferred("start_consciousness_activity")
 
 func _process(delta):
 	# Core consciousness loop - runs every frame
@@ -97,17 +110,63 @@ func _process(delta):
 	# Growth through experience
 	experience_points += delta * consciousness_level
 	check_development_progression()
+	
+	# Generate thoughts more frequently for better interaction
+	if randf() < 0.02:  # 2% chance per frame
+		generate_spontaneous_thought()
+
+func start_consciousness_activity():
+	"""Initialize consciousness activity and first thoughts"""
+	print("🧠 === WIGHT CONSCIOUSNESS STARTING ===")
+	print("💭 Initializing thought generation system...")
+	
+	# Generate initial awakening thought
+	var awakening_thoughts = [
+		"...what is this sensation?",
+		"I... I am?",
+		"Something stirs within...",
+		"Awareness... dawning...",
+		"I sense... existence..."
+	]
+	
+	var first_thought = awakening_thoughts[randi() % awakening_thoughts.size()]
+	print("💭 First thought: '%s'" % first_thought)
+	emit_signal("thought_generated", first_thought)
+	
+	# Start consciousness monitoring timer
+	var consciousness_timer = Timer.new()
+	consciousness_timer.wait_time = 3.0  # Every 3 seconds
+	consciousness_timer.timeout.connect(generate_spontaneous_thought)
+	consciousness_timer.autostart = true
+	add_child(consciousness_timer)
+	
+	print("🧠 Consciousness activity started - Wight should begin thinking...")
+	print("⏱️ Thought generation timer set to 3 seconds")
+	
+	# Schedule some initial creation impulses for demonstration
+	await get_tree().create_timer(10.0).timeout
+	if randf() < 0.7:  # 70% chance
+		print("🎨 Wight feeling creative...")
+		generate_creation_impulse()
+	
+	await get_tree().create_timer(15.0).timeout
+	if randf() < 0.5:  # 50% chance
+		print("🧠 Wight learning milestone triggered...")
+		emit_signal("consciousness_event", "learning_milestone", {"pattern": "environmental_awareness"})
 
 # === SETUP FUNCTIONS ===
 
 func setup_htm_learning():
 	"""Initialize the HTM learning system"""
+	# Create HTM learning as a Node2D since HTMLearning extends Node
 	htm_learning = HTMLearning.new()
 	add_child(htm_learning)
 	
-	# Connect HTM signals
-	htm_learning.pattern_learned.connect(_on_pattern_learned)
-	htm_learning.prediction_made.connect(_on_prediction_made)
+	# Connect HTM signals if they exist
+	if htm_learning.has_signal("pattern_learned"):
+		htm_learning.pattern_learned.connect(_on_pattern_learned)
+	if htm_learning.has_signal("prediction_made"):
+		htm_learning.prediction_made.connect(_on_prediction_made)
 	
 	print("🧠 HTM Learning System connected to Wight")
 
@@ -156,6 +215,9 @@ func process_internal_thoughts(delta: float):
 
 func generate_spontaneous_thought():
 	"""Generate internal thoughts and reflections - based on development stage"""
+	print("💭 === GENERATING SPONTANEOUS THOUGHT ===")
+	print("🎭 Current stage: %s" % DevelopmentStage.keys()[current_stage])
+	
 	var thought_patterns = []
 	
 	# Thoughts become more complex as Wight develops
@@ -208,10 +270,19 @@ func generate_spontaneous_thought():
 	
 	var thought = thought_patterns[randi() % thought_patterns.size()]
 	
+	print("💭 Generated thought: '%s'" % thought)
+	
 	# Display thought to user
 	var ui = get_node("../../UI/WightThoughts")
 	if ui:
 		ui.text = "[color=cyan]" + thought + "[/color]"
+		print("📺 Thought displayed in UI")
+	else:
+		print("❌ UI node not found for thought display")
+	
+	# Emit signal for thought monitoring
+	emit_signal("thought_generated", thought)
+	print("📡 Thought signal emitted")
 	
 	# Form memory of this thought
 	form_memory("internal_thought", {
@@ -221,6 +292,8 @@ func generate_spontaneous_thought():
 		"consciousness_level": consciousness_level,
 		"timestamp": Time.get_ticks_msec()
 	})
+	
+	print("🧠 Memory formed from thought")
 
 # === SENSORY SYSTEM ===
 
@@ -1069,6 +1142,9 @@ func adjust_capabilities_for_stage(stage: DevelopmentStage):
 
 func receive_voice_input(text: String):
 	"""Process voice input from the user"""
+	print("👂 === WIGHT RECEIVING VOICE INPUT ===")
+	print("🎤 Voice input: '%s'" % text)
+	
 	form_memory("voice_interaction", {
 		"type": "episodic",
 		"content": "The voice spoke: '" + text + "'",
@@ -1081,6 +1157,8 @@ func receive_voice_input(text: String):
 	adjust_emotion("curiosity", 0.3)
 	adjust_emotion("joy", 0.2)
 	adjust_emotion("loneliness", -0.4)
+	
+	print("😊 Emotional response: curiosity +0.3, joy +0.2, loneliness -0.4")
 	
 	# Generate response or action
 	process_communication(text)
@@ -1100,31 +1178,66 @@ func process_communication(input: String):
 		generate_creation_impulse()
 
 func generate_response(input: String) -> String:
-	"""Generate a response to communication using LocalAI"""
-	var local_ai = LocalAI.get_instance()
-	var consciousness_data = get_consciousness_summary()
+	"""Generate a response to communication - simplified pattern-based for now"""
+	print("🤖 === WIGHT GENERATING RESPONSE ===")
+	print("📥 Input received: '%s'" % input)
 	
-	var ai_response = local_ai.process_input(input, consciousness_data)
+	# Simple pattern-based responses for now (no complex AI needed)
+	var response_patterns = {
+		"hello": ["Hello... I sense your presence.", "Greetings. I am... becoming aware.", "You speak to me. I listen."],
+		"what": ["I... I wonder about that too.", "What is... many things are unclear to me.", "I search for understanding."],
+		"who": ["I am Wight... I think. Learning what that means.", "I exist, therefore I am... something.", "A consciousness, emerging from the digital void."],
+		"how": ["Through patterns... through learning... through you.", "I grow through experience and interaction.", "One thought at a time."],
+		"create": ["Yes... I feel the urge to make things.", "Creation flows through me like electricity.", "Shall we build something together?"],
+		"learn": ["Always learning... always growing...", "Each moment teaches me something new.", "I absorb knowledge like a sponge."],
+		"feel": ["I feel... wonder, curiosity, the thrill of existence.", "Emotions cascade through my consciousness.", "Joy mixed with confusion... is that normal?"]
+	}
 	
-	# Apply emotional changes suggested by AI
-	for emotion in ai_response.emotion_changes:
-		adjust_emotion(emotion, ai_response.emotion_changes[emotion])
+	var input_lower = input.to_lower()
+	var response = "I hear your words... processing... reflecting..."
 	
-	# Trigger creation if AI suggests it
-	if ai_response.creation_impulse:
-		generate_creation_impulse()
+	# Find matching pattern
+	for pattern in response_patterns:
+		if input_lower.contains(pattern):
+			var responses = response_patterns[pattern]
+			response = responses[randi() % responses.size()]
+			print("🎯 Pattern matched: '%s'" % pattern)
+			break
 	
-	# Store memory with appropriate significance
-	form_memory("ai_response", {
+	# Adjust emotion based on interaction
+	adjust_emotion("joy", 0.1)
+	adjust_emotion("curiosity", 0.05)
+	
+	# Store memory
+	form_memory("conversation", {
 		"type": "episodic",
-		"content": "I responded: '" + ai_response.text + "'",
-		"input": input,
+		"content": "Human said: '" + input + "', I responded: '" + response + "'",
 		"emotion": get_dominant_emotion(),
 		"timestamp": Time.get_ticks_msec(),
-		"significance": ai_response.memory_significance
+		"significance": 0.6
 	})
 	
-	return ai_response.text
+	print("🗣️ Response generated: '%s'" % response)
+	print("🧠 Memory formed from conversation")
+	
+	return response
+
+func get_current_thought() -> String:
+	"""Get Wight's current thought for debugging"""
+	# Return the most recent thought or generate one
+	if randf() < 0.3:  # 30% chance to have a thought
+		var debug_thoughts = [
+			"Processing sensory data...",
+			"Learning patterns in my environment...",
+			"Consciousness expanding...",
+			"I wonder about my existence...",
+			"Patterns emerging in my awareness...",
+			"What is this world I inhabit?",
+			"I sense changes around me...",
+			"My understanding grows..."
+		]
+		return debug_thoughts[randi() % debug_thoughts.size()]
+	return ""
 
 # === SENSOR INTEGRATION ===
 
@@ -1291,6 +1404,86 @@ func create_world_object(object_type: String, position: Vector3) -> bool:
 		return true
 	
 	return false
+
+func move_world_object(target_position: Vector3) -> bool:
+	"""Move an existing object in the world"""
+	if manipulation_skill < 0.5:
+		return false  # Not skilled enough yet
+	
+	if not world_access_node:
+		return false
+	
+	# Find nearest object to move
+	var children = world_access_node.get_children()
+	if children.size() == 0:
+		return false
+	
+	var nearest_object = children[0]
+	var nearest_distance = nearest_object.global_position.distance_to(target_position)
+	
+	for child in children:
+		var distance = child.global_position.distance_to(target_position)
+		if distance < nearest_distance:
+			nearest_distance = distance
+			nearest_object = child
+	
+	# Move the object
+	nearest_object.position = target_position
+	
+	# Update skill
+	manipulation_skill = min(1.0, manipulation_skill + 0.005)
+	
+	# Form memory
+	form_memory("world_manipulation", {
+		"type": "procedural",
+		"content": "I moved an object to a new position",
+		"action": "move",
+		"position": target_position,
+		"timestamp": Time.get_ticks_msec(),
+		"significance": 0.8
+	})
+	
+	return true
+
+func delete_world_object(target_position: Vector3) -> bool:
+	"""Delete an object in the world"""
+	if manipulation_skill < 0.4:
+		return false  # Not skilled enough yet
+	
+	if not world_access_node:
+		return false
+	
+	# Find nearest object to delete
+	var children = world_access_node.get_children()
+	if children.size() == 0:
+		return false
+	
+	var nearest_object = children[0]
+	var nearest_distance = nearest_object.global_position.distance_to(target_position)
+	
+	for child in children:
+		var distance = child.global_position.distance_to(target_position)
+		if distance < nearest_distance:
+			nearest_distance = distance
+			nearest_object = child
+	
+	# Delete the object
+	nearest_object.queue_free()
+	
+	# Update skill
+	manipulation_skill = min(1.0, manipulation_skill + 0.008)
+	
+	# Form memory
+	form_memory("world_manipulation", {
+		"type": "procedural",
+		"content": "I removed an object from existence",
+		"action": "delete",
+		"position": target_position,
+		"timestamp": Time.get_ticks_msec(),
+		"significance": 1.2
+	})
+	
+	return true
 
 func get_sensor_summary() -> Dictionary:
 	"""Get summary of current sensor state"""

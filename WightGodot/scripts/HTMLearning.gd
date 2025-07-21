@@ -1,4 +1,4 @@
-extends RefCounted
+extends Node
 class_name HTMLearning
 
 # Simplified HTM-like Learning System for Wight AI
@@ -429,7 +429,12 @@ func find_best_matching_segment(cell: Dictionary, source_cells: Array[Dictionary
 	# Simplified implementation
 	if cell.distal_segments.size() > 0:
 		return cell.distal_segments[0]
-	return null
+	# Return an empty segment structure if none exists
+	return {
+		"synapses": {},
+		"permanences": {},
+		"threshold": temporal_memory.get("activation_threshold", 0.5)
+	}
 
 func create_new_segment(cell: Dictionary) -> Dictionary:
 	"""Create a new distal segment for a cell"""

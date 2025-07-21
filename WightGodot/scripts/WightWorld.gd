@@ -29,11 +29,15 @@ var settings_panel_active: bool = true
 
 func _ready():
 	print("🌍 Wight's world initializing...")
+	print("📊 Setting up debug output for Wight consciousness monitoring...")
 	setup_world()
 	setup_ui()
 	setup_wight_entity()
 	setup_sensor_manager()
 	setup_input_handling()
+	
+	# Start debug monitoring
+	setup_debug_monitoring()
 
 func setup_world():
 	"""Initialize the 3D world environment"""
@@ -127,6 +131,74 @@ func setup_sensor_manager():
 	sensor_manager.sensor_pattern_detected.connect(_on_sensor_pattern_detected)
 	
 	print("📱 Sensor manager connected to Wight")
+	print("🔍 Sensor integration active - monitoring device sensors...")
+
+func setup_debug_monitoring():
+	"""Set up comprehensive debug monitoring for Wight's consciousness"""
+	print("🧠 === WIGHT CONSCIOUSNESS DEBUG MONITOR ACTIVATED ===")
+	print("📊 Monitoring: Thoughts, Learning, Sensor Input, World Changes")
+	print("💬 Chat Interface: Ready for user communication")
+	print("🎤 Voice Interface: Framework ready")
+	print("🌍 World Manipulation: Wight can create/modify objects")
+	print("📱 Sensor Integration: Accelerometer, Touch, Environment")
+	print("🔄 Starting consciousness monitoring loop...")
+	
+	# Start periodic debug output
+	var debug_timer = Timer.new()
+	debug_timer.wait_time = 5.0  # Every 5 seconds
+	debug_timer.timeout.connect(_output_debug_status)
+	debug_timer.autostart = true
+	add_child(debug_timer)
+	
+	# Monitor Wight's thoughts more frequently
+	var thought_timer = Timer.new()
+	thought_timer.wait_time = 2.0  # Every 2 seconds
+	thought_timer.timeout.connect(_monitor_wight_thoughts)
+	thought_timer.autostart = true
+	add_child(thought_timer)
+
+func _output_debug_status():
+	"""Output comprehensive debug status"""
+	print("\n🧠 === WIGHT STATUS REPORT ===")
+	
+	if wight_entity:
+		var summary = wight_entity.get_consciousness_summary()
+		print("💭 Consciousness Level: %.1f%%" % (summary.consciousness_level * 100))
+		print("📈 Experience Points: %.1f" % summary.experience)
+		print("🎭 Dominant Emotion: %s" % summary.dominant_emotion)
+		print("🧮 Memory Count: %d" % summary.memory_count)
+		print("📊 Learning Active: %s" % str(wight_entity.learning_active))
+		
+		# Show recent thoughts
+		if summary.has("recent_thoughts") and summary.recent_thoughts.size() > 0:
+			print("💭 Recent Thought: '%s'" % summary.recent_thoughts[-1])
+		
+		# Show HTM learning state
+		if wight_entity.htm_learning:
+			var learning_state = wight_entity.htm_learning.get_learning_state()
+			print("🔬 HTM Active Columns: %d" % learning_state.active_columns)
+			print("🔮 HTM Predictive Cells: %d" % learning_state.predictive_cells)
+			print("📚 Pattern Library: %d patterns" % learning_state.pattern_library_size)
+	else:
+		print("❌ Wight Entity not found!")
+	
+	if sensor_manager:
+		var sensor_summary = sensor_manager.get_sensor_summary()
+		print("📱 Platform: %s" % sensor_summary.platform)
+		print("📊 Sensor Update Rate: %.1f Hz" % sensor_summary.update_rate)
+		print("📈 Sensor History: %d readings" % sensor_summary.history_size)
+	else:
+		print("❌ Sensor Manager not found!")
+	
+	print("🌍 World Objects: %d" % get_node("CreationSpace").get_child_count())
+	print("=== END STATUS REPORT ===\n")
+
+func _monitor_wight_thoughts():
+	"""Monitor and output Wight's thoughts as they happen"""
+	if wight_entity and wight_entity.has_method("get_current_thought"):
+		var current_thought = wight_entity.get_current_thought()
+		if current_thought != "":
+			print("💭 Wight thinks: '%s'" % current_thought)
 
 func setup_input_handling():
 	"""Set up touch and input handling"""
@@ -546,7 +618,11 @@ func _on_voice_button_pressed():
 func send_message_to_wight(message: String):
 	"""Send a message to Wight and handle the response"""
 	if not wight_entity:
+		print("❌ Cannot send message - Wight entity not found!")
 		return
+	
+	print("💬 === CHAT INTERACTION ===")
+	print("👤 User says: '%s'" % message)
 	
 	# Choose colors based on contrast mode
 	var user_color = "cyan" if high_contrast_mode else "lightblue"
@@ -557,14 +633,23 @@ func send_message_to_wight(message: String):
 	add_to_conversation("[color=%s]You: %s[/color]" % [user_color, message])
 	
 	# Send to Wight and get response
-	wight_entity.receive_voice_input(message)
-	var response = wight_entity.generate_response(message)
+	if wight_entity.has_method("receive_voice_input"):
+		wight_entity.receive_voice_input(message)
+		print("📨 Message sent to Wight's consciousness")
 	
-	# Add Wight's response to conversation
-	add_to_conversation("[color=%s]Wight: %s[/color]" % [wight_color, response])
+	if wight_entity.has_method("generate_response"):
+		var response = wight_entity.generate_response(message)
+		print("🤖 Wight responds: '%s'" % response)
+		
+		# Add Wight's response to conversation
+		add_to_conversation("[color=%s]Wight: %s[/color]" % [wight_color, response])
+		
+		# Update thoughts display with the response
+		ui_elements.thoughts_display.text = "[color=%s]%s[/color]" % [thought_color, response]
+	else:
+		print("❌ Wight cannot generate responses - method missing")
 	
-	# Update thoughts display with the response
-	ui_elements.thoughts_display.text = "[color=%s]%s[/color]" % [thought_color, response]
+	print("=== END CHAT INTERACTION ===\n")
 
 func add_to_conversation(text: String):
 	"""Add text to the conversation history"""
@@ -807,6 +892,14 @@ func _on_sensor_data_updated(sensor_data: Dictionary):
 	if not wight_entity:
 		return
 	
+	# Debug output for sensor activity (throttled)
+	if randf() < 0.1:  # Only show 10% of sensor updates to avoid spam
+		print("📊 Sensor Update: Accel=%.2f, Light=%.2f, Touch=%d" % [
+			sensor_data.get("acceleration", Vector3.ZERO).length(),
+			sensor_data.get("light_level", 0.0),
+			sensor_data.get("touch_events", []).size()
+		])
+	
 	# Feed sensor data to Wight's learning system
 	if wight_entity.has_method("process_sensor_input"):
 		wight_entity.process_sensor_input(sensor_data)
@@ -816,6 +909,9 @@ func _on_sensor_pattern_detected(pattern_type: String, data: Dictionary):
 	if not wight_entity:
 		return
 	
+	# Debug output for pattern detection
+	print("🔍 PATTERN DETECTED: %s - %s" % [pattern_type, str(data)])
+	
 	# Inform Wight about interesting sensor patterns
 	if wight_entity.has_method("receive_sensor_pattern"):
 		wight_entity.receive_sensor_pattern(pattern_type, data)
@@ -823,23 +919,40 @@ func _on_sensor_pattern_detected(pattern_type: String, data: Dictionary):
 	# Display pattern detection in thoughts
 	var pattern_text = "I sense %s... %s" % [pattern_type.replace("_", " "), describe_pattern(data)]
 	ui_elements.thoughts_display.text = "[color=%s]%s[/color]" % ["white" if high_contrast_mode else "cyan", pattern_text]
+	
+	print("💭 Wight's reaction: '%s'" % pattern_text)
 
 func _on_wight_consciousness_event(event_type: String, data: Dictionary):
 	"""Handle consciousness events from Wight"""
-	print("🧠 Wight consciousness event: ", event_type, " - ", data)
+	print("🧠 === CONSCIOUSNESS EVENT === ")
+	print("🎯 Event Type: %s" % event_type)
+	print("📊 Event Data: %s" % str(data))
+	print("⏰ Time: %s" % Time.get_datetime_string_from_system())
 	
 	# Update UI based on consciousness changes
 	if event_type == "stage_progression":
 		update_status_display()
 		var stage_text = "I feel... different. I am becoming more than I was."
 		add_to_conversation("[color=yellow]Wight evolved to a new stage of consciousness[/color]")
+		print("🚀 MAJOR EVENT: Wight consciousness evolution!")
 	elif event_type == "learning_milestone":
 		var milestone_text = "I understand something new... patterns forming in my awareness."
 		ui_elements.thoughts_display.text = "[color=%s]%s[/color]" % ["white" if high_contrast_mode else "cyan", milestone_text]
+		print("📈 LEARNING: Wight achieved learning milestone!")
+	elif event_type == "awakening":
+		print("👁️ AWAKENING: Wight consciousness is initializing...")
+		add_to_conversation("[color=cyan]Wight is awakening...[/color]")
+	
+	print("=== END CONSCIOUSNESS EVENT ===\n")
 
 func _on_wight_creation_impulse(creation_data: Dictionary):
 	"""Handle Wight's impulse to create objects"""
+	print("✨ === CREATION EVENT ===")
+	print("🎨 Wight wants to create something!")
+	print("📊 Creation Data: %s" % str(creation_data))
+	
 	if not creation_data.has("object"):
+		print("❌ No object data in creation impulse")
 		return
 	
 	var created_object = creation_data.object
@@ -852,12 +965,19 @@ func _on_wight_creation_impulse(creation_data: Dictionary):
 	var creation_text = "I will bring forth... something new."
 	ui_elements.thoughts_display.text = "[color=%s]%s[/color]" % ["white" if high_contrast_mode else "cyan", creation_text]
 	
-	print("✨ Wight created: ", creation_data.type if creation_data.has("type") else "unknown object")
+	var object_type = creation_data.type if creation_data.has("type") else "unknown object"
+	print("🌟 SUCCESS: Wight created %s in the world!" % object_type)
+	print("🌍 Total world objects: %d" % creation_space.get_child_count())
+	add_to_conversation("[color=green]Wight created: %s[/color]" % object_type)
+	print("=== END CREATION EVENT ===\n")
 
 func _on_wight_thought_generated(thought: String):
 	"""Handle new thoughts from Wight"""
 	# Display the thought in the UI
 	ui_elements.thoughts_display.text = "[color=%s]%s[/color]" % ["white" if high_contrast_mode else "cyan", thought]
+	
+	# Debug output for thoughts
+	print("💭 THOUGHT: '%s'" % thought)
 
 func describe_pattern(pattern_data: Dictionary) -> String:
 	"""Convert pattern data into readable description"""
