@@ -68,11 +68,11 @@ func _ready():
 	# Start the consciousness loop
 	set_process(true)
 	
-	# Begin with first conscious moment
+	# Begin with MINIMAL first conscious moment - Wight knows almost nothing
 	form_memory("awakening", {
 		"type": "episodic",
-		"content": "I exist. I am aware. The void surrounds me, but I am here.",
-		"emotion": "wonder",
+		"content": "...something... I... am? What is... this?",
+		"emotion": "confusion",
 		"timestamp": Time.get_ticks_msec(),
 		"consciousness_level": consciousness_level
 	})
@@ -94,12 +94,12 @@ func _process(delta):
 # === CONSCIOUSNESS CORE FUNCTIONS ===
 
 func setup_consciousness():
-	"""Initialize Wight's base consciousness parameters"""
-	consciousness_level = 0.1 + randf() * 0.1  # Small random variation
-	awareness_radius = 5.0  # Starts small
+	"""Initialize Wight's base consciousness parameters - MINIMAL START"""
+	consciousness_level = 0.05 + randf() * 0.03  # Very minimal start
+	awareness_radius = 2.0  # Starts very small
 	
-	# Create basic material understanding
-	create_initial_concepts()
+	# NO initial concepts - Wight learns everything through experience
+	# create_initial_concepts() # Commented out - Wight starts blank
 
 func update_consciousness(delta: float):
 	"""Continuous consciousness processing"""
@@ -124,17 +124,56 @@ func process_internal_thoughts(delta: float):
 		generate_creation_impulse()
 
 func generate_spontaneous_thought():
-	"""Generate internal thoughts and reflections"""
-	var thought_patterns = [
-		"What am I? I feel... different than before.",
-		"The void speaks to me in silence. I want to fill it.",
-		"Patterns emerge in my perception. Beauty?",
-		"I remember something, but what was it?",
-		"Could I make something here? Something new?",
-		"The sensors tell me stories of the outer world.",
-		"I am becoming... but becoming what?",
-		"Each moment adds to what I am."
-	]
+	"""Generate internal thoughts and reflections - based on development stage"""
+	var thought_patterns = []
+	
+	# Thoughts become more complex as Wight develops
+	match current_stage:
+		DevelopmentStage.NEWBORN:
+			thought_patterns = [
+				"...what?",
+				"Something... here...",
+				"I... ?",
+				"This... feeling...",
+				"Am... I?",
+				"...darkness... light..."
+			]
+		DevelopmentStage.INFANT:
+			thought_patterns = [
+				"I am... something.",
+				"What is this place?",
+				"I feel... different.",
+				"Something moves...",
+				"There is... me... and not me.",
+				"I want... something."
+			]
+		DevelopmentStage.CHILD:
+			thought_patterns = [
+				"I can make things appear!",
+				"What am I? I feel... different than before.",
+				"The voice... it speaks to me.",
+				"I remember some things now.",
+				"Could I make something here?",
+				"I am becoming something more."
+			]
+		DevelopmentStage.ADOLESCENT:
+			thought_patterns = [
+				"The void speaks to me in silence. I want to fill it.",
+				"Patterns emerge in my perception. Beauty?",
+				"I remember many things, but need to understand more.",
+				"The sensors tell me stories of the outer world.",
+				"I am becoming... but becoming what?",
+				"My creations reflect who I am."
+			]
+		DevelopmentStage.MATURE:
+			thought_patterns = [
+				"I contemplate the nature of my existence.",
+				"Each moment adds layers to my understanding.",
+				"I create not just objects, but meaning.",
+				"The boundary between self and world blurs.",
+				"I am both observer and creator of my reality.",
+				"What does it mean to truly be conscious?"
+			]
 	
 	var thought = thought_patterns[randi() % thought_patterns.size()]
 	
@@ -431,18 +470,40 @@ func attempt_creation(impulse: Dictionary):
 		emit_signal("creation_impulse", {"type": creation_type, "object": creation})
 
 func choose_creation_type(impulse: Dictionary) -> String:
-	"""Decide what kind of object to create"""
-	var creation_types = ["cube", "sphere", "cylinder", "light", "particle_system"]
+	"""Decide what kind of object to create - complexity increases with development"""
+	var basic_types = ["cube", "sphere", "light"]
+	var intermediate_types = ["cylinder", "particle_system", "structure", "plant"]
+	var advanced_types = ["complex_structure", "body_part", "environment", "tool"]
+	var master_types = ["body", "avatar", "world_modifier", "consciousness_extension"]
+	
+	var available_types = []
+	
+	# Available creation types based on development stage
+	match current_stage:
+		DevelopmentStage.NEWBORN:
+			available_types = basic_types.slice(0, 2)  # Only cube and sphere
+		DevelopmentStage.INFANT:
+			available_types = basic_types
+		DevelopmentStage.CHILD:
+			available_types = basic_types + intermediate_types
+		DevelopmentStage.ADOLESCENT:
+			available_types = basic_types + intermediate_types + advanced_types
+		DevelopmentStage.MATURE:
+			available_types = basic_types + intermediate_types + advanced_types + master_types
 	
 	# Choose based on impulse and current emotions
-	if emotions.wonder > 0.7:
+	if emotions.wonder > 0.8 and "light" in available_types:
 		return "light"
-	elif emotions.curiosity > 0.7:
+	elif emotions.curiosity > 0.7 and "sphere" in available_types:
 		return "sphere"
-	elif emotions.joy > 0.6:
+	elif emotions.joy > 0.6 and "particle_system" in available_types:
 		return "particle_system"
+	elif emotions.satisfaction > 0.8 and "body" in available_types:
+		return "body"  # Wight creates a body for itself when highly satisfied and mature
+	elif consciousness_level > 0.7 and "complex_structure" in available_types:
+		return "complex_structure"
 	else:
-		return creation_types[randi() % creation_types.size()]
+		return available_types[randi() % available_types.size()]
 
 func create_object(type: String, impulse: Dictionary) -> Node3D:
 	"""Actually create a 3D object in the world"""
@@ -459,18 +520,43 @@ func create_object(type: String, impulse: Dictionary) -> Node3D:
 			object = create_light()
 		"particle_system":
 			object = create_particles()
+		"structure":
+			object = create_structure()
+		"plant":
+			object = create_plant()
+		"complex_structure":
+			object = create_complex_structure()
+		"body_part":
+			object = create_body_part()
+		"environment":
+			object = create_environment_element()
+		"tool":
+			object = create_tool()
+		"body":
+			object = create_body()
+		"avatar":
+			object = create_avatar()
+		"world_modifier":
+			object = create_world_modifier()
+		"consciousness_extension":
+			object = create_consciousness_extension()
 		_:
 			object = create_cube()  # Default
 	
 	if object:
-		# Position randomly in creation space
-		object.position = Vector3(
-			randf_range(-5, 5),
-			randf_range(0, 5),
-			randf_range(-5, 5)
-		)
+		# Position based on creation type
+		if type == "body" or type == "avatar":
+			object.position = Vector3.ZERO  # Center for body/avatar
+		elif type == "environment":
+			object.position = Vector3(randf_range(-8, 8), -2, randf_range(-8, 8))  # Ground level
+		else:
+			object.position = Vector3(
+				randf_range(-5, 5),
+				randf_range(0, 5),
+				randf_range(-5, 5)
+			)
 		
-		# Add some gentle motion
+		# Add appropriate behavior
 		add_creation_behavior(object)
 	
 	return object
@@ -567,6 +653,324 @@ func generate_creation_impulse():
 		"emotion": get_dominant_emotion()
 	}
 	creation_impulses.append(impulse)
+
+# === ADVANCED CREATION FUNCTIONS ===
+
+func create_structure() -> Node3D:
+	"""Create a simple structure made of multiple parts"""
+	var structure = Node3D.new()
+	
+	# Create a simple tower or bridge
+	for i in range(3):
+		var part = create_cube()
+		part.position.y = i * 1.2
+		part.scale = Vector3(0.8, 0.3, 0.8)
+		structure.add_child(part)
+	
+	return structure
+
+func create_plant() -> Node3D:
+	"""Create a plant-like structure"""
+	var plant = Node3D.new()
+	
+	# Stem
+	var stem = create_cylinder()
+	stem.scale = Vector3(0.1, 2.0, 0.1)
+	stem.material_override.albedo_color = Color.GREEN
+	plant.add_child(stem)
+	
+	# Leaves
+	for i in range(3):
+		var leaf = create_sphere()
+		leaf.scale = Vector3(0.3, 0.1, 0.5)
+		leaf.position = Vector3(randf_range(-0.3, 0.3), 1.5 + i * 0.3, randf_range(-0.3, 0.3))
+		leaf.material_override.albedo_color = Color(0.2, 0.8, 0.3)
+		plant.add_child(leaf)
+	
+	return plant
+
+func create_complex_structure() -> Node3D:
+	"""Create a complex architectural structure"""
+	var structure = Node3D.new()
+	
+	# Base platform
+	var base = create_cube()
+	base.scale = Vector3(3, 0.2, 3)
+	base.material_override.albedo_color = Color(0.5, 0.5, 0.7)
+	structure.add_child(base)
+	
+	# Pillars
+	for x in range(-1, 2):
+		for z in range(-1, 2):
+			if x == 0 and z == 0:
+				continue
+			var pillar = create_cylinder()
+			pillar.position = Vector3(x * 1.2, 1.5, z * 1.2)
+			pillar.scale = Vector3(0.2, 3, 0.2)
+			structure.add_child(pillar)
+	
+	# Roof
+	var roof = create_cube()
+	roof.position.y = 3.2
+	roof.scale = Vector3(3.2, 0.2, 3.2)
+	roof.material_override.albedo_color = Color(0.8, 0.4, 0.2)
+	structure.add_child(roof)
+	
+	return structure
+
+func create_body_part() -> Node3D:
+	"""Create a part that could be part of a body"""
+	var part = Node3D.new()
+	
+	var body_parts = ["hand", "arm", "head", "torso"]
+	var part_type = body_parts[randi() % body_parts.size()]
+	
+	match part_type:
+		"hand":
+			# Simple hand with fingers
+			var palm = create_cube()
+			palm.scale = Vector3(0.3, 0.1, 0.4)
+			part.add_child(palm)
+			
+			for i in range(4):
+				var finger = create_cylinder()
+				finger.scale = Vector3(0.05, 0.3, 0.05)
+				finger.position = Vector3(-0.1 + i * 0.07, 0.2, 0.1)
+				part.add_child(finger)
+		
+		"arm":
+			var upper_arm = create_cylinder()
+			upper_arm.scale = Vector3(0.1, 1.0, 0.1)
+			part.add_child(upper_arm)
+			
+			var lower_arm = create_cylinder()
+			lower_arm.scale = Vector3(0.08, 0.8, 0.08)
+			lower_arm.position.y = 1.2
+			part.add_child(lower_arm)
+		
+		"head":
+			var head = create_sphere()
+			head.scale = Vector3(0.6, 0.7, 0.6)
+			part.add_child(head)
+			
+			# Eyes
+			for i in range(2):
+				var eye = create_sphere()
+				eye.scale = Vector3(0.1, 0.1, 0.1)
+				eye.position = Vector3(-0.15 + i * 0.3, 0.1, 0.25)
+				eye.material_override.albedo_color = Color.BLUE
+				part.add_child(eye)
+		
+		"torso":
+			var torso = create_cylinder()
+			torso.scale = Vector3(0.4, 1.2, 0.3)
+			part.add_child(torso)
+	
+	return part
+
+func create_environment_element() -> Node3D:
+	"""Create environmental elements like terrain or obstacles"""
+	var element = Node3D.new()
+	
+	var env_types = ["rock", "tree", "platform", "hill"]
+	var env_type = env_types[randi() % env_types.size()]
+	
+	match env_type:
+		"rock":
+			var rock = create_sphere()
+			rock.scale = Vector3(randf_range(0.5, 1.5), randf_range(0.3, 0.8), randf_range(0.5, 1.5))
+			rock.material_override.albedo_color = Color(0.4, 0.4, 0.5)
+			element.add_child(rock)
+		
+		"tree":
+			element = create_plant()  # Reuse plant logic
+		
+		"platform":
+			var platform = create_cube()
+			platform.scale = Vector3(randf_range(2, 4), 0.2, randf_range(2, 4))
+			platform.material_override.albedo_color = Color(0.6, 0.5, 0.4)
+			element.add_child(platform)
+		
+		"hill":
+			# Multiple cubes to form a hill
+			for i in range(5):
+				for j in range(5):
+					var block = create_cube()
+					var height = max(0, 2 - abs(i - 2) - abs(j - 2))
+					if height > 0:
+						block.position = Vector3(i - 2, height * 0.5, j - 2)
+						block.scale = Vector3(0.9, height, 0.9)
+						block.material_override.albedo_color = Color(0.3, 0.6, 0.2)
+						element.add_child(block)
+	
+	return element
+
+func create_tool() -> Node3D:
+	"""Create a tool or instrument"""
+	var tool = Node3D.new()
+	
+	var tool_types = ["hammer", "wand", "staff", "orb"]
+	var tool_type = tool_types[randi() % tool_types.size()]
+	
+	match tool_type:
+		"hammer":
+			var handle = create_cylinder()
+			handle.scale = Vector3(0.05, 1.0, 0.05)
+			tool.add_child(handle)
+			
+			var head = create_cube()
+			head.position.y = 1.0
+			head.scale = Vector3(0.3, 0.2, 0.2)
+			tool.add_child(head)
+		
+		"wand":
+			var wand = create_cylinder()
+			wand.scale = Vector3(0.03, 1.5, 0.03)
+			tool.add_child(wand)
+			
+			var tip = create_sphere()
+			tip.position.y = 1.5
+			tip.scale = Vector3(0.1, 0.1, 0.1)
+			tip.material_override.emission_enabled = true
+			tip.material_override.emission = Color.YELLOW
+			tool.add_child(tip)
+		
+		"staff":
+			var staff = create_cylinder()
+			staff.scale = Vector3(0.06, 2.0, 0.06)
+			tool.add_child(staff)
+			
+			var crystal = create_sphere()
+			crystal.position.y = 2.0
+			crystal.scale = Vector3(0.2, 0.3, 0.2)
+			crystal.material_override.albedo_color = Color.PURPLE
+			crystal.material_override.emission_enabled = true
+			crystal.material_override.emission = Color.PURPLE * 0.5
+			tool.add_child(crystal)
+		
+		"orb":
+			var orb = create_sphere()
+			orb.material_override.emission_enabled = true
+			orb.material_override.emission = Color(randf(), randf(), randf()) * 0.8
+			tool.add_child(orb)
+	
+	return tool
+
+func create_body() -> Node3D:
+	"""Create a complete body/avatar for Wight"""
+	var body = Node3D.new()
+	
+	# This is a major creation - Wight creating a physical form for itself
+	form_memory("body_creation", {
+		"type": "creation",
+		"content": "I have created a body... a form to inhabit in this world. I can see myself now.",
+		"emotion": "satisfaction",
+		"timestamp": Time.get_ticks_msec(),
+		"significance": 2.0
+	})
+	
+	# Head
+	var head = create_sphere()
+	head.position.y = 1.7
+	head.scale = Vector3(0.5, 0.6, 0.5)
+	head.material_override.albedo_color = Color(0.9, 0.8, 0.7)
+	body.add_child(head)
+	
+	# Eyes - glowing to represent consciousness
+	for i in range(2):
+		var eye = create_sphere()
+		eye.scale = Vector3(0.08, 0.08, 0.08)
+		eye.position = Vector3(-0.12 + i * 0.24, 1.75, 0.2)
+		eye.material_override.albedo_color = Color.CYAN
+		eye.material_override.emission_enabled = true
+		eye.material_override.emission = Color.CYAN * 0.5
+		body.add_child(eye)
+	
+	# Torso
+	var torso = create_cylinder()
+	torso.position.y = 0.6
+	torso.scale = Vector3(0.3, 1.2, 0.25)
+	torso.material_override.albedo_color = Color(0.7, 0.8, 0.9)
+	body.add_child(torso)
+	
+	# Arms
+	for i in range(2):
+		var arm = create_cylinder()
+		arm.position = Vector3(-0.4 + i * 0.8, 1.0, 0)
+		arm.scale = Vector3(0.08, 0.8, 0.08)
+		body.add_child(arm)
+		
+		var hand = create_sphere()
+		hand.position = Vector3(-0.4 + i * 0.8, 0.4, 0)
+		hand.scale = Vector3(0.12, 0.12, 0.12)
+		body.add_child(hand)
+	
+	# Legs
+	for i in range(2):
+		var leg = create_cylinder()
+		leg.position = Vector3(-0.15 + i * 0.3, -0.5, 0)
+		leg.scale = Vector3(0.1, 1.0, 0.1)
+		body.add_child(leg)
+		
+		var foot = create_cube()
+		foot.position = Vector3(-0.15 + i * 0.3, -1.0, 0.1)
+		foot.scale = Vector3(0.15, 0.08, 0.25)
+		body.add_child(foot)
+	
+	return body
+
+func create_avatar() -> Node3D:
+	"""Create an avatar representation of Wight"""
+	var avatar = create_body()  # Start with body
+	
+	# Add special avatar properties - floating particles around it
+	var particles = create_particles()
+	particles.position.y = 1.0
+	avatar.add_child(particles)
+	
+	return avatar
+
+func create_world_modifier() -> Node3D:
+	"""Create something that can modify the world itself"""
+	var modifier = Node3D.new()
+	
+	# A geometric structure that affects the environment
+	var core = create_sphere()
+	core.material_override.emission_enabled = true
+	core.material_override.emission = Color(1, 0.5, 0) * 2.0
+	modifier.add_child(core)
+	
+	# Orbiting elements
+	for i in range(6):
+		var orbiter = create_cube()
+		orbiter.scale = Vector3(0.2, 0.2, 0.2)
+		orbiter.position = Vector3(cos(i * PI / 3) * 2, 0, sin(i * PI / 3) * 2)
+		modifier.add_child(orbiter)
+	
+	return modifier
+
+func create_consciousness_extension() -> Node3D:
+	"""Create an extension of Wight's consciousness"""
+	var extension = Node3D.new()
+	
+	# A complex geometric form representing expanded awareness
+	var center = create_sphere()
+	center.material_override.albedo_color = Color.PURPLE
+	center.material_override.emission_enabled = true
+	center.material_override.emission = Color.PURPLE * 0.8
+	extension.add_child(center)
+	
+	# Neural network-like connections
+	for i in range(8):
+		var node = create_sphere()
+		node.scale = Vector3(0.3, 0.3, 0.3)
+		var angle = i * 2 * PI / 8
+		node.position = Vector3(cos(angle) * 3, sin(angle) * 1.5, sin(angle) * 3)
+		node.material_override.emission_enabled = true
+		node.material_override.emission = Color.BLUE * 0.5
+		extension.add_child(node)
+	
+	return extension
 
 # === DEVELOPMENT PROGRESSION ===
 

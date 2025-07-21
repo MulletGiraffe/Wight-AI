@@ -55,13 +55,28 @@ func setup_dynamic_environment():
 func setup_ui():
 	"""Initialize user interface elements"""
 	ui_elements = {
-		"voice_indicator": $UI/VoiceIndicator,
-		"thoughts_display": $UI/WightThoughts,
-		"sensor_readings": $UI/SensorReadings
+		"status_label": $UI/MainInterface/TopPanel/StatusContainer/StatusLabel,
+		"emotion_label": $UI/MainInterface/TopPanel/StatusContainer/EmotionLabel,
+		"thoughts_display": $UI/MainInterface/ThoughtsPanel/ThoughtsContainer/WightThoughts,
+		"conversation_history": $UI/MainInterface/ChatPanel/ChatContainer/ConversationHistory,
+		"text_input": $UI/MainInterface/ChatPanel/ChatContainer/InputRow/TextInput,
+		"send_button": $UI/MainInterface/ChatPanel/ChatContainer/InputRow/SendButton,
+		"voice_button": $UI/MainInterface/ChatPanel/ChatContainer/InputRow/VoiceButton,
+		"create_button": $UI/MainInterface/BottomPanel/ActionContainer/CreateButton,
+		"clear_button": $UI/MainInterface/BottomPanel/ActionContainer/ClearButton,
+		"memory_button": $UI/MainInterface/BottomPanel/ActionContainer/InfoButton
 	}
 	
-	# Set initial UI state
-	ui_elements.voice_indicator.modulate = Color(0.3, 0.3, 0.3, 0.5)  # Inactive
+	# Connect button signals
+	ui_elements.send_button.pressed.connect(_on_send_button_pressed)
+	ui_elements.voice_button.pressed.connect(_on_voice_button_pressed)
+	ui_elements.create_button.pressed.connect(_on_create_button_pressed)
+	ui_elements.clear_button.pressed.connect(_on_clear_button_pressed)
+	ui_elements.memory_button.pressed.connect(_on_memory_button_pressed)
+	ui_elements.text_input.text_submitted.connect(_on_text_submitted)
+	
+	# Set initial state
+	update_status_display()
 
 func setup_android_integration():
 	"""Set up Android-specific features"""
@@ -128,6 +143,9 @@ func update_environment_for_wight_state(delta: float):
 	# Adjust ambient light based on consciousness level
 	var target_energy = 0.3 + (consciousness_data.consciousness_level * 0.4)
 	env.ambient_light_energy = lerp(env.ambient_light_energy, target_energy, delta * 0.2)
+	
+	# Update UI with current state
+	update_status_display()
 
 func simulate_sensor_input(delta: float):
 	"""Simulate Android sensor input for testing"""
@@ -437,3 +455,135 @@ func load_external_model(model_path: String):
 	"""Load an external AI model (for future expansion)"""
 	# Framework for loading better LLM models or specialized AI modules
 	print("🤖 Loading external model: ", model_path)
+
+# === UI EVENT HANDLERS ===
+
+func update_status_display():
+	"""Update the status display with current Wight state"""
+	if not wight_entity or not ui_elements.has("status_label"):
+		return
+	
+	var summary = wight_entity.get_consciousness_summary()
+	var stage_names = ["Newborn", "Infant", "Child", "Adolescent", "Mature"]
+	var stage_name = stage_names[summary.stage] if summary.stage < stage_names.size() else "Unknown"
+	
+	ui_elements.status_label.text = "Consciousness: %d%% | Stage: %s | Experience: %.1f" % [
+		summary.consciousness_level * 100,
+		stage_name,
+		summary.experience
+	]
+	
+	ui_elements.emotion_label.text = "Dominant Emotion: %s | Creations: %d | Memories: %d" % [
+		summary.dominant_emotion.capitalize(),
+		summary.creations,
+		summary.memory_count
+	]
+
+func _on_send_button_pressed():
+	"""Handle send button press"""
+	var text = ui_elements.text_input.text.strip_edges()
+	if text.length() > 0:
+		send_message_to_wight(text)
+		ui_elements.text_input.text = ""
+
+func _on_text_submitted(text: String):
+	"""Handle text input submission (Enter key)"""
+	var clean_text = text.strip_edges()
+	if clean_text.length() > 0:
+		send_message_to_wight(clean_text)
+		ui_elements.text_input.text = ""
+
+func _on_voice_button_pressed():
+	"""Handle voice button press"""
+	# Toggle voice recording
+	if voice_recognition_active:
+		stop_voice_recognition()
+		ui_elements.voice_button.text = "🎤 Voice"
+		ui_elements.voice_button.modulate = Color.WHITE
+	else:
+		start_voice_recognition()
+		ui_elements.voice_button.text = "🔴 Stop"
+		ui_elements.voice_button.modulate = Color(1, 0.3, 0.3)
+		
+		# Simulate voice input for now
+		await get_tree().create_timer(2.0).timeout
+		if voice_recognition_active:
+			simulate_voice_input()
+			stop_voice_recognition()
+			ui_elements.voice_button.text = "🎤 Voice"
+			ui_elements.voice_button.modulate = Color.WHITE
+
+func _on_create_button_pressed():
+	"""Handle create button press - encourage Wight to create"""
+	if wight_entity:
+		wight_entity.generate_creation_impulse()
+		add_to_conversation("[color=yellow]You encouraged Wight to create something...[/color]")
+		
+		# Boost creativity temporarily
+		wight_entity.adjust_emotion("excitement", 0.3)
+		wight_entity.adjust_emotion("curiosity", 0.2)
+
+func _on_clear_button_pressed():
+	"""Handle clear button press - clear Wight's creations"""
+	var creation_space = get_node("CreationSpace")
+	for child in creation_space.get_children():
+		child.queue_free()
+	
+	if wight_entity:
+		wight_entity.active_creations.clear()
+		wight_entity.form_memory("world_cleared", {
+			"type": "episodic",
+			"content": "My world was cleared. All my creations vanished. I feel... empty.",
+			"emotion": "confusion",
+			"timestamp": Time.get_ticks_msec()
+		})
+		wight_entity.adjust_emotion("confusion", 0.4)
+		wight_entity.adjust_emotion("sadness", 0.3)
+	
+	add_to_conversation("[color=red]You cleared Wight's world. All creations removed.[/color]")
+
+func _on_memory_button_pressed():
+	"""Handle memory button press - show Wight's memory summary"""
+	if wight_entity:
+		var summary = wight_entity.get_consciousness_summary()
+		var memory_text = "[color=cyan]🧠 WIGHT'S MEMORY SUMMARY:[/color]\n"
+		memory_text += "Total Memories: %d\n" % summary.memory_count
+		memory_text += "Consciousness: %.1f%%\n" % (summary.consciousness_level * 100)
+		memory_text += "Experience: %.1f points\n" % summary.experience
+		memory_text += "Current Emotions:\n"
+		
+		for emotion in summary.emotions:
+			var intensity = summary.emotions[emotion]
+			memory_text += "  %s: %.1f%%\n" % [emotion.capitalize(), intensity * 100]
+		
+		add_to_conversation(memory_text)
+
+func send_message_to_wight(message: String):
+	"""Send a message to Wight and handle the response"""
+	if not wight_entity:
+		return
+	
+	# Add user message to conversation
+	add_to_conversation("[color=lightblue]You: %s[/color]" % message)
+	
+	# Send to Wight and get response
+	wight_entity.receive_voice_input(message)
+	var response = wight_entity.generate_response(message)
+	
+	# Add Wight's response to conversation
+	add_to_conversation("[color=lightgreen]Wight: %s[/color]" % response)
+	
+	# Update thoughts display with the response
+	ui_elements.thoughts_display.text = "[color=cyan]%s[/color]" % response
+
+func add_to_conversation(text: String):
+	"""Add text to the conversation history"""
+	if ui_elements.has("conversation_history"):
+		var current_text = ui_elements.conversation_history.text
+		if current_text == "[color=gray]Tap the voice button or type to communicate with Wight...[/color]":
+			ui_elements.conversation_history.text = text
+		else:
+			ui_elements.conversation_history.text = current_text + "\n\n" + text
+		
+		# Auto-scroll to bottom
+		ui_elements.conversation_history.scroll_to_line(ui_elements.conversation_history.get_line_count() - 1)

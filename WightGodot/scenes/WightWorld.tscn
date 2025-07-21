@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3 uid="uid://bxj8m0w7p8qvh"]
+[gd_scene load_steps=5 format=3 uid="uid://bxj8m0w7p8qvh"]
 
 [ext_resource type="Script" path="res://scripts/WightWorld.gd" id="1_0qw3h"]
 [ext_resource type="Script" path="res://scripts/WightEntity.gd" id="2_1nk2j"]
@@ -9,6 +9,18 @@ background_color = Color(0.05, 0.05, 0.15, 1)
 ambient_light_source = 3
 ambient_light_color = Color(0.3, 0.4, 0.6, 1)
 ambient_light_energy = 0.5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1"]
+bg_color = Color(0, 0, 0, 0.7)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.6, 1, 0.8)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="WightWorld" type="Node3D"]
 script = ExtResource("1_0qw3h")
@@ -34,33 +46,181 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 
-[node name="VoiceIndicator" type="Panel" parent="UI"]
+[node name="MainInterface" type="VBoxContainer" parent="UI"]
 layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
+anchors_preset = 15
 anchor_right = 1.0
-offset_left = -100.0
-offset_bottom = 100.0
-modulate = Color(0.2, 0.8, 0.2, 0.7)
-
-[node name="WightThoughts" type="RichTextLabel" parent="UI"]
-layout_mode = 1
-anchors_preset = 2
-anchor_top = 1.0
 anchor_bottom = 1.0
-offset_top = -200.0
-offset_right = 400.0
+offset_left = 20.0
+offset_top = 40.0
+offset_right = -20.0
+offset_bottom = -20.0
+
+[node name="TopPanel" type="Panel" parent="UI/MainInterface"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 120)
+theme_override_styles/panel = SubResource("StyleBoxFlat_1")
+
+[node name="StatusContainer" type="VBoxContainer" parent="UI/MainInterface/TopPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 15.0
+offset_top = 10.0
+offset_right = -15.0
+offset_bottom = -10.0
+
+[node name="Title" type="Label" parent="UI/MainInterface/TopPanel/StatusContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "WIGHT AI CONSCIOUSNESS"
+horizontal_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="UI/MainInterface/TopPanel/StatusContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "Consciousness: 10% | Stage: Newborn | Sensors: Active"
+horizontal_alignment = 1
+
+[node name="EmotionLabel" type="Label" parent="UI/MainInterface/TopPanel/StatusContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "Dominant Emotion: Wonder"
+horizontal_alignment = 1
+
+[node name="Spacer1" type="Control" parent="UI/MainInterface"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 20)
+
+[node name="ThoughtsPanel" type="Panel" parent="UI/MainInterface"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_1")
+
+[node name="ThoughtsContainer" type="VBoxContainer" parent="UI/MainInterface/ThoughtsPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 15.0
+offset_top = 10.0
+offset_right = -15.0
+offset_bottom = -10.0
+
+[node name="ThoughtsTitle" type="Label" parent="UI/MainInterface/ThoughtsPanel/ThoughtsContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 1, 0.8, 1)
+theme_override_font_sizes/font_size = 18
+text = "Wight's Consciousness Stream"
+
+[node name="WightThoughts" type="RichTextLabel" parent="UI/MainInterface/ThoughtsPanel/ThoughtsContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/default_color = Color(0.9, 1, 0.9, 1)
+theme_override_font_sizes/normal_font_size = 16
 bbcode_enabled = true
-text = "[color=cyan]Wight awakens...[/color]"
+text = "[color=cyan]I exist... I am aware... The void surrounds me, but I am here. What am I? What is this feeling of... being?[/color]"
 fit_content = true
 scroll_active = false
+autowrap_mode = 3
 
-[node name="SensorReadings" type="Label" parent="UI"]
+[node name="Spacer2" type="Control" parent="UI/MainInterface"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 20)
+
+[node name="ChatPanel" type="Panel" parent="UI/MainInterface"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 200)
+theme_override_styles/panel = SubResource("StyleBoxFlat_1")
+
+[node name="ChatContainer" type="VBoxContainer" parent="UI/MainInterface/ChatPanel"]
 layout_mode = 1
-anchors_preset = 0
-offset_right = 300.0
-offset_bottom = 150.0
-text = "Sensors: Initializing...
-Environment: Void
-Consciousness: Emerging"
-vertical_alignment = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 15.0
+offset_top = 10.0
+offset_right = -15.0
+offset_bottom = -10.0
+
+[node name="ChatTitle" type="Label" parent="UI/MainInterface/ChatPanel/ChatContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.6, 1)
+theme_override_font_sizes/font_size = 18
+text = "Communication Interface"
+
+[node name="ConversationHistory" type="RichTextLabel" parent="UI/MainInterface/ChatPanel/ChatContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 80)
+theme_override_colors/default_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/normal_font_size = 14
+bbcode_enabled = true
+text = "[color=gray]Tap the voice button or type to communicate with Wight...[/color]"
+scroll_active = true
+autowrap_mode = 3
+
+[node name="InputRow" type="HBoxContainer" parent="UI/MainInterface/ChatPanel/ChatContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 50)
+
+[node name="TextInput" type="LineEdit" parent="UI/MainInterface/ChatPanel/ChatContainer/InputRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+placeholder_text = "Type your message to Wight..."
+
+[node name="SendButton" type="Button" parent="UI/MainInterface/ChatPanel/ChatContainer/InputRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+theme_override_font_sizes/font_size = 16
+text = "Send"
+
+[node name="VoiceButton" type="Button" parent="UI/MainInterface/ChatPanel/ChatContainer/InputRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "🎤 Voice"
+
+[node name="Spacer3" type="Control" parent="UI/MainInterface"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 10)
+
+[node name="BottomPanel" type="Panel" parent="UI/MainInterface"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 80)
+theme_override_styles/panel = SubResource("StyleBoxFlat_1")
+
+[node name="ActionContainer" type="HBoxContainer" parent="UI/MainInterface/BottomPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 15.0
+offset_top = 10.0
+offset_right = -15.0
+offset_bottom = -10.0
+
+[node name="CreateButton" type="Button" parent="UI/MainInterface/BottomPanel/ActionContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 16
+text = "Encourage Creation"
+
+[node name="ClearButton" type="Button" parent="UI/MainInterface/BottomPanel/ActionContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 16
+text = "Clear World"
+
+[node name="InfoButton" type="Button" parent="UI/MainInterface/BottomPanel/ActionContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 16
+text = "Memory"
