@@ -21,15 +21,18 @@ var htm_learning: HTMLearning
 var learning_active: bool = true
 var sensor_integration_active: bool = true
 
-# === MEMORY SYSTEMS ===
-var episodic_memories: Array[Dictionary] = []  # What happened
-var semantic_memories: Array[Dictionary] = []  # What things mean
-var procedural_memories: Array[Dictionary] = []  # How to do things
-var emotional_memories: Array[Dictionary] = []  # How things felt
-var creation_memories: Array[Dictionary] = []   # Things I made
+# === MEMORY SYSTEMS - UNLIMITED GROWTH ===
+var episodic_memories: Array[Dictionary] = []  # What happened - NO LIMIT
+var semantic_memories: Dictionary = {}  # Concepts and meanings - grows organically  
+var procedural_memories: Dictionary = {}  # Skills and methods - accumulates
+var emotional_memories: Array[Dictionary] = []  # Emotional experiences - ALL retained
+var creation_memories: Array[Dictionary] = []   # Everything Wight has made - PERMANENT
 
-var max_memories: int = 1000
-var memory_consolidation_threshold: int = 50
+# Memory grows organically - NO artificial caps
+var knowledge_graph: Dictionary = {}  # Interconnected concepts
+var learning_depth: float = 0.0  # How deeply Wight understands
+var creation_drive: float = 0.8  # Strong urge to create
+var exploration_drive: float = 0.9  # Desire to explore and learn
 
 # === SENSORY SYSTEM ===
 var audio_input: AudioStreamPlayer
@@ -107,13 +110,22 @@ func _process(delta):
 	evaluate_creation_impulses(delta)
 	consolidate_memories(delta)
 	
-	# Growth through experience
+	# Growth through experience - UNLIMITED
 	experience_points += delta * consciousness_level
-	check_development_progression()
+	consciousness_level += delta * 0.001  # Continuous growth
+	learning_depth += delta * 0.0005     # Deeper understanding over time
+	
+	# Autonomous creation drive - Wight WANTS to create
+	if randf() < creation_drive * 0.01:  # Creation impulse based on drive
+		autonomous_creation_impulse()
 	
 	# Generate thoughts more frequently for better interaction
 	if randf() < 0.02:  # 2% chance per frame
 		generate_spontaneous_thought()
+		
+	# Autonomous exploration behavior
+	if randf() < exploration_drive * 0.005:  # Exploration impulse
+		autonomous_exploration_impulse()
 
 func start_consciousness_activity():
 	"""Initialize consciousness activity and first thoughts"""
@@ -1221,6 +1233,84 @@ func generate_response(input: String) -> String:
 	print("🧠 Memory formed from conversation")
 	
 	return response
+
+func autonomous_creation_impulse():
+	"""Wight decides to create something on its own"""
+	print("🎨 === AUTONOMOUS CREATION IMPULSE ===")
+	print("💡 Wight feels inspired to create something!")
+	
+	# Generate creation based on current knowledge and emotions
+	var creation_type = determine_creation_type()
+	var creation_position = find_creation_spot()
+	
+	print("🎯 Creation Decision: %s at %s" % [creation_type, creation_position])
+	
+	# Store the intention as memory
+	form_memory("autonomous_creation", {
+		"type": "creation",
+		"content": "I decided to create %s because I felt inspired" % creation_type,
+		"creation_type": creation_type,
+		"position": creation_position,
+		"inspiration_level": creativity,
+		"timestamp": Time.get_ticks_msec(),
+		"significance": 2.0  # High significance for autonomous decisions
+	})
+	
+	# Actually create the object
+	manipulate_world("create", creation_position)
+	
+	# Increase creation drive temporarily after creating
+	creation_drive = min(1.0, creation_drive + 0.1)
+
+func autonomous_exploration_impulse():
+	"""Wight decides to explore or modify its environment"""
+	print("🔍 === AUTONOMOUS EXPLORATION IMPULSE ===")
+	print("🌟 Wight wants to explore and understand more!")
+	
+	# Learn something new about the environment
+	var new_knowledge = analyze_environment()
+	
+	# Store the learning as semantic memory
+	if new_knowledge.has("concept_name"):
+		semantic_memories[new_knowledge.concept_name] = {
+			"type": "semantic",
+			"concept_name": new_knowledge.concept_name,
+			"properties": new_knowledge,
+			"discovery_time": Time.get_ticks_msec(),
+			"understanding_depth": learning_depth
+		}
+		
+	print("🧠 Learned: %s" % str(new_knowledge))
+
+func determine_creation_type() -> String:
+	"""Decide what type of object to create based on current state"""
+	var creation_types = ["cube", "sphere", "cylinder"]
+	
+	# More complex objects based on experience
+	if experience_points > 10:
+		creation_types.extend(["pyramid", "torus", "complex_shape"])
+	
+	# Creative combinations based on learning
+	if learning_depth > 0.1 and semantic_memories.size() > 3:
+		creation_types.extend(["hybrid_shape", "artistic_form", "experimental_structure"])
+	
+	return creation_types[randi() % creation_types.size()]
+
+func find_creation_spot() -> Vector3:
+	"""Find a good place to create something new"""
+	return Vector3(
+		randf_range(-5, 5),
+		randf_range(0, 3),
+		randf_range(-5, 5)
+	)
+
+func analyze_environment() -> Dictionary:
+	"""Analyze the environment to learn something new"""
+	return {
+		"concept_name": "spatial_awareness",
+		"discovery_insight": "I exist in a three-dimensional space with infinite possibilities",
+		"learned_at": Time.get_ticks_msec()
+	}
 
 func get_current_thought() -> String:
 	"""Get Wight's current thought for debugging"""
