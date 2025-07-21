@@ -18,6 +18,25 @@ var is_touching: bool = false
 var camera_orbit_speed: float = 2.0
 var camera_zoom_speed: float = 0.5
 
+# Touch joystick controls
+var joystick_active: bool = false
+var joystick_center: Vector2
+var joystick_radius: float = 100.0
+var joystick_dead_zone: float = 20.0
+var joystick_background: Control
+var joystick_knob: Control
+var joystick_touch_index: int = -1
+var current_joystick_vector: Vector2 = Vector2.ZERO
+
+# Camera control enhancement
+var camera_distance: float = 10.0
+var camera_target: Vector3 = Vector3.ZERO
+var camera_yaw: float = 0.0
+var camera_pitch: float = -20.0
+var camera_smooth_speed: float = 8.0
+var zoom_min: float = 3.0
+var zoom_max: float = 25.0
+
 # Environmental parameters
 var world_evolution_timer: float = 0.0
 var ambient_light_cycle_speed: float = 0.1
@@ -204,10 +223,19 @@ func setup_input_handling():
 	"""Set up touch and input handling"""
 	set_process_input(true)
 	set_process(true)
+	
+	# Create touch joystick for camera controls
+	create_touch_joystick()
+	
+	# Initialize camera position
+	initialize_camera_position()
 
 func _process(delta):
 	"""Main world update loop"""
 	world_evolution_timer += delta
+	
+	# Update camera with joystick input
+	update_camera_with_joystick(delta)
 	
 	# Update environment based on Wight's state
 	update_environment_for_wight_state(delta)
@@ -274,11 +302,11 @@ func update_ambient_lighting(delta: float):
 # === INPUT HANDLING ===
 
 func _input(event):
-	"""Handle user input events"""
+	"""Handle user input events with joystick support"""
 	if event is InputEventScreenTouch:
-		handle_touch_input(event)
+		handle_enhanced_touch_input(event)
 	elif event is InputEventScreenDrag:
-		handle_drag_input(event)
+		handle_enhanced_drag_input(event)
 	elif event is InputEventKey:
 		handle_key_input(event)
 
@@ -401,6 +429,36 @@ func handle_key_input(event: InputEventKey):
 				# Print memory summary
 				if wight_entity:
 					print_memory_summary()
+			KEY_R:
+				# Reset camera
+				reset_camera()
+			KEY_F:
+				# Focus camera on Wight
+				focus_camera_on_wight()
+			KEY_EQUAL, KEY_PLUS:
+				# Zoom in
+				zoom_camera(0.8)
+			KEY_MINUS:
+				# Zoom out
+				zoom_camera(1.25)
+			KEY_UP:
+				# Orbit camera up
+				camera_pitch -= 5.0
+				camera_pitch = clamp(camera_pitch, -80.0, 80.0)
+				update_camera_position()
+			KEY_DOWN:
+				# Orbit camera down
+				camera_pitch += 5.0
+				camera_pitch = clamp(camera_pitch, -80.0, 80.0)
+				update_camera_position()
+			KEY_LEFT:
+				# Orbit camera left
+				camera_yaw -= 5.0
+				update_camera_position()
+			KEY_RIGHT:
+				# Orbit camera right
+				camera_yaw += 5.0
+				update_camera_position()
 
 func simulate_voice_input():
 	"""Simulate voice input for testing"""
@@ -419,6 +477,294 @@ func simulate_voice_input():
 func process_voice_input(text: String):
 	"""Process voice input from user"""
 	print("🎤 Voice input: " + text)
+
+# === ENHANCED TOUCH JOYSTICK CONTROLS ===
+
+func create_touch_joystick():
+	"""Create virtual joystick for camera controls"""
+	print("🕹️ Creating touch joystick for camera controls...")
+	
+	# Create joystick container
+	var joystick_container = Control.new()
+	joystick_container.name = "JoystickContainer"
+	joystick_container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	joystick_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	
+	# Create joystick background
+	joystick_background = Control.new()
+	joystick_background.name = "JoystickBackground"
+	joystick_background.size = Vector2(joystick_radius * 2, joystick_radius * 2)
+	joystick_background.position = Vector2(100, get_viewport().size.y - 200)  # Bottom left
+	joystick_background.visible = false  # Hidden by default
+	
+	# Add background visual
+	var bg_style = StyleBoxFlat.new()
+	bg_style.bg_color = Color(0.2, 0.2, 0.2, 0.6)
+	bg_style.corner_radius_top_left = joystick_radius
+	bg_style.corner_radius_top_right = joystick_radius
+	bg_style.corner_radius_bottom_left = joystick_radius
+	bg_style.corner_radius_bottom_right = joystick_radius
+	bg_style.border_width_top = 2
+	bg_style.border_width_bottom = 2
+	bg_style.border_width_left = 2
+	bg_style.border_width_right = 2
+	bg_style.border_color = Color(0.5, 0.5, 0.5, 0.8)
+	
+	var bg_panel = Panel.new()
+	bg_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bg_panel.add_theme_stylebox_override("panel", bg_style)
+	joystick_background.add_child(bg_panel)
+	
+	# Create joystick knob
+	joystick_knob = Control.new()
+	joystick_knob.name = "JoystickKnob"
+	joystick_knob.size = Vector2(40, 40)
+	joystick_knob.position = Vector2(joystick_radius - 20, joystick_radius - 20)
+	
+	# Add knob visual
+	var knob_style = StyleBoxFlat.new()
+	knob_style.bg_color = Color(0.7, 0.7, 0.9, 0.9)
+	knob_style.corner_radius_top_left = 20
+	knob_style.corner_radius_top_right = 20
+	knob_style.corner_radius_bottom_left = 20
+	knob_style.corner_radius_bottom_right = 20
+	knob_style.border_width_top = 2
+	knob_style.border_width_bottom = 2
+	knob_style.border_width_left = 2
+	knob_style.border_width_right = 2
+	knob_style.border_color = Color(0.9, 0.9, 1.0, 1.0)
+	
+	var knob_panel = Panel.new()
+	knob_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	knob_panel.add_theme_stylebox_override("panel", knob_style)
+	joystick_knob.add_child(knob_panel)
+	
+	# Assemble joystick
+	joystick_background.add_child(joystick_knob)
+	joystick_container.add_child(joystick_background)
+	
+	# Add to UI
+	$UI.add_child(joystick_container)
+	
+	print("✅ Touch joystick created and ready")
+
+func initialize_camera_position():
+	"""Set up initial camera position and target"""
+	camera_target = Vector3.ZERO
+	camera_distance = 10.0
+	camera_yaw = 45.0  # degrees
+	camera_pitch = -20.0  # degrees
+	
+	update_camera_position()
+	print("📹 Camera initialized at distance: %.1f" % camera_distance)
+
+func update_camera_with_joystick(delta: float):
+	"""Update camera position based on joystick input"""
+	if current_joystick_vector.length() > 0.1:
+		# Apply joystick input to camera rotation
+		var input_strength = current_joystick_vector.length()
+		var input_direction = current_joystick_vector.normalized()
+		
+		# Horizontal movement controls yaw (Y rotation)
+		camera_yaw += input_direction.x * camera_orbit_speed * input_strength * 60.0 * delta
+		
+		# Vertical movement controls pitch (X rotation)
+		camera_pitch += input_direction.y * camera_orbit_speed * input_strength * 60.0 * delta
+		
+		# Clamp pitch to reasonable limits
+		camera_pitch = clamp(camera_pitch, -80.0, 80.0)
+		
+		# Update camera position
+		update_camera_position()
+
+func update_camera_position():
+	"""Update camera position based on current yaw, pitch, and distance"""
+	# Convert spherical coordinates to cartesian
+	var yaw_rad = deg_to_rad(camera_yaw)
+	var pitch_rad = deg_to_rad(camera_pitch)
+	
+	var x = camera_distance * cos(pitch_rad) * cos(yaw_rad)
+	var y = camera_distance * sin(pitch_rad)
+	var z = camera_distance * cos(pitch_rad) * sin(yaw_rad)
+	
+	var target_position = camera_target + Vector3(x, y, z)
+	
+	# Smooth camera movement
+	camera.position = camera.position.lerp(target_position, camera_smooth_speed * get_process_delta_time())
+	camera.look_at(camera_target, Vector3.UP)
+
+func handle_enhanced_touch_input(event: InputEventScreenTouch):
+	"""Enhanced touch input with joystick support"""
+	var touch_pos = event.position
+	
+	if event.pressed:
+		# Check if touch is in joystick area
+		if is_touch_in_joystick_area(touch_pos):
+			# Start joystick control
+			start_joystick_control(touch_pos, event.index)
+		else:
+			# Handle regular touch interaction
+			handle_world_touch(touch_pos)
+	else:
+		# Handle touch release
+		if event.index == joystick_touch_index:
+			stop_joystick_control()
+		else:
+			handle_touch_release(event)
+
+func handle_enhanced_drag_input(event: InputEventScreenDrag):
+	"""Enhanced drag input with joystick support"""
+	if event.index == joystick_touch_index and joystick_active:
+		# Update joystick position
+		update_joystick_position(event.position)
+	else:
+		# Handle regular world interaction drag
+		handle_world_drag(event)
+
+func is_touch_in_joystick_area(touch_pos: Vector2) -> bool:
+	"""Check if touch position is in joystick area"""
+	if not joystick_background:
+		return false
+	
+	var joystick_global_pos = joystick_background.global_position + Vector2(joystick_radius, joystick_radius)
+	var distance = touch_pos.distance_to(joystick_global_pos)
+	
+	return distance <= joystick_radius * 1.2  # Slightly larger area for easier activation
+
+func start_joystick_control(touch_pos: Vector2, touch_index: int):
+	"""Start joystick control mode"""
+	joystick_active = true
+	joystick_touch_index = touch_index
+	joystick_center = joystick_background.global_position + Vector2(joystick_radius, joystick_radius)
+	joystick_background.visible = true
+	
+	# Position knob at touch location
+	update_joystick_position(touch_pos)
+	
+	print("🕹️ Joystick activated for camera control")
+
+func stop_joystick_control():
+	"""Stop joystick control mode"""
+	joystick_active = false
+	joystick_touch_index = -1
+	current_joystick_vector = Vector2.ZERO
+	joystick_background.visible = false
+	
+	# Reset knob to center
+	joystick_knob.position = Vector2(joystick_radius - 20, joystick_radius - 20)
+	
+	print("🕹️ Joystick deactivated")
+
+func update_joystick_position(touch_pos: Vector2):
+	"""Update joystick knob position and calculate input vector"""
+	var offset = touch_pos - joystick_center
+	var distance = offset.length()
+	
+	# Clamp to joystick radius
+	if distance > joystick_radius:
+		offset = offset.normalized() * joystick_radius
+		distance = joystick_radius
+	
+	# Update knob position
+	var knob_pos = offset + Vector2(joystick_radius - 20, joystick_radius - 20)
+	joystick_knob.position = knob_pos
+	
+	# Calculate input vector (normalized to -1 to 1)
+	if distance > joystick_dead_zone:
+		var normalized_distance = (distance - joystick_dead_zone) / (joystick_radius - joystick_dead_zone)
+		current_joystick_vector = offset.normalized() * normalized_distance
+	else:
+		current_joystick_vector = Vector2.ZERO
+
+func handle_world_touch(touch_pos: Vector2):
+	"""Handle touch in the 3D world (non-joystick areas)"""
+	is_touching = true
+	touch_start_pos = touch_pos
+	
+	# Notify Wight of touch interaction
+	if wight_entity:
+		wight_entity.sensor_data.touch_events.append({
+			"type": "touch_start",
+			"position": touch_pos,
+			"timestamp": Time.get_ticks_msec()
+		})
+		
+		# Touch interaction affects Wight's emotions
+		wight_entity.adjust_emotion("loneliness", -0.1)
+		wight_entity.adjust_emotion("curiosity", 0.05)
+
+func handle_touch_release(event: InputEventScreenTouch):
+	"""Handle touch release in the world"""
+	is_touching = false
+	
+	# Check for tap (quick touch without much movement)
+	var distance = touch_start_pos.distance_to(event.position)
+	if distance < 50:  # Short tap
+		handle_world_tap_interaction(event.position)
+
+func handle_world_drag(event: InputEventScreenDrag):
+	"""Handle drag in the world (for zoom or other interactions)"""
+	if is_touching:
+		var drag_delta = event.relative
+		
+		# Use drag for zoom control when not using joystick
+		handle_zoom_gesture(drag_delta)
+
+func handle_zoom_gesture(drag_delta: Vector2):
+	"""Handle zoom gesture with touch drag"""
+	# Vertical drag for zoom
+	var zoom_delta = -drag_delta.y * camera_zoom_speed * 0.01
+	camera_distance += zoom_delta
+	camera_distance = clamp(camera_distance, zoom_min, zoom_max)
+	
+	# Update camera position with new distance
+	update_camera_position()
+
+func handle_world_tap_interaction(position: Vector2):
+	"""Handle tap interactions in the 3D world"""
+	# Convert screen tap to 3D world interaction
+	var from = camera.project_ray_origin(position)
+	var to = from + camera.project_ray_normal(position) * 100
+	
+	# Perform raycast to see if we hit anything in Wight's creation space
+	var space_state = get_world_3d().direct_space_state
+	var query = PhysicsRayQueryParameters3D.create(from, to)
+	var result = space_state.intersect_ray(query)
+	
+	if result:
+		# Tapped on something in the world
+		interact_with_object_at_point(result.position)
+	else:
+		# Tapped in empty space - encourage Wight to create something
+		encourage_creation_at_point(camera.project_position(position, 5.0))
+
+# === ADDITIONAL CAMERA CONTROLS ===
+
+func zoom_camera(zoom_factor: float):
+	"""Zoom camera in or out"""
+	camera_distance *= zoom_factor
+	camera_distance = clamp(camera_distance, zoom_min, zoom_max)
+	update_camera_position()
+
+func reset_camera():
+	"""Reset camera to default position"""
+	camera_yaw = 45.0
+	camera_pitch = -20.0
+	camera_distance = 10.0
+	camera_target = Vector3.ZERO
+	update_camera_position()
+	print("📹 Camera reset to default position")
+
+func focus_camera_on_wight():
+	"""Focus camera on Wight's avatar if it exists"""
+	if wight_entity and wight_entity.avatar_body:
+		camera_target = wight_entity.avatar_body.global_position
+		update_camera_position()
+		print("📹 Camera focused on Wight's avatar")
+	else:
+		camera_target = Vector3.ZERO
+		update_camera_position()
+		print("📹 Camera focused on world center")
 	
 	# Show voice activity in UI
 	ui_elements.voice_indicator.modulate = Color(0.2, 0.8, 0.2, 0.8)
