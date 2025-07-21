@@ -1,0 +1,14 @@
+fc8a56933c4b1c8d796fdb8f7a9f9475
+::res://::1753123058
+export_presets.cfg::TextFile::-1::1753123058::0::1::::<><>::
+icon.svg::CompressedTexture2D::992275986315991024::1753123058::1753124864::1::::<><>::
+WIGHT_README.md::TextFile::-1::1753123058::0::1::::<><>::
+::res://ai_core/::1753123058
+LocalAI.gd::GDScript::-1::1753123058::0::1::::LocalAI<>RefCounted<>::
+::res://scenes/::1753123058
+WightWorld.tscn::PackedScene::4021369925987281545::1753123058::0::1::::<><>::res://scripts/WightWorld.gd<>res://scripts/WightEntity.gd
+::res://scripts/::1753124751
+AndroidSensorManager.gd::GDScript::-1::1753123058::0::1::::AndroidSensorManager<>Node<>::
+HTMLearning.gd::GDScript::-1::1753123058::0::1::::HTMLearning<>Node<>::
+WightEntity.gd::GDScript::-1::1753124751::0::1::::WightEntity<>Node3D<>::
+WightWorld.gd::GDScript::-1::1753124751::0::1::::WightWorld<>Node3D<>::
