@@ -66,12 +66,17 @@ func setup_world():
 	
 	# Connect to Wight's consciousness events
 	if wight_entity:
-		wight_entity.consciousness_event.connect(_on_consciousness_event)
-		wight_entity.creation_impulse.connect(_on_creation_impulse)
-		wight_entity.memory_formed.connect(_on_memory_formed)
+		if wight_entity.has_signal("consciousness_event"):
+			wight_entity.consciousness_event.connect(_on_consciousness_event)
+		if wight_entity.has_signal("creation_impulse"):
+			wight_entity.creation_impulse.connect(_on_creation_impulse)
+		if wight_entity.has_signal("memory_formed"):
+			wight_entity.memory_formed.connect(_on_memory_formed)
 	
-	# Set up dynamic environment
+	# Set up dynamic environment and lighting
 	setup_dynamic_environment()
+	add_initial_lighting()
+	create_test_objects()
 	
 	print("🧠 Connected to Wight's consciousness")
 
@@ -80,6 +85,77 @@ func setup_dynamic_environment():
 	# The environment will change based on Wight's emotional state and development
 	# For now, set up basic ambient lighting that responds to emotions
 	pass
+
+func add_initial_lighting():
+	"""Add proper lighting to prevent black screen"""
+	print("💡 Setting up initial lighting...")
+	
+	# Add point lights around the scene
+	var light1 = PointLight3D.new()
+	light1.position = Vector3(5, 5, 5)
+	light1.light_energy = 2.0
+	light1.light_color = Color(1.0, 0.9, 0.8)
+	add_child(light1)
+	
+	var light2 = PointLight3D.new()
+	light2.position = Vector3(-5, 5, -5)
+	light2.light_energy = 1.5
+	light2.light_color = Color(0.8, 0.9, 1.0)
+	add_child(light2)
+	
+	# Add a subtle fill light
+	var fill_light = PointLight3D.new()
+	fill_light.position = Vector3(0, 8, 0)
+	fill_light.light_energy = 1.0
+	fill_light.light_color = Color(0.9, 0.9, 1.0)
+	add_child(fill_light)
+	
+	print("✨ Lighting setup complete - scene should now be visible")
+
+func create_test_objects():
+	"""Create some initial objects so the world isn't empty"""
+	print("🎲 Creating initial objects for Wight to interact with...")
+	
+	# Create a test cube
+	var test_cube = MeshInstance3D.new()
+	test_cube.mesh = BoxMesh.new()
+	test_cube.position = Vector3(2, 1, 0)
+	
+	var cube_material = StandardMaterial3D.new()
+	cube_material.albedo_color = Color(0.3, 0.7, 1.0)
+	cube_material.metallic = 0.2
+	cube_material.roughness = 0.3
+	test_cube.material_override = cube_material
+	
+	$CreationSpace.add_child(test_cube)
+	
+	# Create a test sphere
+	var test_sphere = MeshInstance3D.new()
+	test_sphere.mesh = SphereMesh.new()
+	test_sphere.position = Vector3(-2, 1, 0)
+	
+	var sphere_material = StandardMaterial3D.new()
+	sphere_material.albedo_color = Color(1.0, 0.3, 0.7)
+	sphere_material.metallic = 0.0
+	sphere_material.roughness = 0.1
+	test_sphere.material_override = sphere_material
+	
+	$CreationSpace.add_child(test_sphere)
+	
+	# Create a ground plane
+	var ground = MeshInstance3D.new()
+	ground.mesh = PlaneMesh.new()
+	ground.mesh.size = Vector2(20, 20)
+	ground.position = Vector3(0, 0, 0)
+	
+	var ground_material = StandardMaterial3D.new()
+	ground_material.albedo_color = Color(0.2, 0.4, 0.2)
+	ground_material.roughness = 0.8
+	ground.material_override = ground_material
+	
+	add_child(ground)
+	
+	print("🌍 Initial world objects created")
 
 func setup_ui():
 	"""Initialize user interface elements"""
@@ -987,11 +1063,14 @@ func send_message_to_wight(message: String):
 		var response = wight_entity.generate_response(message)
 		print("🤖 Wight responds: '%s'" % response)
 		
-		# Add Wight's response to conversation
-		add_to_conversation("[color=%s]Wight: %s[/color]" % [wight_color, response])
-		
-		# Update thoughts display with the response
-		ui_elements.thoughts_display.text = "[color=%s]%s[/color]" % [thought_color, response]
+			# Add Wight's response to conversation
+	add_to_conversation("[color=%s]Wight: %s[/color]" % [wight_color, response])
+	
+	# Update thoughts display with the response
+	ui_elements.thoughts_display.text = "[color=%s]%s[/color]" % [thought_color, response]
+	
+	# Make Wight speak the response out loud
+	speak_response(response)
 	else:
 		print("❌ Wight cannot generate responses - method missing")
 	
@@ -1009,6 +1088,65 @@ func add_to_conversation(text: String):
 		
 		# Auto-scroll to bottom
 		ui_elements.conversation_history.scroll_to_line(ui_elements.conversation_history.get_line_count() - 1)
+
+# === VOICE HANDLING FUNCTIONS ===
+
+func start_voice_recognition():
+	"""Start voice recognition"""
+	print("🎤 Starting voice recognition...")
+	voice_recognition_active = true
+	
+	# In a real implementation, this would start Android speech recognition
+	# For now, we'll simulate it
+	print("🔊 Voice recording active - speak now!")
+
+func stop_voice_recognition():
+	"""Stop voice recognition"""
+	print("🔇 Stopping voice recognition...")
+	voice_recognition_active = false
+
+func simulate_voice_input():
+	"""Simulate voice input for testing"""
+	var test_phrases = [
+		"Hello Wight, how are you feeling?",
+		"What are you thinking about?",
+		"Can you create something for me?",
+		"Tell me about your emotions",
+		"What do you see in your world?",
+		"I want to talk to you",
+		"Show me what you can do"
+	]
+	
+	var random_phrase = test_phrases[randi() % test_phrases.size()]
+	print("🎤 Simulated voice input: '%s'" % random_phrase)
+	
+	# Process the simulated voice input
+	send_message_to_wight(random_phrase)
+
+func speak_response(text: String):
+	"""Make Wight speak the response using text-to-speech"""
+	print("🗣️ Wight speaking: '%s'" % text)
+	
+	# In Android, this would use Android TTS
+	# For now, we'll simulate it with visual feedback
+	if ui_elements.has("voice_button"):
+		ui_elements.voice_button.text = "🔊 Speaking"
+		ui_elements.voice_button.modulate = Color(0.3, 1.0, 0.3)
+		
+		# Simulate speech duration based on text length
+		var speech_duration = max(2.0, text.length() * 0.1)
+		
+		await get_tree().create_timer(speech_duration).timeout
+		
+		ui_elements.voice_button.text = "🎤 Voice" 
+		ui_elements.voice_button.modulate = Color.WHITE
+	
+	# Try to use Android TTS if available
+	if OS.get_name() == "Android":
+		# This would be implemented with Android TTS API
+		print("📱 Android TTS would speak here: '%s'" % text)
+	else:
+		print("🖥️ Desktop - TTS simulation complete")
 
 # === UI SETTINGS HANDLERS ===
 

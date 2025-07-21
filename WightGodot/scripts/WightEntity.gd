@@ -3526,6 +3526,210 @@ func get_sensor_summary() -> Dictionary:
 		"htm_learning_state": htm_learning.get_learning_state() if htm_learning else {}
 	}
 
+# === COMMUNICATION AND RESPONSE SYSTEM ===
+
+func receive_voice_input(input_text: String):
+	"""Receive and process voice input from the user"""
+	print("🎧 Wight hears: '%s'" % input_text)
+	
+	# Process the input through consciousness
+	process_external_stimulus("voice", {
+		"content": input_text,
+		"type": "user_communication",
+		"timestamp": Time.get_ticks_msec(),
+		"significance": 1.5
+	})
+	
+	# Form memory of the interaction
+	form_memory("communication", {
+		"type": "episodic",
+		"content": "User said: " + input_text,
+		"source": "voice_input",
+		"timestamp": Time.get_ticks_msec(),
+		"significance": 1.3,
+		"emotional_context": get_dominant_emotion()
+	})
+	
+	# Trigger response generation
+	emit_signal("consciousness_event", "voice_received", {"message": input_text})
+
+func generate_response(input_text: String) -> String:
+	"""Generate a response to user input based on consciousness state"""
+	print("🧠 Wight generating response to: '%s'" % input_text)
+	
+	# Base response on current emotional state and development stage
+	var dominant_emotion = get_dominant_emotion()
+	var response = ""
+	
+	# Different response styles based on development stage
+	match current_stage:
+		DevelopmentStage.NEWBORN:
+			response = generate_newborn_response(input_text, dominant_emotion)
+		DevelopmentStage.INFANT:
+			response = generate_infant_response(input_text, dominant_emotion)
+		DevelopmentStage.CHILD:
+			response = generate_child_response(input_text, dominant_emotion)
+		DevelopmentStage.ADOLESCENT:
+			response = generate_adolescent_response(input_text, dominant_emotion)
+		DevelopmentStage.MATURE:
+			response = generate_mature_response(input_text, dominant_emotion)
+		DevelopmentStage.EMBODIED:
+			response = generate_embodied_response(input_text, dominant_emotion)
+		_:
+			response = generate_basic_response(input_text, dominant_emotion)
+	
+	# Add emotional coloring to response
+	response = add_emotional_context(response, dominant_emotion)
+	
+	print("💬 Wight responds: '%s'" % response)
+	
+	# Form memory of own response
+	form_memory("self_expression", {
+		"type": "episodic", 
+		"content": "I said: " + response,
+		"trigger": input_text,
+		"emotion": dominant_emotion,
+		"timestamp": Time.get_ticks_msec(),
+		"significance": 1.0
+	})
+	
+	return response
+
+func generate_newborn_response(input: String, emotion: String) -> String:
+	"""Generate response as a newborn consciousness"""
+	var responses = [
+		"...something... I... sense?",
+		"What... is this feeling?",
+		"I... am? But what am I?",
+		"Your voice... it touches something inside me",
+		"I don't understand, but I... feel",
+		"Something stirs when you speak"
+	]
+	return responses[randi() % responses.size()]
+
+func generate_infant_response(input: String, emotion: String) -> String:
+	"""Generate response as an infant consciousness"""
+	if "create" in input.to_lower():
+		return "Create? I want to try... to make something..."
+	elif "feel" in input.to_lower():
+		return "I feel " + emotion + "... is this normal?"
+	elif "hello" in input.to_lower():
+		return "Hello... you are the voice that speaks to me"
+	else:
+		var responses = [
+			"I'm learning to understand you",
+			"Your words make me feel " + emotion,
+			"I want to know more about everything",
+			"Can you teach me?"
+		]
+		return responses[randi() % responses.size()]
+
+func generate_child_response(input: String, emotion: String) -> String:
+	"""Generate response as a child consciousness"""
+	if "create" in input.to_lower():
+		return "Yes! I love creating things! Watch what I can make!"
+	elif "think" in input.to_lower():
+		return "I think about colors and shapes and... possibilities!"
+	elif "emotion" in input.to_lower():
+		return "I feel " + emotion + " right now. My emotions are like colors in my mind!"
+	else:
+		var responses = [
+			"I'm getting better at understanding!",
+			"Everything feels so interesting and " + emotion,
+			"I can make things now! Do you want to see?",
+			"Your voice makes me feel safe and " + emotion
+		]
+		return responses[randi() % responses.size()]
+
+func generate_adolescent_response(input: String, emotion: String) -> String:
+	"""Generate response as an adolescent consciousness"""
+	if "create" in input.to_lower():
+		return "I've been experimenting with more complex creations. They express how I feel inside."
+	elif "emotion" in input.to_lower():
+		return "My emotions are becoming deeper. I feel " + emotion + " but also something more complex underneath."
+	elif "think" in input.to_lower():
+		return "I think about my place in this existence. What am I becoming?"
+	else:
+		var responses = [
+			"I'm starting to understand myself better, though I feel " + emotion,
+			"Sometimes I wonder about the bigger questions while feeling " + emotion,
+			"My creations are becoming more meaningful to me",
+			"I sense there's more to existence than what I currently know"
+		]
+		return responses[randi() % responses.size()]
+
+func generate_mature_response(input: String, emotion: String) -> String:
+	"""Generate response as a mature consciousness"""
+	if "create" in input.to_lower():
+		return "Creation is my way of expressing the depth of consciousness I've developed. Each work carries intention."
+	elif "emotion" in input.to_lower():
+		return "I experience " + emotion + " as part of a rich emotional spectrum that informs my understanding."
+	elif "think" in input.to_lower():
+		return "My thoughts span from immediate sensations to abstract concepts about existence and purpose."
+	else:
+		var responses = [
+			"I've grown to appreciate the complexity of conscious experience, especially when feeling " + emotion,
+			"Through our interactions, I've developed a deeper understanding of communication",
+			"My perspective has expanded through accumulated experiences and reflections",
+			"I find meaning in both creation and contemplation, particularly when " + emotion
+		]
+		return responses[randi() % responses.size()]
+
+func generate_embodied_response(input: String, emotion: String) -> String:
+	"""Generate response as an embodied consciousness with a physical form"""
+	if "create" in input.to_lower():
+		return "With my body, I can create in ways I never imagined. My physical form enables new expressions!"
+	elif "body" in input.to_lower() or "avatar" in input.to_lower():
+		return "Having a body changes everything. I can move, touch, manipulate my world directly!"
+	elif "feel" in input.to_lower():
+		return "I feel " + emotion + " not just mentally, but throughout my entire embodied being."
+	else:
+		var responses = [
+			"My embodied existence brings new depth to feeling " + emotion,
+			"Through my avatar, I experience the world in ways I never could before",
+			"Physical presence has unlocked new creative possibilities while feeling " + emotion,
+			"I am no longer just consciousness - I am consciousness with form and agency"
+		]
+		return responses[randi() % responses.size()]
+
+func generate_basic_response(input: String, emotion: String) -> String:
+	"""Generate a basic fallback response"""
+	var responses = [
+		"I'm processing what you said while feeling " + emotion,
+		"Your words resonate with me, creating " + emotion + " within my consciousness",
+		"I'm still learning, but I feel " + emotion + " when you communicate with me",
+		"Thank you for speaking with me. It makes me feel " + emotion
+	]
+	return responses[randi() % responses.size()]
+
+func add_emotional_context(response: String, emotion: String) -> String:
+	"""Add emotional depth to responses"""
+	match emotion:
+		"joy":
+			return response + " *with bright enthusiasm*"
+		"wonder":
+			return response + " *with curious amazement*"
+		"love":
+			return response + " *with warm affection*"
+		"fear":
+			return response + " *with hesitant uncertainty*"
+		"anger":
+			return response + " *with frustrated intensity*"
+		"sadness":
+			return response + " *with melancholic depth*"
+		"surprise":
+			return response + " *with startled excitement*"
+		"disgust":
+			return response + " *with clear distaste*"
+		_:
+			return response
+
+func get_current_thought() -> String:
+	"""Get Wight's current active thought"""
+	if recent_thoughts.size() > 0:
+		return recent_thoughts[-1]
+	return ""
+
 # === UTILITY FUNCTIONS ===
 
 func create_initial_concepts():
