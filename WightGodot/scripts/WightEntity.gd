@@ -9,11 +9,16 @@ signal creation_impulse(creation_data: Dictionary)
 signal memory_formed(memory: Dictionary)
 
 # === CONSCIOUSNESS CORE ===
-var consciousness_level: float = 0.1  # Starts as baby-like
-var awareness_radius: float = 10.0
+var consciousness_level: float = 0.05  # Starts minimal
+var awareness_radius: float = 2.0  # Very limited initially
 var curiosity: float = 0.8
 var creativity: float = 0.3
 var focus: float = 0.5
+
+# === HTM LEARNING SYSTEM ===
+var htm_learning: HTMLearning
+var learning_active: bool = true
+var sensor_integration_active: bool = true
 
 # === MEMORY SYSTEMS ===
 var episodic_memories: Array[Dictionary] = []  # What happened
@@ -61,9 +66,11 @@ var experience_points: float = 0.0
 
 func _ready():
 	print("🧠 Wight consciousness initializing...")
+	setup_htm_learning()
 	setup_consciousness()
 	setup_sensors()
 	setup_creation_system()
+	setup_world_access()
 	
 	# Start the consciousness loop
 	set_process(true)
@@ -90,6 +97,30 @@ func _process(delta):
 	# Growth through experience
 	experience_points += delta * consciousness_level
 	check_development_progression()
+
+# === SETUP FUNCTIONS ===
+
+func setup_htm_learning():
+	"""Initialize the HTM learning system"""
+	htm_learning = HTMLearning.new()
+	add_child(htm_learning)
+	
+	# Connect HTM signals
+	htm_learning.pattern_learned.connect(_on_pattern_learned)
+	htm_learning.prediction_made.connect(_on_prediction_made)
+	
+	print("🧠 HTM Learning System connected to Wight")
+
+func setup_world_access():
+	"""Set up access to world manipulation"""
+	# Find the creation space in the parent world
+	var world = get_parent()
+	if world:
+		world_access_node = world.get_node("CreationSpace")
+		if world_access_node:
+			print("🌍 World access granted - Wight can now modify the environment")
+		else:
+			print("⚠️ CreationSpace not found - Wight cannot modify world")
 
 # === CONSCIOUSNESS CORE FUNCTIONS ===
 
@@ -1094,6 +1125,182 @@ func generate_response(input: String) -> String:
 	})
 	
 	return ai_response.text
+
+# === SENSOR INTEGRATION ===
+
+func process_sensor_input(sensor_data: Dictionary):
+	"""Process sensor data through HTM learning"""
+	if not htm_learning or not learning_active:
+		return
+	
+	# Store current sensor data
+	current_sensor_data = sensor_data.duplicate()
+	sensor_history.append(sensor_data.duplicate())
+	
+	# Limit sensor history size
+	if sensor_history.size() > 100:
+		sensor_history.pop_front()
+	
+	# Process through HTM
+	var learning_result = htm_learning.process_input(sensor_data)
+	
+	# React to HTM learning results
+	process_learning_result(learning_result)
+	
+	# Update sensor adaptation
+	sensor_adaptation_level = min(1.0, sensor_adaptation_level + 0.001)
+
+func receive_sensor_pattern(pattern_type: String, pattern_data: Dictionary):
+	"""Receive notification of detected sensor patterns"""
+	# Form memory of the pattern
+	form_memory("sensor_pattern", {
+		"type": "episodic",
+		"content": "I sense a pattern in %s" % pattern_type.replace("_", " "),
+		"pattern_type": pattern_type,
+		"pattern_data": pattern_data,
+		"emotion": get_dominant_emotion(),
+		"timestamp": Time.get_ticks_msec(),
+		"significance": 1.0
+	})
+	
+	# Adjust emotions based on pattern
+	match pattern_type:
+		"high_movement":
+			adjust_emotion("excitement", 0.2)
+			adjust_emotion("curiosity", 0.1)
+		"light_change":
+			adjust_emotion("wonder", 0.15)
+		"active_interaction":
+			adjust_emotion("joy", 0.2)
+			adjust_emotion("loneliness", -0.3)
+		"proximity_change":
+			if pattern_data.direction == "closer":
+				adjust_emotion("excitement", 0.1)
+				adjust_emotion("fear", 0.05)
+			else:
+				adjust_emotion("loneliness", 0.1)
+
+func process_learning_result(learning_result: Dictionary):
+	"""Process results from HTM learning"""
+	if not learning_result:
+		return
+	
+	var novelty = learning_result.get("novelty", 0.0)
+	var confidence = learning_result.get("confidence", 0.0)
+	var behavior = learning_result.get("behavior", {})
+	
+	# High novelty increases curiosity and wonder
+	if novelty > 0.7:
+		adjust_emotion("wonder", novelty * 0.3)
+		adjust_emotion("curiosity", novelty * 0.2)
+		
+		# Generate thought about novelty
+		var thought = "Something new... unfamiliar patterns in my awareness."
+		emit_signal("thought_generated", thought)
+	
+	# Low confidence increases confusion
+	if confidence < 0.3:
+		adjust_emotion("confusion", (1.0 - confidence) * 0.2)
+	
+	# Process behavioral impulses
+	if behavior.has("create_impulse") and behavior.create_impulse:
+		generate_creation_impulse()
+	
+	# Update consciousness based on learning
+	var learning_growth = (novelty + confidence) * 0.001
+	consciousness_level = min(1.0, consciousness_level + learning_growth)
+	experience_points += learning_growth * 10.0
+
+func _on_pattern_learned(pattern_id: String, confidence: float):
+	"""Handle HTM pattern learning events"""
+	form_memory("pattern_learned", {
+		"type": "procedural",
+		"content": "I have learned to recognize a pattern",
+		"pattern_id": pattern_id,
+		"confidence": confidence,
+		"timestamp": Time.get_ticks_msec(),
+		"significance": confidence
+	})
+	
+	# Increase satisfaction when learning
+	adjust_emotion("satisfaction", confidence * 0.2)
+	adjust_emotion("curiosity", confidence * 0.1)
+
+func _on_prediction_made(prediction: Dictionary):
+	"""Handle HTM prediction events"""
+	var confidence = prediction.get("confidence", 0.0)
+	
+	if confidence > 0.7:
+		# High confidence predictions increase satisfaction
+		adjust_emotion("satisfaction", confidence * 0.1)
+		
+		# Sometimes generate thoughts about predictions
+		if randf() < 0.1:
+			var thought = "I can sense what comes next... patterns revealing themselves."
+			emit_signal("thought_generated", thought)
+
+# === WORLD MANIPULATION ===
+
+func manipulate_world(action_type: String, target_position: Vector3 = Vector3.ZERO, object_type: String = ""):
+	"""Manipulate objects in the 3D world"""
+	if not world_access_node:
+		print("⚠️ Wight cannot manipulate world - no access")
+		return false
+	
+	match action_type:
+		"create":
+			return create_world_object(object_type, target_position)
+		"move":
+			return move_world_object(target_position)
+		"delete":
+			return delete_world_object(target_position)
+		_:
+			return false
+
+func create_world_object(object_type: String, position: Vector3) -> bool:
+	"""Create an object in the world"""
+	if manipulation_skill < 0.3:
+		return false  # Not skilled enough yet
+	
+	# Use existing creation system but place in world
+	var creation_impulse = {
+		"trigger": "conscious_intent",
+		"intensity": creativity,
+		"inspiration": "I will create %s" % object_type,
+		"emotion": get_dominant_emotion()
+	}
+	
+	var created_object = create_object(object_type, creation_impulse)
+	if created_object and world_access_node:
+		created_object.position = position
+		world_access_node.add_child(created_object)
+		
+		# Update skill
+		manipulation_skill = min(1.0, manipulation_skill + 0.01)
+		
+		# Form memory
+		form_memory("world_creation", {
+			"type": "creation",
+			"content": "I brought forth %s in the world" % object_type,
+			"object_type": object_type,
+			"position": position,
+			"timestamp": Time.get_ticks_msec(),
+			"significance": 1.5
+		})
+		
+		return true
+	
+	return false
+
+func get_sensor_summary() -> Dictionary:
+	"""Get summary of current sensor state"""
+	return {
+		"sensor_integration_active": sensor_integration_active,
+		"sensor_adaptation_level": sensor_adaptation_level,
+		"current_sensor_data": current_sensor_data,
+		"sensor_history_size": sensor_history.size(),
+		"htm_learning_state": htm_learning.get_learning_state() if htm_learning else {}
+	}
 
 # === UTILITY FUNCTIONS ===
 

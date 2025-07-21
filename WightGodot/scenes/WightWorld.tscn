@@ -285,42 +285,5 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 16
 text = "🎤 Voice"
 
-[node name="Spacer3" type="Control" parent="UI/MainInterface"]
-layout_mode = 2
-custom_minimum_size = Vector2(0, 10)
 
-[node name="BottomPanel" type="Panel" parent="UI/MainInterface"]
-layout_mode = 2
-custom_minimum_size = Vector2(0, 80)
-theme_override_styles/panel = SubResource("StyleBoxFlat_1")
 
-[node name="ActionContainer" type="HBoxContainer" parent="UI/MainInterface/BottomPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 15.0
-offset_top = 10.0
-offset_right = -15.0
-offset_bottom = -10.0
-
-[node name="CreateButton" type="Button" parent="UI/MainInterface/BottomPanel/ActionContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 16
-text = "Encourage Creation"
-
-[node name="ClearButton" type="Button" parent="UI/MainInterface/BottomPanel/ActionContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 16
-text = "Clear World"
-
-[node name="InfoButton" type="Button" parent="UI/MainInterface/BottomPanel/ActionContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 16
-text = "Memory"

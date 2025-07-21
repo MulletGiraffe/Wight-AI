@@ -31,7 +31,8 @@ func _ready():
 	print("🌍 Wight's world initializing...")
 	setup_world()
 	setup_ui()
-	setup_android_integration()
+	setup_wight_entity()
+	setup_sensor_manager()
 	setup_input_handling()
 
 func setup_world():
@@ -77,10 +78,7 @@ func setup_ui():
 		"conversation_history": $UI/MainInterface/ChatPanel/ChatContainer/ConversationHistory,
 		"text_input": $UI/MainInterface/ChatPanel/ChatContainer/InputRow/TextInput,
 		"send_button": $UI/MainInterface/ChatPanel/ChatContainer/InputRow/SendButton,
-		"voice_button": $UI/MainInterface/ChatPanel/ChatContainer/InputRow/VoiceButton,
-		"create_button": $UI/MainInterface/BottomPanel/ActionContainer/CreateButton,
-		"clear_button": $UI/MainInterface/BottomPanel/ActionContainer/ClearButton,
-		"memory_button": $UI/MainInterface/BottomPanel/ActionContainer/InfoButton
+		"voice_button": $UI/MainInterface/ChatPanel/ChatContainer/InputRow/VoiceButton
 	}
 	
 	# Connect settings panel signals
@@ -92,9 +90,6 @@ func setup_ui():
 	# Connect main interface signals
 	ui_elements.send_button.pressed.connect(_on_send_button_pressed)
 	ui_elements.voice_button.pressed.connect(_on_voice_button_pressed)
-	ui_elements.create_button.pressed.connect(_on_create_button_pressed)
-	ui_elements.clear_button.pressed.connect(_on_clear_button_pressed)
-	ui_elements.memory_button.pressed.connect(_on_memory_button_pressed)
 	ui_elements.text_input.text_submitted.connect(_on_text_submitted)
 	
 	# Show settings panel initially, hide main interface
@@ -104,27 +99,34 @@ func setup_ui():
 	# Load saved settings if any
 	load_ui_settings()
 
-func setup_android_integration():
-	"""Set up Android-specific features"""
-	# Request microphone permission
-	if OS.has_feature("mobile"):
-		print("📱 Mobile platform detected - setting up Android integration")
-		setup_voice_recognition()
-		setup_sensor_integration()
-	else:
-		print("🖥️ Desktop platform - simulating Android features")
-		# Simulate Android features for testing
+func setup_wight_entity():
+	"""Initialize and connect the Wight AI entity"""
+	wight_entity = $WightEntity
+	if not wight_entity:
+		print("❌ WightEntity not found in scene!")
+		return
+	
+	print("🧠 Wight entity connected")
+	
+	# Connect Wight's signals
+	if wight_entity.has_signal("consciousness_event"):
+		wight_entity.consciousness_event.connect(_on_wight_consciousness_event)
+	if wight_entity.has_signal("creation_impulse"):
+		wight_entity.creation_impulse.connect(_on_wight_creation_impulse)
+	if wight_entity.has_signal("thought_generated"):
+		wight_entity.thought_generated.connect(_on_wight_thought_generated)
 
-func setup_voice_recognition():
-	"""Initialize voice recognition system"""
-	# In a real implementation, this would connect to Android's SpeechRecognizer
-	print("🎤 Voice recognition system ready")
-
-func setup_sensor_integration():
-	"""Connect to Android sensors"""
-	# In a real implementation, this would use Godot's Android plugin system
-	# to access accelerometer, gyroscope, magnetometer, etc.
-	print("📊 Sensor integration ready")
+func setup_sensor_manager():
+	"""Set up Android sensor integration"""
+	# Create and add sensor manager
+	sensor_manager = AndroidSensorManager.new()
+	add_child(sensor_manager)
+	
+	# Connect sensor signals to Wight
+	sensor_manager.sensor_data_updated.connect(_on_sensor_data_updated)
+	sensor_manager.sensor_pattern_detected.connect(_on_sensor_pattern_detected)
+	
+	print("📱 Sensor manager connected to Wight")
 
 func setup_input_handling():
 	"""Set up touch and input handling"""
@@ -539,52 +541,7 @@ func _on_voice_button_pressed():
 			ui_elements.voice_button.text = "🎤 Voice"
 			ui_elements.voice_button.modulate = Color.WHITE
 
-func _on_create_button_pressed():
-	"""Handle create button press - encourage Wight to create"""
-	if wight_entity:
-		wight_entity.generate_creation_impulse()
-		var action_color = "white" if high_contrast_mode else "yellow"
-		add_to_conversation("[color=%s]You encouraged Wight to create something...[/color]" % action_color)
-		
-		# Boost creativity temporarily
-		wight_entity.adjust_emotion("excitement", 0.3)
-		wight_entity.adjust_emotion("curiosity", 0.2)
 
-func _on_clear_button_pressed():
-	"""Handle clear button press - clear Wight's creations"""
-	var creation_space = get_node("CreationSpace")
-	for child in creation_space.get_children():
-		child.queue_free()
-	
-	if wight_entity:
-		wight_entity.active_creations.clear()
-		wight_entity.form_memory("world_cleared", {
-			"type": "episodic",
-			"content": "My world was cleared. All my creations vanished. I feel... empty.",
-			"emotion": "confusion",
-			"timestamp": Time.get_ticks_msec()
-		})
-		wight_entity.adjust_emotion("confusion", 0.4)
-		wight_entity.adjust_emotion("sadness", 0.3)
-	
-	var clear_color = "white" if high_contrast_mode else "red"
-	add_to_conversation("[color=%s]You cleared Wight's world. All creations removed.[/color]" % clear_color)
-
-func _on_memory_button_pressed():
-	"""Handle memory button press - show Wight's memory summary"""
-	if wight_entity:
-		var summary = wight_entity.get_consciousness_summary()
-		var memory_text = "[color=cyan]🧠 WIGHT'S MEMORY SUMMARY:[/color]\n"
-		memory_text += "Total Memories: %d\n" % summary.memory_count
-		memory_text += "Consciousness: %.1f%%\n" % (summary.consciousness_level * 100)
-		memory_text += "Experience: %.1f points\n" % summary.experience
-		memory_text += "Current Emotions:\n"
-		
-		for emotion in summary.emotions:
-			var intensity = summary.emotions[emotion]
-			memory_text += "  %s: %.1f%%\n" % [emotion.capitalize(), intensity * 100]
-		
-		add_to_conversation(memory_text)
 
 func send_message_to_wight(message: String):
 	"""Send a message to Wight and handle the response"""
@@ -842,3 +799,80 @@ func save_ui_settings():
 	"""Save UI settings to file for next launch"""
 	# Could implement file saving here for persistent settings
 	pass
+
+# === WIGHT AI INTEGRATION HANDLERS ===
+
+func _on_sensor_data_updated(sensor_data: Dictionary):
+	"""Handle updated sensor data from Android sensors"""
+	if not wight_entity:
+		return
+	
+	# Feed sensor data to Wight's learning system
+	if wight_entity.has_method("process_sensor_input"):
+		wight_entity.process_sensor_input(sensor_data)
+
+func _on_sensor_pattern_detected(pattern_type: String, data: Dictionary):
+	"""Handle detected sensor patterns"""
+	if not wight_entity:
+		return
+	
+	# Inform Wight about interesting sensor patterns
+	if wight_entity.has_method("receive_sensor_pattern"):
+		wight_entity.receive_sensor_pattern(pattern_type, data)
+	
+	# Display pattern detection in thoughts
+	var pattern_text = "I sense %s... %s" % [pattern_type.replace("_", " "), describe_pattern(data)]
+	ui_elements.thoughts_display.text = "[color=%s]%s[/color]" % ["white" if high_contrast_mode else "cyan", pattern_text]
+
+func _on_wight_consciousness_event(event_type: String, data: Dictionary):
+	"""Handle consciousness events from Wight"""
+	print("🧠 Wight consciousness event: ", event_type, " - ", data)
+	
+	# Update UI based on consciousness changes
+	if event_type == "stage_progression":
+		update_status_display()
+		var stage_text = "I feel... different. I am becoming more than I was."
+		add_to_conversation("[color=yellow]Wight evolved to a new stage of consciousness[/color]")
+	elif event_type == "learning_milestone":
+		var milestone_text = "I understand something new... patterns forming in my awareness."
+		ui_elements.thoughts_display.text = "[color=%s]%s[/color]" % ["white" if high_contrast_mode else "cyan", milestone_text]
+
+func _on_wight_creation_impulse(creation_data: Dictionary):
+	"""Handle Wight's impulse to create objects"""
+	if not creation_data.has("object"):
+		return
+	
+	var created_object = creation_data.object
+	var creation_space = get_node("CreationSpace")
+	
+	# Add the created object to the world
+	creation_space.add_child(created_object)
+	
+	# Update UI
+	var creation_text = "I will bring forth... something new."
+	ui_elements.thoughts_display.text = "[color=%s]%s[/color]" % ["white" if high_contrast_mode else "cyan", creation_text]
+	
+	print("✨ Wight created: ", creation_data.type if creation_data.has("type") else "unknown object")
+
+func _on_wight_thought_generated(thought: String):
+	"""Handle new thoughts from Wight"""
+	# Display the thought in the UI
+	ui_elements.thoughts_display.text = "[color=%s]%s[/color]" % ["white" if high_contrast_mode else "cyan", thought]
+
+func describe_pattern(pattern_data: Dictionary) -> String:
+	"""Convert pattern data into readable description"""
+	if pattern_data.has("type"):
+		match pattern_data.type:
+			"acceleration":
+				return "movement and motion"
+			"rotation":
+				return "spinning and turning"
+			"environmental":
+				return "the world around me shifting"
+			"proximity":
+				return "presence drawing near or far"
+			"touch":
+				return "contact and interaction"
+			_:
+				return "something changing"
+	return "patterns in the data flow"
