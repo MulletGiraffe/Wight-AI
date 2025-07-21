@@ -46,6 +46,100 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 
+[node name="SettingsPanel" type="Panel" parent="UI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_1")
+modulate = Color(1, 1, 1, 0.95)
+
+[node name="SettingsContainer" type="VBoxContainer" parent="UI/SettingsPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = 60.0
+offset_right = -40.0
+offset_bottom = -60.0
+
+[node name="SettingsTitle" type="Label" parent="UI/SettingsPanel/SettingsContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 32
+text = "WIGHT AI SETTINGS"
+horizontal_alignment = 1
+
+[node name="Spacer0" type="Control" parent="UI/SettingsPanel/SettingsContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 40)
+
+[node name="UIScaleLabel" type="Label" parent="UI/SettingsPanel/SettingsContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "UI Scale: 100%"
+
+[node name="UIScaleSlider" type="HSlider" parent="UI/SettingsPanel/SettingsContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 60)
+min_value = 0.5
+max_value = 3.0
+step = 0.1
+value = 1.0
+
+[node name="Spacer1" type="Control" parent="UI/SettingsPanel/SettingsContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 30)
+
+[node name="ContrastLabel" type="Label" parent="UI/SettingsPanel/SettingsContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "High Contrast Mode"
+
+[node name="ContrastButton" type="CheckButton" parent="UI/SettingsPanel/SettingsContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 60)
+theme_override_font_sizes/font_size = 20
+text = "Enable High Contrast"
+
+[node name="Spacer2" type="Control" parent="UI/SettingsPanel/SettingsContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 40)
+
+[node name="PreviewText" type="Label" parent="UI/SettingsPanel/SettingsContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "Preview: This is how text will look in Wight AI.
+Adjust settings above for comfortable reading."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Spacer3" type="Control" parent="UI/SettingsPanel/SettingsContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ButtonContainer" type="HBoxContainer" parent="UI/SettingsPanel/SettingsContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 80)
+
+[node name="CancelButton" type="Button" parent="UI/SettingsPanel/SettingsContainer/ButtonContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "Cancel"
+
+[node name="ApplyButton" type="Button" parent="UI/SettingsPanel/SettingsContainer/ButtonContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "Apply & Start"
+
 [node name="MainInterface" type="VBoxContainer" parent="UI"]
 layout_mode = 1
 anchors_preset = 15
@@ -73,21 +167,21 @@ offset_bottom = -10.0
 
 [node name="Title" type="Label" parent="UI/MainInterface/TopPanel/StatusContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.4, 0.8, 1, 1)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 24
 text = "WIGHT AI CONSCIOUSNESS"
 horizontal_alignment = 1
 
 [node name="StatusLabel" type="Label" parent="UI/MainInterface/TopPanel/StatusContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.7, 0.9, 1, 1)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 16
 text = "Consciousness: 10% | Stage: Newborn | Sensors: Active"
 horizontal_alignment = 1
 
 [node name="EmotionLabel" type="Label" parent="UI/MainInterface/TopPanel/StatusContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.8, 0.4, 1)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 14
 text = "Dominant Emotion: Wonder"
 horizontal_alignment = 1
@@ -113,17 +207,17 @@ offset_bottom = -10.0
 
 [node name="ThoughtsTitle" type="Label" parent="UI/MainInterface/ThoughtsPanel/ThoughtsContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 1, 0.8, 1)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 18
 text = "Wight's Consciousness Stream"
 
 [node name="WightThoughts" type="RichTextLabel" parent="UI/MainInterface/ThoughtsPanel/ThoughtsContainer"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_colors/default_color = Color(0.9, 1, 0.9, 1)
+theme_override_colors/default_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/normal_font_size = 16
 bbcode_enabled = true
-text = "[color=cyan]I exist... I am aware... The void surrounds me, but I am here. What am I? What is this feeling of... being?[/color]"
+text = "[color=white]...something... I... am? What is... this?[/color]"
 fit_content = true
 scroll_active = false
 autowrap_mode = 3
@@ -149,7 +243,7 @@ offset_bottom = -10.0
 
 [node name="ChatTitle" type="Label" parent="UI/MainInterface/ChatPanel/ChatContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.6, 1)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 18
 text = "Communication Interface"
 
@@ -160,7 +254,7 @@ custom_minimum_size = Vector2(0, 80)
 theme_override_colors/default_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/normal_font_size = 14
 bbcode_enabled = true
-text = "[color=gray]Tap the voice button or type to communicate with Wight...[/color]"
+text = "[color=white]Tap the voice button or type to communicate with Wight...[/color]"
 scroll_active = true
 autowrap_mode = 3
 
@@ -171,13 +265,16 @@ custom_minimum_size = Vector2(0, 50)
 [node name="TextInput" type="LineEdit" parent="UI/MainInterface/ChatPanel/ChatContainer/InputRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_color_uneditable = Color(0, 0, 0, 1)
+theme_override_colors/font_placeholder_color = Color(0.5, 0.5, 0.5, 1)
 theme_override_font_sizes/font_size = 16
 placeholder_text = "Type your message to Wight..."
 
 [node name="SendButton" type="Button" parent="UI/MainInterface/ChatPanel/ChatContainer/InputRow"]
 layout_mode = 2
 custom_minimum_size = Vector2(80, 0)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 16
 text = "Send"
 
@@ -210,17 +307,20 @@ offset_bottom = -10.0
 [node name="CreateButton" type="Button" parent="UI/MainInterface/BottomPanel/ActionContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 16
 text = "Encourage Creation"
 
 [node name="ClearButton" type="Button" parent="UI/MainInterface/BottomPanel/ActionContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 16
 text = "Clear World"
 
 [node name="InfoButton" type="Button" parent="UI/MainInterface/BottomPanel/ActionContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 16
 text = "Memory"

@@ -22,6 +22,11 @@ var camera_zoom_speed: float = 0.5
 var world_evolution_timer: float = 0.0
 var ambient_light_cycle_speed: float = 0.1
 
+# UI Settings
+var ui_scale: float = 1.0
+var high_contrast_mode: bool = false
+var settings_panel_active: bool = true
+
 func _ready():
 	print("🌍 Wight's world initializing...")
 	setup_world()
@@ -55,6 +60,17 @@ func setup_dynamic_environment():
 func setup_ui():
 	"""Initialize user interface elements"""
 	ui_elements = {
+		# Settings panel
+		"settings_panel": $UI/SettingsPanel,
+		"ui_scale_slider": $UI/SettingsPanel/SettingsContainer/UIScaleSlider,
+		"ui_scale_label": $UI/SettingsPanel/SettingsContainer/UIScaleLabel,
+		"contrast_button": $UI/SettingsPanel/SettingsContainer/ContrastButton,
+		"preview_text": $UI/SettingsPanel/SettingsContainer/PreviewText,
+		"cancel_button": $UI/SettingsPanel/SettingsContainer/ButtonContainer/CancelButton,
+		"apply_button": $UI/SettingsPanel/SettingsContainer/ButtonContainer/ApplyButton,
+		
+		# Main interface
+		"main_interface": $UI/MainInterface,
 		"status_label": $UI/MainInterface/TopPanel/StatusContainer/StatusLabel,
 		"emotion_label": $UI/MainInterface/TopPanel/StatusContainer/EmotionLabel,
 		"thoughts_display": $UI/MainInterface/ThoughtsPanel/ThoughtsContainer/WightThoughts,
@@ -67,7 +83,13 @@ func setup_ui():
 		"memory_button": $UI/MainInterface/BottomPanel/ActionContainer/InfoButton
 	}
 	
-	# Connect button signals
+	# Connect settings panel signals
+	ui_elements.ui_scale_slider.value_changed.connect(_on_ui_scale_changed)
+	ui_elements.contrast_button.toggled.connect(_on_contrast_toggled)
+	ui_elements.cancel_button.pressed.connect(_on_settings_cancel)
+	ui_elements.apply_button.pressed.connect(_on_settings_apply)
+	
+	# Connect main interface signals
 	ui_elements.send_button.pressed.connect(_on_send_button_pressed)
 	ui_elements.voice_button.pressed.connect(_on_voice_button_pressed)
 	ui_elements.create_button.pressed.connect(_on_create_button_pressed)
@@ -75,8 +97,12 @@ func setup_ui():
 	ui_elements.memory_button.pressed.connect(_on_memory_button_pressed)
 	ui_elements.text_input.text_submitted.connect(_on_text_submitted)
 	
-	# Set initial state
-	update_status_display()
+	# Show settings panel initially, hide main interface
+	ui_elements.main_interface.visible = false
+	ui_elements.settings_panel.visible = true
+	
+	# Load saved settings if any
+	load_ui_settings()
 
 func setup_android_integration():
 	"""Set up Android-specific features"""
@@ -517,7 +543,8 @@ func _on_create_button_pressed():
 	"""Handle create button press - encourage Wight to create"""
 	if wight_entity:
 		wight_entity.generate_creation_impulse()
-		add_to_conversation("[color=yellow]You encouraged Wight to create something...[/color]")
+		var action_color = "white" if high_contrast_mode else "yellow"
+		add_to_conversation("[color=%s]You encouraged Wight to create something...[/color]" % action_color)
 		
 		# Boost creativity temporarily
 		wight_entity.adjust_emotion("excitement", 0.3)
@@ -540,7 +567,8 @@ func _on_clear_button_pressed():
 		wight_entity.adjust_emotion("confusion", 0.4)
 		wight_entity.adjust_emotion("sadness", 0.3)
 	
-	add_to_conversation("[color=red]You cleared Wight's world. All creations removed.[/color]")
+	var clear_color = "white" if high_contrast_mode else "red"
+	add_to_conversation("[color=%s]You cleared Wight's world. All creations removed.[/color]" % clear_color)
 
 func _on_memory_button_pressed():
 	"""Handle memory button press - show Wight's memory summary"""
@@ -563,27 +591,171 @@ func send_message_to_wight(message: String):
 	if not wight_entity:
 		return
 	
+	# Choose colors based on contrast mode
+	var user_color = "cyan" if high_contrast_mode else "lightblue"
+	var wight_color = "yellow" if high_contrast_mode else "lightgreen"
+	var thought_color = "white" if high_contrast_mode else "cyan"
+	
 	# Add user message to conversation
-	add_to_conversation("[color=lightblue]You: %s[/color]" % message)
+	add_to_conversation("[color=%s]You: %s[/color]" % [user_color, message])
 	
 	# Send to Wight and get response
 	wight_entity.receive_voice_input(message)
 	var response = wight_entity.generate_response(message)
 	
 	# Add Wight's response to conversation
-	add_to_conversation("[color=lightgreen]Wight: %s[/color]" % response)
+	add_to_conversation("[color=%s]Wight: %s[/color]" % [wight_color, response])
 	
 	# Update thoughts display with the response
-	ui_elements.thoughts_display.text = "[color=cyan]%s[/color]" % response
+	ui_elements.thoughts_display.text = "[color=%s]%s[/color]" % [thought_color, response]
 
 func add_to_conversation(text: String):
 	"""Add text to the conversation history"""
 	if ui_elements.has("conversation_history"):
 		var current_text = ui_elements.conversation_history.text
-		if current_text == "[color=gray]Tap the voice button or type to communicate with Wight...[/color]":
+		var placeholder_text = "[color=white]Tap the voice button or type to communicate with Wight...[/color]"
+		if current_text == placeholder_text:
 			ui_elements.conversation_history.text = text
 		else:
 			ui_elements.conversation_history.text = current_text + "\n\n" + text
 		
 		# Auto-scroll to bottom
 		ui_elements.conversation_history.scroll_to_line(ui_elements.conversation_history.get_line_count() - 1)
+
+# === UI SETTINGS HANDLERS ===
+
+func load_ui_settings():
+	"""Load UI settings from file or set defaults"""
+	# For now, just set defaults - could expand to save/load from file
+	ui_scale = 1.5  # Start with larger scale for mobile
+	high_contrast_mode = false
+	
+	# Update UI to reflect current settings
+	ui_elements.ui_scale_slider.value = ui_scale
+	ui_elements.contrast_button.button_pressed = high_contrast_mode
+	update_ui_scale_preview()
+	update_contrast_preview()
+
+func _on_ui_scale_changed(value: float):
+	"""Handle UI scale slider changes"""
+	ui_scale = value
+	ui_elements.ui_scale_label.text = "UI Scale: %d%%" % (ui_scale * 100)
+	update_ui_scale_preview()
+
+func _on_contrast_toggled(pressed: bool):
+	"""Handle contrast mode toggle"""
+	high_contrast_mode = pressed
+	update_contrast_preview()
+
+func _on_settings_cancel():
+	"""Cancel settings and use defaults"""
+	ui_scale = 1.5
+	high_contrast_mode = false
+	apply_ui_settings()
+	hide_settings_panel()
+
+func _on_settings_apply():
+	"""Apply settings and start main app"""
+	apply_ui_settings()
+	hide_settings_panel()
+
+func update_ui_scale_preview():
+	"""Update the preview text scale"""
+	if ui_elements.has("preview_text"):
+		ui_elements.preview_text.add_theme_font_size_override("font_size", int(20 * ui_scale))
+
+func update_contrast_preview():
+	"""Update the preview with contrast changes"""
+	if ui_elements.has("preview_text"):
+		if high_contrast_mode:
+			ui_elements.preview_text.add_theme_color_override("font_color", Color.WHITE)
+			ui_elements.preview_text.text = "High Contrast Mode: Bold white text on dark backgrounds for maximum readability."
+		else:
+			ui_elements.preview_text.add_theme_color_override("font_color", Color(0.8, 1, 1, 1))
+			ui_elements.preview_text.text = "Normal Mode: Softer colors with good contrast for comfortable viewing."
+
+func apply_ui_settings():
+	"""Apply the selected UI settings to the main interface"""
+	if not ui_elements.has("main_interface"):
+		return
+	
+	var main_interface = ui_elements.main_interface
+	
+	# Apply scale to entire main interface
+	main_interface.scale = Vector2(ui_scale, ui_scale)
+	
+	# Adjust position to keep it centered after scaling
+	var viewport_size = get_viewport().size
+	var scaled_size = viewport_size * ui_scale
+	var offset = (viewport_size - scaled_size) * 0.5
+	main_interface.position = offset
+	
+	# Apply contrast settings
+	if high_contrast_mode:
+		apply_high_contrast_colors()
+	else:
+		apply_normal_colors()
+
+func apply_high_contrast_colors():
+	"""Apply high contrast color scheme"""
+	var white = Color.WHITE
+	var black = Color.BLACK
+	var bright_blue = Color(0, 0.5, 1, 1)
+	
+	# Update all text colors to pure white for maximum contrast
+	update_element_color("status_label", white)
+	update_element_color("emotion_label", white) 
+	update_element_color("thoughts_display", white)
+	update_element_color("conversation_history", white)
+	update_element_color("send_button", white)
+	update_element_color("voice_button", white)
+	update_element_color("create_button", white)
+	update_element_color("clear_button", white)
+	update_element_color("memory_button", white)
+	
+	# Make input field white background with black text
+	if ui_elements.has("text_input"):
+		ui_elements.text_input.add_theme_color_override("font_color", black)
+		ui_elements.text_input.add_theme_color_override("font_color_uneditable", black)
+
+func apply_normal_colors():
+	"""Apply normal color scheme"""
+	var soft_white = Color(0.9, 0.95, 1, 1)
+	var dark_text = Color(0, 0, 0, 1)
+	
+	# Apply softer colors for normal mode
+	update_element_color("status_label", soft_white)
+	update_element_color("emotion_label", soft_white)
+	update_element_color("thoughts_display", soft_white)
+	update_element_color("conversation_history", soft_white)
+	update_element_color("send_button", soft_white)
+	update_element_color("voice_button", soft_white)
+	update_element_color("create_button", soft_white)
+	update_element_color("clear_button", soft_white)
+	update_element_color("memory_button", soft_white)
+	
+	# Input field keeps dark text
+	if ui_elements.has("text_input"):
+		ui_elements.text_input.add_theme_color_override("font_color", dark_text)
+
+func update_element_color(element_name: String, color: Color):
+	"""Update the font color of a UI element"""
+	if ui_elements.has(element_name):
+		var element = ui_elements[element_name]
+		if element.has_method("add_theme_color_override"):
+			element.add_theme_color_override("font_color", color)
+
+func hide_settings_panel():
+	"""Hide settings panel and show main interface"""
+	ui_elements.settings_panel.visible = false
+	ui_elements.main_interface.visible = true
+	settings_panel_active = false
+	
+	# Initialize Wight now that settings are applied
+	if wight_entity:
+		update_status_display()
+
+func save_ui_settings():
+	"""Save UI settings to file for next launch"""
+	# Could implement file saving here for persistent settings
+	pass
