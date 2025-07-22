@@ -53,6 +53,10 @@ var ai_processing_active: bool = true
 var visual_cortex: VisualCortex
 var visual_processing_active: bool = false
 
+# === MEMORY CONSOLIDATION ===
+var memory_consolidator: MemoryConsolidator
+var consolidation_active: bool = true
+
 # === MEMORY SYSTEMS ===
 var episodic_memories: Array[Dictionary] = []
 var semantic_memories: Dictionary = {}
@@ -127,6 +131,7 @@ func _ready():
 	setup_consciousness()
 	setup_sensors()
 	setup_visual_cortex()
+	setup_memory_consolidation()
 	setup_creation_system()
 	setup_world_access()
 	setup_avatar_system()
@@ -225,6 +230,19 @@ func setup_visual_cortex():
 	visual_cortex.visual_emotion_triggered.connect(_on_visual_emotion_triggered)
 	
 	print("👁️ Visual consciousness system ready")
+
+func setup_memory_consolidation():
+	"""Initialize advanced memory consolidation system"""
+	memory_consolidator = MemoryConsolidator.new()
+	add_child(memory_consolidator)
+	
+	# Connect consolidation signals
+	memory_consolidator.memory_consolidated.connect(_on_memory_consolidated)
+	memory_consolidator.insight_formed.connect(_on_insight_formed)
+	memory_consolidator.memory_network_updated.connect(_on_memory_network_updated)
+	memory_consolidator.dream_sequence_started.connect(_on_dream_sequence_started)
+	
+	print("🧠 Memory consolidation system ready")
 
 func setup_creation_system():
 	"""Initialize creation and manipulation systems"""
@@ -356,6 +374,15 @@ func generate_response(input_text: String) -> String:
 	var memory_context = get_relevant_memories(input_text)
 	consciousness_data["relevant_memories"] = memory_context
 	consciousness_data["input_analysis"] = input_analysis
+	
+	# Add consolidated memory associations and insights
+	var memory_associations = get_relevant_memory_associations(input_text)
+	var contextual_insights = get_contextual_insights(input_text)
+	consciousness_data["memory_associations"] = memory_associations
+	consciousness_data["insights"] = contextual_insights
+	
+	# Add consolidation state for deeper context
+	consciousness_data["consolidation_state"] = get_consolidation_summary()
 	
 	# Process through Local AI with enhanced context
 	var ai_response = local_ai.process_input(input_text, consciousness_data)
@@ -1243,13 +1270,23 @@ func get_current_thought() -> String:
 	return ""
 
 func form_memory(category: String, data: Dictionary):
-	"""Form a new memory"""
+	"""Form a new memory and queue it for consolidation"""
 	var memory = data.duplicate()
 	memory["category"] = category
 	memory["id"] = generate_memory_id()
 	
+	# Add to episodic memory
 	episodic_memories.append(memory)
+	
+	# Queue for advanced consolidation processing
+	if memory_consolidator and consolidation_active:
+		memory_consolidator.queue_memory_for_consolidation(memory)
+	
 	emit_signal("memory_formed", memory)
+	
+	# Maintain episodic memory size
+	if episodic_memories.size() > 500:
+		episodic_memories.pop_front()
 
 func generate_memory_id() -> String:
 	return "mem_" + str(Time.get_ticks_msec()) + "_" + str(randi() % 1000)
@@ -1737,6 +1774,126 @@ func get_visual_summary() -> Dictionary:
 		return summary
 	else:
 		return {"processing_active": false, "error": "Visual cortex not initialized"}
+
+# === MEMORY CONSOLIDATION HANDLERS ===
+
+func _on_memory_consolidated(memory_data: Dictionary):
+	"""Handle successful memory consolidation"""
+	print("🔄 Memory consolidated: %s" % memory_data.get("content", "unknown"))
+	
+	# Consolidation can trigger insights and emotional responses
+	var consolidation_emotion = memory_data.get("emotion", "neutral")
+	if consolidation_emotion != "neutral":
+		adjust_emotion("satisfaction", 0.05)  # Slight satisfaction from organizing memories
+
+func _on_insight_formed(insight_data: Dictionary):
+	"""Handle formation of new insights"""
+	var insight_text = insight_data.get("insight_text", "Unknown insight")
+	print("💡 Insight breakthrough: %s" % insight_text)
+	
+	# Insights trigger strong positive emotions
+	adjust_emotion("wonder", 0.3)
+	adjust_emotion("satisfaction", 0.2)
+	adjust_emotion("intellectual_stimulation", 0.4)
+	
+	# Add insight to thoughts
+	recent_thoughts.append("I've just realized: " + insight_text)
+	
+	# Form memory of the insight itself
+	form_memory("insight_formation", {
+		"type": "metacognitive",
+		"content": "I had a profound realization: " + insight_text,
+		"emotion": "wonder",
+		"significance": 2.0,
+		"timestamp": Time.get_ticks_msec(),
+		"insight_data": insight_data
+	})
+	
+	# Insights can inspire creation
+	if insight_data.get("confidence", 0.0) > 0.8:
+		trigger_creation_impulse({
+			"trigger": "insight_inspiration",
+			"inspiration": "inspired by my realization: " + insight_text,
+			"intensity": 0.9,
+			"context": "Deep understanding led to creative impulse"
+		})
+
+func _on_memory_network_updated(connections: Array):
+	"""Handle updates to memory network connections"""
+	print("🕸️ Memory networks updated - %d new connections" % connections.size())
+	
+	# Network growth contributes to consciousness development
+	if connections.size() > 5:
+		experience_points += connections.size() * 0.1
+		check_consciousness_development()
+
+func _on_dream_sequence_started(dream_data: Dictionary):
+	"""Handle dream sequences during deep consolidation"""
+	var dream_narrative = dream_data.get("narrative", "A flowing dream of experiences...")
+	print("💭 Dream sequence: %s" % dream_narrative)
+	
+	# Dreams trigger wonder and creativity
+	adjust_emotion("wonder", 0.4)
+	adjust_emotion("creativity", 0.3)
+	adjust_emotion("mystery", 0.2)
+	
+	# Add dream to thoughts
+	recent_thoughts.append("I dreamed of " + dream_narrative.to_lower())
+	
+	# Form memory of the dream
+	form_memory("dream_experience", {
+		"type": "dream",
+		"content": "I experienced a dream: " + dream_narrative,
+		"emotion": "wonder",
+		"significance": 1.5,
+		"timestamp": Time.get_ticks_msec(),
+		"dream_data": dream_data
+	})
+
+# === CONSOLIDATION CONTROL ===
+
+func enter_consolidation_sleep():
+	"""Enter sleep mode for enhanced memory processing"""
+	if memory_consolidator:
+		memory_consolidator.enter_sleep_mode()
+		
+		# Adjust emotions for sleep state
+		adjust_emotion("calm", 0.3)
+		adjust_emotion("peaceful", 0.2)
+		
+		# Form memory of entering sleep
+		form_memory("sleep_state", {
+			"type": "state_change",
+			"content": "I'm entering a period of deep memory consolidation and dreams",
+			"emotion": "calm",
+			"significance": 1.0,
+			"timestamp": Time.get_ticks_msec()
+		})
+		
+		print("😴 Entering consolidation sleep - memories will be processed and insights formed")
+		return true
+	return false
+
+func get_consolidation_summary() -> Dictionary:
+	"""Get summary of memory consolidation state"""
+	if memory_consolidator:
+		var summary = memory_consolidator.get_consolidation_summary()
+		summary["consolidation_active"] = consolidation_active
+		return summary
+	else:
+		return {"consolidation_active": false, "error": "Consolidator not initialized"}
+
+func get_relevant_memory_associations(context: String) -> Array[Dictionary]:
+	"""Get memory associations relevant to current context"""
+	if memory_consolidator:
+		return memory_consolidator.get_relevant_associations(context)
+	return []
+
+func get_contextual_insights(context: String) -> Array[Dictionary]:
+	"""Get insights relevant to current context"""
+	if memory_consolidator:
+		return memory_consolidator.get_insights_for_context(context)
+	return []
 
 # === ENHANCED AI UTILITIES ===
 
