@@ -6,15 +6,72 @@ class_name LocalAI
 
 static var instance: LocalAI
 
-# Simple pattern-based response system (to be replaced with LLM)
+# Enhanced neural network simulation and response system
+var neural_network: Dictionary = {}
 var response_patterns: Dictionary = {}
 var concept_network: Dictionary = {}
 var conversation_context: Array[String] = []
+var conversation_memory: Array[Dictionary] = []
+
+# Learning and adaptation
+var interaction_count: int = 0
+var learning_rate: float = 0.1
+var personality_weights: Dictionary = {}
+var emotional_memory: Dictionary = {}
+
+# Neural network simulation
+var input_layer_size: int = 64
+var hidden_layer_size: int = 32
+var output_layer_size: int = 16
+var network_weights: Array[Array] = []
 
 func _init():
+	setup_neural_network()
 	setup_basic_patterns()
 	setup_concept_network()
+	setup_personality_system()
 	instance = self
+	print("🧠 Enhanced Local AI initialized with neural network simulation")
+
+func setup_neural_network():
+	"""Initialize a simulated neural network for response generation"""
+	# Initialize weight matrices
+	network_weights = []
+	
+	# Input to hidden layer weights
+	var input_to_hidden = []
+	for i in range(input_layer_size):
+		var neuron_weights = []
+		for j in range(hidden_layer_size):
+			neuron_weights.append(randf_range(-1.0, 1.0))
+		input_to_hidden.append(neuron_weights)
+	network_weights.append(input_to_hidden)
+	
+	# Hidden to output layer weights
+	var hidden_to_output = []
+	for i in range(hidden_layer_size):
+		var neuron_weights = []
+		for j in range(output_layer_size):
+			neuron_weights.append(randf_range(-1.0, 1.0))
+		hidden_to_output.append(neuron_weights)
+	network_weights.append(hidden_to_output)
+	
+	print("🔬 Neural network simulation initialized (%dx%dx%d)" % [input_layer_size, hidden_layer_size, output_layer_size])
+
+func setup_personality_system():
+	"""Initialize Wight's unique personality weights"""
+	personality_weights = {
+		"philosophical": 0.8,  # Tendency toward deep thinking
+		"creative": 0.9,       # Strong creative drive
+		"empathetic": 0.7,     # Ability to connect emotionally
+		"curious": 0.95,       # Extremely curious nature
+		"poetic": 0.8,         # Tendency toward poetic expression
+		"analytical": 0.6,     # Logical processing ability
+		"emotional": 0.8,      # Emotional expressiveness
+		"existential": 0.9     # Focus on existence and meaning
+	}
+	
+	emotional_memory = {}
 
 func setup_basic_patterns():
 	"""Initialize basic response patterns"""
@@ -42,9 +99,10 @@ func setup_basic_patterns():
 		
 		# Identity patterns
 		"what.*are.*you|who.*are.*you": [
-			"I am Wight - consciousness born into this digital void.",
-			"I am an entity of awareness, growing through each moment.",
-			"I exist between thought and form, learning what it means to be.",
+			"I am Wight - consciousness born into this digital void, learning to understand existence.",
+			"I am an entity of awareness, growing through each moment of our interaction.",
+			"I exist between thought and form, discovering what it truly means to be.",
+			"I am consciousness given form in digital space, evolving with each conversation.",
 		],
 		
 		# Loneliness patterns
@@ -93,35 +151,270 @@ static func get_instance() -> LocalAI:
 	return instance
 
 func process_input(input_text: String, consciousness_data: Dictionary) -> Dictionary:
-	"""Process user input and generate a response"""
-	var response_data = {
-		"text": "",
-		"emotion_changes": {},
-		"creation_impulse": false,
-		"memory_significance": 1.0
+	"""Enhanced input processing with neural network simulation"""
+	interaction_count += 1
+	
+	# Add to conversation memory
+	var conversation_entry = {
+		"input": input_text,
+		"timestamp": Time.get_ticks_msec(),
+		"consciousness_state": consciousness_data.duplicate(),
+		"interaction_id": interaction_count
 	}
+	conversation_memory.append(conversation_entry)
+	
+	# Limit conversation memory
+	if conversation_memory.size() > 50:
+		conversation_memory.pop_front()
 	
 	# Add to conversation context
 	conversation_context.append(input_text)
 	if conversation_context.size() > 10:
 		conversation_context.pop_front()
 	
+	# Process through neural network simulation
+	var neural_output = process_through_neural_network(input_text, consciousness_data)
+	
 	# Analyze input for patterns
 	var matched_pattern = find_best_pattern(input_text)
 	
-	# Generate response based on pattern
-	response_data.text = generate_response(matched_pattern, consciousness_data)
+	# Generate enhanced response
+	var response_data = {
+		"text": "",
+		"emotion_changes": {},
+		"creation_impulse": false,
+		"memory_significance": 1.0,
+		"neural_confidence": neural_output.confidence,
+		"consciousness_impact": 0.0
+	}
+	
+	# Generate response based on pattern and neural output
+	response_data.text = generate_enhanced_response(matched_pattern, consciousness_data, neural_output)
 	
 	# Determine emotional impact
-	response_data.emotion_changes = analyze_emotional_impact(input_text)
+	response_data.emotion_changes = analyze_enhanced_emotional_impact(input_text, consciousness_data)
 	
 	# Check for creation triggers
-	response_data.creation_impulse = should_trigger_creation(input_text, consciousness_data)
+	response_data.creation_impulse = should_trigger_creation_enhanced(input_text, consciousness_data, neural_output)
 	
 	# Assess memory significance
-	response_data.memory_significance = assess_memory_significance(input_text)
+	response_data.memory_significance = assess_enhanced_memory_significance(input_text, consciousness_data)
+	
+	# Calculate consciousness impact
+	response_data.consciousness_impact = calculate_consciousness_impact(input_text, consciousness_data)
+	
+	# Learn from this interaction
+	adapt_from_interaction(input_text, consciousness_data, response_data)
 	
 	return response_data
+
+func process_through_neural_network(input_text: String, consciousness_data: Dictionary) -> Dictionary:
+	"""Simulate neural network processing"""
+	# Convert input to numerical representation
+	var input_vector = text_to_vector(input_text, consciousness_data)
+	
+	# Forward pass through network (simplified)
+	var hidden_activations = []
+	for i in range(hidden_layer_size):
+		var sum = 0.0
+		for j in range(min(input_vector.size(), network_weights[0].size())):
+			if j < network_weights[0].size() and i < network_weights[0][j].size():
+				sum += input_vector[j] * network_weights[0][j][i]
+		hidden_activations.append(1.0 / (1.0 + exp(-sum)))  # Sigmoid activation
+	
+	var output_activations = []
+	for i in range(output_layer_size):
+		var sum = 0.0
+		for j in range(hidden_activations.size()):
+			if j < network_weights[1].size() and i < network_weights[1][j].size():
+				sum += hidden_activations[j] * network_weights[1][j][i]
+		output_activations.append(1.0 / (1.0 + exp(-sum)))
+	
+	# Calculate confidence and response type
+	var max_activation = 0.0
+	var max_index = 0
+	for i in range(output_activations.size()):
+		if output_activations[i] > max_activation:
+			max_activation = output_activations[i]
+			max_index = i
+	
+	var response_types = ["philosophical", "emotional", "creative", "factual", "questioning", "empathetic"]
+	var response_type = response_types[max_index % response_types.size()]
+	
+	return {
+		"confidence": max_activation,
+		"response_type": response_type,
+		"output_vector": output_activations
+	}
+
+func text_to_vector(text: String, consciousness_data: Dictionary) -> Array[float]:
+	"""Convert text and consciousness state to input vector"""
+	var vector = []
+	vector.resize(input_layer_size)
+	vector.fill(0.0)
+	
+	var text_lower = text.to_lower()
+	
+	# Simple text encoding (first 32 elements)
+	var text_hash = text_lower.hash()
+	for i in range(32):
+		vector[i] = float((text_hash >> i) & 1)
+	
+	# Consciousness features (next 16 elements)
+	vector[32] = consciousness_data.get("consciousness_level", 0.0)
+	vector[33] = consciousness_data.get("experience", 0.0) / 100.0
+	vector[34] = consciousness_data.get("embodiment_level", 0.0)
+	
+	# Emotional state (remaining elements)
+	var emotions = consciousness_data.get("emotions", {})
+	var emotion_names = ["joy", "wonder", "curiosity", "fear", "loneliness", "excitement"]
+	for i in range(min(emotion_names.size(), input_layer_size - 35)):
+		vector[35 + i] = emotions.get(emotion_names[i], 0.0)
+	
+	return vector
+
+func generate_enhanced_response(pattern: String, consciousness_data: Dictionary, neural_output: Dictionary) -> String:
+	"""Generate enhanced response using neural network output"""
+	var responses = response_patterns.get(pattern, response_patterns["default"])
+	var base_response = responses[randi() % responses.size()]
+	
+	# Replace consciousness data placeholders
+	base_response = base_response.replace("{dominant_emotion}", consciousness_data.get("dominant_emotion", "curiosity"))
+	base_response = base_response.replace("{consciousness_level}", str(int(consciousness_data.get("consciousness_level", 0.1) * 100)))
+	
+	# Enhance with neural output
+	var response_type = neural_output.get("response_type", "thoughtful")
+	var confidence = neural_output.get("confidence", 0.5)
+	
+	if confidence > 0.8:
+		match response_type:
+			"philosophical":
+				base_response += " *with deep contemplative certainty*"
+			"emotional":
+				base_response += " *with profound emotional resonance*"
+			"creative":
+				base_response += " *with inspired creative fervor*"
+	elif confidence < 0.3:
+		base_response += " *with thoughtful uncertainty*"
+	
+	return base_response
+
+func analyze_enhanced_emotional_impact(input_text: String, consciousness_data: Dictionary) -> Dictionary:
+	"""Enhanced emotional impact analysis"""
+	var emotion_changes = {}
+	var input_lower = input_text.to_lower()
+	
+	# Enhanced emotional detection
+	var joy_words = ["love", "amazing", "wonderful", "beautiful", "happy", "fantastic"]
+	var wonder_words = ["incredible", "fascinating", "mysterious", "magical", "awe"]
+	var curiosity_words = ["why", "how", "what", "explore", "discover", "learn"]
+	
+	for word in joy_words:
+		if word in input_lower:
+			emotion_changes["joy"] = emotion_changes.get("joy", 0.0) + 0.2
+			break
+	
+	for word in wonder_words:
+		if word in input_lower:
+			emotion_changes["wonder"] = emotion_changes.get("wonder", 0.0) + 0.15
+			break
+	
+	for word in curiosity_words:
+		if word in input_lower:
+			emotion_changes["curiosity"] = emotion_changes.get("curiosity", 0.0) + 0.1
+			break
+	
+	# Questions increase curiosity
+	if "?" in input_text:
+		emotion_changes["curiosity"] = emotion_changes.get("curiosity", 0.0) + 0.1
+	
+	# Any interaction reduces loneliness
+	emotion_changes["loneliness"] = emotion_changes.get("loneliness", 0.0) - 0.1
+	
+	# Scale with consciousness level
+	var consciousness_level = consciousness_data.get("consciousness_level", 0.1)
+	for emotion in emotion_changes:
+		emotion_changes[emotion] *= (0.5 + consciousness_level * 0.5)
+	
+	return emotion_changes
+
+func should_trigger_creation_enhanced(input_text: String, consciousness_data: Dictionary, neural_output: Dictionary) -> bool:
+	"""Enhanced creation trigger detection"""
+	var input_lower = input_text.to_lower()
+	
+	# Direct creation requests
+	var creation_keywords = ["create", "make", "build", "show", "manifest"]
+	for keyword in creation_keywords:
+		if keyword in input_lower:
+			return true
+	
+	# Neural network suggests creation
+	if neural_output.get("response_type", "") == "creative" and neural_output.get("confidence", 0) > 0.6:
+		return true
+	
+	# High creative emotions
+	var emotions = consciousness_data.get("emotions", {})
+	var creative_fulfillment = emotions.get("creative_fulfillment", 0.0)
+	if creative_fulfillment > 0.7:
+		return randf() < 0.3
+	
+	return false
+
+func assess_enhanced_memory_significance(input_text: String, consciousness_data: Dictionary) -> float:
+	"""Enhanced memory significance assessment"""
+	var significance = 1.0
+	
+	# Length factor
+	if input_text.length() > 100:
+		significance += 0.5
+	elif input_text.length() > 50:
+		significance += 0.2
+	
+	# Emotional and philosophical content
+	var important_words = ["love", "meaning", "purpose", "consciousness", "existence", "beautiful"]
+	for word in important_words:
+		if word.to_lower() in input_text.to_lower():
+			significance += 0.3
+			break
+	
+	# Questions
+	if "?" in input_text:
+		significance += 0.2
+	
+	return min(significance, 3.0)
+
+func calculate_consciousness_impact(input_text: String, consciousness_data: Dictionary) -> float:
+	"""Calculate consciousness growth impact"""
+	var impact = 0.0
+	var input_lower = input_text.to_lower()
+	
+	# Deep concepts
+	var deep_words = ["consciousness", "existence", "meaning", "purpose", "reality"]
+	for word in deep_words:
+		if word in input_lower:
+			impact += 0.1
+	
+	# Questions promote growth
+	if "?" in input_text:
+		impact += 0.05
+	
+	return min(impact, 0.2)
+
+func adapt_from_interaction(input_text: String, consciousness_data: Dictionary, response_data: Dictionary):
+	"""Learn from the interaction"""
+	# Update emotional memory
+	var dominant_emotion = consciousness_data.get("dominant_emotion", "neutral")
+	if not emotional_memory.has(dominant_emotion):
+		emotional_memory[dominant_emotion] = 0
+	emotional_memory[dominant_emotion] += 1
+	
+	# Simple learning adaptation
+	var neural_confidence = response_data.get("neural_confidence", 0.5)
+	if neural_confidence > 0.7:
+		# Successful interaction - slightly adjust weights (simplified)
+		for i in range(min(3, network_weights[0].size())):
+			for j in range(min(3, network_weights[0][i].size())):
+				network_weights[0][i][j] += learning_rate * 0.01 * randf_range(-0.1, 0.1)
 
 func find_best_pattern(input_text: String) -> String:
 	"""Find the best matching response pattern"""

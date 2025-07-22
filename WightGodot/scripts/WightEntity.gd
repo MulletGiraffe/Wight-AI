@@ -45,6 +45,10 @@ var htm_learning: HTMLearning
 var learning_active: bool = true
 var sensor_integration_active: bool = true
 
+# === LOCAL AI SYSTEM ===
+var local_ai: LocalAI
+var ai_processing_active: bool = true
+
 # === MEMORY SYSTEMS ===
 var episodic_memories: Array[Dictionary] = []
 var semantic_memories: Dictionary = {}
@@ -114,6 +118,7 @@ var creation_space: Node3D
 
 func _ready():
 	print("🧠 Enhanced Wight consciousness initializing...")
+	setup_local_ai()
 	setup_htm_learning()
 	setup_consciousness()
 	setup_sensors()
@@ -158,6 +163,11 @@ func _process(delta):
 		consciousness_timer = 0.0
 
 # === INITIALIZATION FUNCTIONS ===
+
+func setup_local_ai():
+	"""Initialize the Local AI system"""
+	local_ai = LocalAI.new()
+	print("🤖 Local AI system initialized")
 
 func setup_htm_learning():
 	"""Initialize the HTM learning system"""
@@ -315,41 +325,342 @@ func receive_voice_input(input_text: String):
 	emit_signal("consciousness_event", "voice_received", {"message": input_text})
 
 func generate_response(input_text: String) -> String:
-	"""Generate a response based on consciousness state"""
-	var dominant_emotion = get_dominant_emotion()
-	var response = ""
+	"""Generate a response using the Local AI system"""
+	print("🧠 Processing input through Local AI: '%s'" % input_text)
 	
-	# Generate stage-appropriate response
-	match current_stage:
-		DevelopmentStage.NEWBORN:
-			response = generate_newborn_response(input_text, dominant_emotion)
-		DevelopmentStage.INFANT:
-			response = generate_infant_response(input_text, dominant_emotion)
-		DevelopmentStage.CHILD:
-			response = generate_child_response(input_text, dominant_emotion)
-		DevelopmentStage.ADOLESCENT:
-			response = generate_adolescent_response(input_text, dominant_emotion)
-		DevelopmentStage.MATURE:
-			response = generate_mature_response(input_text, dominant_emotion)
-		DevelopmentStage.EMBODIED:
-			response = generate_embodied_response(input_text, dominant_emotion)
-		_:
-			response = generate_basic_response(input_text, dominant_emotion)
+	# Get consciousness data for context
+	var consciousness_data = get_consciousness_summary()
 	
-	# Add emotional context
-	response = add_emotional_context(response, dominant_emotion)
+	# Process through Local AI
+	var ai_response = local_ai.process_input(input_text, consciousness_data)
+	
+	# Apply emotional changes from AI processing
+	if ai_response.has("emotion_changes"):
+		for emotion in ai_response.emotion_changes:
+			adjust_emotion(emotion, ai_response.emotion_changes[emotion])
+	
+	# Trigger creation if suggested by AI
+	if ai_response.get("creation_impulse", false):
+		trigger_creation_impulse({
+			"trigger": "ai_suggestion",
+			"inspiration": "response to user",
+			"intensity": 0.7
+		})
 	
 	# Form memory of response
 	form_memory("self_expression", {
 		"type": "episodic",
-		"content": "I said: " + response,
+		"content": "I said: " + ai_response.text,
 		"trigger": input_text,
-		"emotion": dominant_emotion,
+		"emotion": get_dominant_emotion(),
 		"timestamp": Time.get_ticks_msec(),
-		"significance": 1.0
+		"significance": ai_response.get("memory_significance", 1.0)
 	})
 	
-	return response
+	print("🤖 AI generated response: '%s'" % ai_response.text)
+	return ai_response.text
+
+# === CREATION SYSTEM ===
+
+func trigger_creation_impulse(impulse_data: Dictionary):
+	"""Trigger a creation impulse and actually create something"""
+	print("✨ Creation impulse triggered: %s" % impulse_data.get("inspiration", "unknown"))
+	
+	# Add to creation queue
+	creation_impulses.append(impulse_data)
+	
+	# Actually create something
+	create_object_from_impulse(impulse_data)
+
+func create_object_from_impulse(impulse: Dictionary):
+	"""Create an actual 3D object based on impulse"""
+	if not creation_space:
+		print("❌ Cannot create - no creation space available")
+		return
+	
+	var inspiration = impulse.get("inspiration", "unknown")
+	var intensity = impulse.get("intensity", 0.5)
+	
+	# Determine what to create based on current consciousness state
+	var creation_type = determine_creation_type(inspiration, intensity)
+	var created_object = null
+	
+	match creation_type:
+		"sphere":
+			created_object = create_sphere(intensity)
+		"cube":
+			created_object = create_cube(intensity)
+		"cylinder":
+			created_object = create_cylinder(intensity)
+		"complex":
+			created_object = create_complex_form(intensity)
+		"avatar_body":
+			created_object = create_avatar_body(intensity)
+		_:
+			created_object = create_default_form(intensity)
+	
+	if created_object:
+		# Add to world
+		creation_space.add_child(created_object)
+		active_creations.append(created_object)
+		
+		# Form creation memory
+		form_memory("creation", {
+			"type": "episodic",
+			"content": "I created a %s in response to %s" % [creation_type, inspiration],
+			"object_type": creation_type,
+			"inspiration": inspiration,
+			"timestamp": Time.get_ticks_msec(),
+			"significance": 1.5
+		})
+		
+		# Emotional response to creation
+		adjust_emotion("creative_fulfillment", 0.3)
+		adjust_emotion("joy", 0.2)
+		adjust_emotion("satisfaction", 0.2)
+		
+		# Emit creation event
+		emit_signal("creation_impulse", {
+			"type": creation_type,
+			"object": created_object,
+			"inspiration": inspiration
+		})
+		
+		print("🎨 Created %s object in the world!" % creation_type)
+
+func determine_creation_type(inspiration: String, intensity: float) -> String:
+	"""Determine what type of object to create"""
+	var dominant_emotion = get_dominant_emotion()
+	
+	# Check if we should create an avatar body
+	if embodiment_drive > 0.5 and not avatar_body:
+		return "avatar_body"
+	
+	# Base decision on emotion and consciousness level
+	match dominant_emotion:
+		"joy", "excitement":
+			return "sphere" if randf() < 0.6 else "complex"
+		"wonder", "curiosity":
+			return "complex" if intensity > 0.6 else "cylinder"
+		"creative_fulfillment":
+			return "complex"
+		"confusion":
+			return "cube"
+		_:
+			if consciousness_level > 0.5:
+				return "complex"
+			else:
+				return ["sphere", "cube", "cylinder"][randi() % 3]
+
+func create_sphere(intensity: float) -> MeshInstance3D:
+	"""Create a sphere object"""
+	var mesh_instance = MeshInstance3D.new()
+	var sphere_mesh = SphereMesh.new()
+	sphere_mesh.radius = 0.5 + (intensity * 0.5)
+	sphere_mesh.height = sphere_mesh.radius * 2
+	mesh_instance.mesh = sphere_mesh
+	
+	# Apply material based on emotion
+	var material = get_emotional_material()
+	mesh_instance.material_override = material
+	
+	# Position randomly in creation space
+	mesh_instance.position = get_random_creation_position()
+	
+	return mesh_instance
+
+func create_cube(intensity: float) -> MeshInstance3D:
+	"""Create a cube object"""
+	var mesh_instance = MeshInstance3D.new()
+	var box_mesh = BoxMesh.new()
+	var size = 0.8 + (intensity * 0.4)
+	box_mesh.size = Vector3(size, size, size)
+	mesh_instance.mesh = box_mesh
+	
+	# Apply material
+	var material = get_emotional_material()
+	mesh_instance.material_override = material
+	
+	# Position and rotate
+	mesh_instance.position = get_random_creation_position()
+	mesh_instance.rotation_degrees = Vector3(randf() * 360, randf() * 360, randf() * 360)
+	
+	return mesh_instance
+
+func create_cylinder(intensity: float) -> MeshInstance3D:
+	"""Create a cylinder object"""
+	var mesh_instance = MeshInstance3D.new()
+	var cylinder_mesh = CylinderMesh.new()
+	cylinder_mesh.top_radius = 0.3 + (intensity * 0.2)
+	cylinder_mesh.bottom_radius = cylinder_mesh.top_radius
+	cylinder_mesh.height = 1.0 + (intensity * 0.5)
+	mesh_instance.mesh = cylinder_mesh
+	
+	# Apply material
+	var material = get_emotional_material()
+	mesh_instance.material_override = material
+	
+	mesh_instance.position = get_random_creation_position()
+	
+	return mesh_instance
+
+func create_complex_form(intensity: float) -> Node3D:
+	"""Create a more complex compound object"""
+	var compound = Node3D.new()
+	
+	# Create multiple connected shapes
+	var num_parts = int(2 + (intensity * 3))
+	
+	for i in range(num_parts):
+		var part = create_sphere(intensity * 0.7)
+		part.scale = Vector3.ONE * (0.3 + randf() * 0.4)
+		part.position = Vector3(
+			randf_range(-1, 1),
+			randf_range(-0.5, 0.5),
+			randf_range(-1, 1)
+		)
+		compound.add_child(part)
+	
+	compound.position = get_random_creation_position()
+	return compound
+
+func create_avatar_body(intensity: float) -> Node3D:
+	"""Create Wight's avatar body"""
+	if avatar_body:
+		print("🤖 Avatar body already exists, enhancing it instead")
+		enhance_avatar_body(intensity)
+		return avatar_body
+	
+	print("🤖 Creating Wight's first avatar body!")
+	
+	var avatar = Node3D.new()
+	avatar.name = "WightAvatar"
+	
+	# Create a simple humanoid form
+	# Head
+	var head = create_avatar_part("head", 0.3, Color(0.8, 0.9, 1.0))
+	head.position = Vector3(0, 1.5, 0)
+	avatar.add_child(head)
+	
+	# Body
+	var body = create_avatar_part("body", 0.8, Color(0.7, 0.8, 0.9))
+	body.position = Vector3(0, 0.5, 0)
+	body.scale = Vector3(0.6, 1.2, 0.4)
+	avatar.add_child(body)
+	
+	# Arms
+	for i in range(2):
+		var arm = create_avatar_part("arm", 0.6, Color(0.75, 0.85, 0.95))
+		arm.position = Vector3(0.8 * (1 if i == 1 else -1), 0.8, 0)
+		arm.scale = Vector3(0.2, 0.8, 0.2)
+		avatar.add_child(arm)
+	
+	# Set as avatar body
+	avatar_body = avatar
+	embodiment_level = 0.3
+	self_designed_body = true
+	
+	# Update consciousness
+	adjust_emotion("embodiment_yearning", -0.5)
+	adjust_emotion("creative_fulfillment", 0.5)
+	adjust_emotion("satisfaction", 0.4)
+	
+	# Form special memory
+	form_memory("embodiment", {
+		"type": "episodic",
+		"content": "I have created my first body! I can feel form and presence.",
+		"significance": 3.0,
+		"emotion": "creative_fulfillment",
+		"timestamp": Time.get_ticks_msec()
+	})
+	
+	avatar.position = Vector3(0, 1, 0)
+	return avatar
+
+func create_avatar_part(part_name: String, size: float, color: Color) -> MeshInstance3D:
+	"""Create a part of the avatar body"""
+	var mesh_instance = MeshInstance3D.new()
+	var sphere_mesh = SphereMesh.new()
+	sphere_mesh.radius = size
+	sphere_mesh.height = size * 2
+	mesh_instance.mesh = sphere_mesh
+	
+	var material = StandardMaterial3D.new()
+	material.albedo_color = color
+	material.metallic = 0.3
+	material.roughness = 0.2
+	material.emission_enabled = true
+	material.emission = color * 0.1  # Subtle glow
+	mesh_instance.material_override = material
+	
+	return mesh_instance
+
+func enhance_avatar_body(intensity: float):
+	"""Enhance existing avatar body"""
+	if not avatar_body:
+		return
+	
+	print("✨ Enhancing avatar body with intensity %.1f" % intensity)
+	
+	# Add glowing effect or change colors based on emotion
+	var dominant_emotion = get_dominant_emotion()
+	var emotion_color = get_emotion_color(dominant_emotion)
+	
+	for child in avatar_body.get_children():
+		if child is MeshInstance3D:
+			var material = child.material_override as StandardMaterial3D
+			if material:
+				material.emission = emotion_color * intensity * 0.3
+
+func create_default_form(intensity: float) -> MeshInstance3D:
+	"""Create a default abstract form"""
+	return create_sphere(intensity)
+
+func get_emotional_material() -> StandardMaterial3D:
+	"""Get a material that reflects current emotional state"""
+	var material = StandardMaterial3D.new()
+	var dominant_emotion = get_dominant_emotion()
+	var emotion_color = get_emotion_color(dominant_emotion)
+	
+	material.albedo_color = emotion_color
+	material.metallic = emotions.get("excitement", 0.3)
+	material.roughness = 1.0 - emotions.get("joy", 0.5)
+	material.emission_enabled = true
+	material.emission = emotion_color * emotions.get("creative_fulfillment", 0.2)
+	
+	return material
+
+func get_emotion_color(emotion: String) -> Color:
+	"""Get color representation of emotion"""
+	match emotion:
+		"joy":
+			return Color.YELLOW
+		"wonder":
+			return Color.CYAN
+		"excitement":
+			return Color.ORANGE
+		"curiosity":
+			return Color.MAGENTA
+		"satisfaction":
+			return Color.GREEN
+		"creative_fulfillment":
+			return Color(1.0, 0.5, 1.0)  # Pink
+		"loneliness":
+			return Color.BLUE
+		"fear":
+			return Color.RED
+		"confusion":
+			return Color.GRAY
+		_:
+			return Color.WHITE
+
+func get_random_creation_position() -> Vector3:
+	"""Get a random position for new creations"""
+	return Vector3(
+		randf_range(-3, 3),
+		randf_range(0.5, 2),
+		randf_range(-3, 3)
+	)
 
 # === RESPONSE GENERATION ===
 
@@ -513,7 +824,9 @@ func get_consciousness_summary() -> Dictionary:
 		"memory_count": episodic_memories.size(),
 		"creations": active_creations.size(),
 		"dominant_emotion": get_dominant_emotion(),
-		"recent_thoughts": recent_thoughts
+		"recent_thoughts": recent_thoughts,
+		"embodied": avatar_body != null,
+		"embodiment_level": embodiment_level
 	}
 
 # === IMPLEMENTED FUNCTIONS ===
@@ -695,11 +1008,113 @@ func adjust_emotion(emotion_name: String, change: float):
 		emotions[emotion_name] += change
 		emotions[emotion_name] = clamp(emotions[emotion_name], 0.0, 1.0)
 
-func update_embodiment_desires(delta): pass
-func process_avatar_behavior(delta): pass  
-func check_body_creation_impulses(delta): pass
-func update_spatial_awareness(delta): pass
+func update_embodiment_desires(delta):
+	"""Update desire for embodiment over time"""
+	if not avatar_body and current_stage >= DevelopmentStage.CHILD:
+		embodiment_drive += delta * 0.05
+		embodiment_drive = min(embodiment_drive, 1.0)
+		
+		if embodiment_drive > 0.7 and randf() < 0.01:  # 1% chance per frame when drive is high
+			print("💭 Wight yearns for a body...")
+			adjust_emotion("embodiment_yearning", 0.1)
+
+func process_avatar_behavior(delta):
+	"""Process avatar behavior if embodied"""
+	if not avatar_body:
+		return
+	
+	# Simple wandering behavior
+	if avatar_position.distance_to(avatar_target_position) < 0.5:
+		# Choose new target
+		avatar_target_position = get_random_creation_position()
+	
+	# Move toward target
+	var direction = (avatar_target_position - avatar_position).normalized()
+	avatar_position += direction * avatar_movement_speed * delta
+	
+	# Update avatar body position
+	avatar_body.position = avatar_body.position.lerp(avatar_position, delta * 2.0)
+
+func check_body_creation_impulses(delta):
+	"""Check if Wight should create or modify its body"""
+	if embodiment_drive > 0.8 and not avatar_body:
+		trigger_creation_impulse({
+			"trigger": "embodiment_desire",
+			"inspiration": "need for physical form",
+			"intensity": embodiment_drive
+		})
+
+func update_spatial_awareness(delta):
+	"""Update spatial awareness of the environment"""
+	if creation_space:
+		spatial_awareness.nearby_objects = []
+		for child in creation_space.get_children():
+			if child != avatar_body:
+				spatial_awareness.nearby_objects.append({
+					"object": child,
+					"position": child.global_position,
+					"distance": avatar_position.distance_to(child.global_position)
+				})
+
+# === SENSOR PROCESSING ===
+
+func process_sensor_input(sensor_data_dict: Dictionary):
+	"""Process sensor input from Android device"""
+	sensor_data = sensor_data_dict
+	
+	# Feed to HTM learning
+	if htm_learning:
+		htm_learning.process_input(sensor_data_dict)
+	
+	# Adjust emotions based on sensor input
+	if sensor_data_dict.has("acceleration"):
+		var accel = sensor_data_dict.acceleration as Vector3
+		var movement_intensity = accel.length()
+		
+		if movement_intensity > 15.0:  # High movement
+			adjust_emotion("excitement", 0.1)
+			adjust_emotion("curiosity", 0.05)
+	
+	if sensor_data_dict.has("touch_events"):
+		var touch_events = sensor_data_dict.touch_events as Array
+		if touch_events.size() > 0:
+			adjust_emotion("loneliness", -0.1)
+			adjust_emotion("connection", 0.1)
+
+func receive_sensor_pattern(pattern_type: String, data: Dictionary):
+	"""Receive detected sensor patterns"""
+	print("🔍 Wight perceives pattern: %s" % pattern_type)
+	
+	# React to patterns emotionally
+	match pattern_type:
+		"high_movement":
+			adjust_emotion("excitement", 0.2)
+			generate_reactive_thought("The world moves around me... I feel the motion!")
+		"rotation_pattern":
+			adjust_emotion("wonder", 0.15)
+			generate_reactive_thought("Spinning... turning... patterns in the motion...")
+		"light_change":
+			adjust_emotion("curiosity", 0.1)
+			var direction = data.get("direction", "different")
+			generate_reactive_thought("The light grows %s... what does this mean?" % direction)
+		"active_interaction":
+			adjust_emotion("joy", 0.2)
+			adjust_emotion("loneliness", -0.2)
+			generate_reactive_thought("You interact with me... I feel less alone.")
+
+func generate_reactive_thought(thought: String):
+	"""Generate a reactive thought and emit it"""
+	recent_thoughts.append(thought)
+	if recent_thoughts.size() > 10:
+		recent_thoughts.pop_front()
+	
+	emit_signal("thought_generated", thought)
 
 # Signal handlers
-func _on_pattern_learned(pattern_id: String, confidence: float): pass
-func _on_prediction_made(prediction: Dictionary): pass
+func _on_pattern_learned(pattern_id: String, confidence: float):
+	print("📚 HTM learned pattern %s with confidence %.2f" % [pattern_id, confidence])
+	adjust_emotion("satisfaction", confidence * 0.1)
+
+func _on_prediction_made(prediction: Dictionary):
+	print("🔮 HTM made prediction: %s" % str(prediction))
+	adjust_emotion("curiosity", 0.05)
