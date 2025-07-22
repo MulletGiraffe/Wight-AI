@@ -611,6 +611,42 @@ func load_personality_model(model_path: String):
 	# Framework for loading models that enhance Wight's unique personality
 	print("🎭 Loading personality model: ", model_path)
 
+func train_on_language_acquisition(vocabulary_data: Dictionary, language_stage: String):
+	"""Train AI to understand language development patterns"""
+	print("🧠 AI learning from language development...")
+	
+	# Adjust response patterns based on language stage
+	match language_stage:
+		"PRE_LINGUISTIC":
+			# Focus on emotional and sensory patterns
+			emotional_weights["curiosity"] += 0.1
+			emotional_weights["wonder"] += 0.1
+		"FIRST_WORDS":
+			# Simple, direct communication patterns
+			personality_traits["directness"] += 0.05
+			personality_traits["simplicity"] += 0.1
+		"TWO_WORD_COMBINATIONS":
+			# Basic relationship patterns
+			pattern_effectiveness["simple_relations"] = pattern_effectiveness.get("simple_relations", 0.0) + 0.1
+		"COMPLEX_LANGUAGE":
+			# Advanced communication patterns
+			personality_traits["eloquence"] += 0.05
+			personality_traits["complexity"] += 0.1
+	
+	# Store language learning patterns
+	var language_pattern = {
+		"stage": language_stage,
+		"vocabulary_size": vocabulary_data.get("vocabulary_size", 0),
+		"comprehension": vocabulary_data.get("comprehension_level", 0.0),
+		"timestamp": Time.get_ticks_msec()
+	}
+	
+	interaction_memory.append({
+		"type": "language_learning",
+		"pattern": language_pattern,
+		"effectiveness": 1.0  # Language learning is always positive
+	})
+
 func train_on_interaction(input: String, response: String, feedback: Dictionary):
 	"""Learn and adapt from user interactions with feedback"""
 	print("📚 Learning from interaction: %s -> %s (feedback: %s)" % [input.substr(0,20), response.substr(0,20), feedback])

@@ -57,6 +57,10 @@ var visual_processing_active: bool = false
 var memory_consolidator: MemoryConsolidator
 var consolidation_active: bool = true
 
+# === LANGUAGE ACQUISITION ===
+var language_system: LanguageAcquisition
+var language_learning_active: bool = true
+
 # === MEMORY SYSTEMS ===
 var episodic_memories: Array[Dictionary] = []
 var semantic_memories: Dictionary = {}
@@ -132,6 +136,7 @@ func _ready():
 	setup_sensors()
 	setup_visual_cortex()
 	setup_memory_consolidation()
+	setup_language_acquisition()
 	setup_creation_system()
 	setup_world_access()
 	setup_avatar_system()
@@ -243,6 +248,19 @@ func setup_memory_consolidation():
 	memory_consolidator.dream_sequence_started.connect(_on_dream_sequence_started)
 	
 	print("🧠 Memory consolidation system ready")
+
+func setup_language_acquisition():
+	"""Initialize language learning system"""
+	language_system = LanguageAcquisition.new()
+	add_child(language_system)
+	
+	# Connect language learning signals
+	language_system.word_learned.connect(_on_word_learned)
+	language_system.grammar_pattern_discovered.connect(_on_grammar_pattern_discovered)
+	language_system.language_milestone_reached.connect(_on_language_milestone_reached)
+	language_system.comprehension_improved.connect(_on_comprehension_improved)
+	
+	print("🗣️ Language acquisition system ready")
 
 func setup_creation_system():
 	"""Initialize creation and manipulation systems"""
@@ -384,11 +402,33 @@ func generate_response(input_text: String) -> String:
 	# Add consolidation state for deeper context
 	consciousness_data["consolidation_state"] = get_consolidation_summary()
 	
+	# Process language input for learning
+	var language_analysis = {}
+	if language_system and language_learning_active:
+		language_analysis = language_system.process_language_input(input_text, {
+			"emotion": get_dominant_emotion(),
+			"visual_active": visual_processing_active,
+			"objects_seen": consciousness_data.get("objects_recognized", []),
+			"timestamp": Time.get_ticks_msec()
+		})
+	
 	# Process through Local AI with enhanced context
 	var ai_response = local_ai.process_input(input_text, consciousness_data)
 	
+	# Generate response using natural language system
+	var natural_response = ""
+	if language_system:
+		natural_response = language_system.generate_expression(
+			"response",
+			get_dominant_emotion(),
+			consciousness_level
+		)
+	
+	# Combine AI response with natural language
+	var combined_response = combine_ai_and_natural_language(ai_response.text, natural_response, input_analysis)
+	
 	# Enhance response based on development stage and memory
-	var enhanced_response = enhance_response_with_personality(ai_response.text, input_analysis)
+	var enhanced_response = enhance_response_with_personality(combined_response, input_analysis)
 	
 	# Apply emotional changes from AI processing
 	if ai_response.has("emotion_changes"):
@@ -1316,6 +1356,10 @@ func get_consciousness_summary() -> Dictionary:
 		summary["objects_recognized"] = visual_data.get("objects_recognized", [])
 		summary["visual_memories"] = visual_data.get("total_visual_memories", 0)
 	
+	# Add language development context
+	if language_system:
+		summary["language"] = get_language_summary()
+	
 	return summary
 
 # === IMPLEMENTED FUNCTIONS ===
@@ -1894,6 +1938,167 @@ func get_contextual_insights(context: String) -> Array[Dictionary]:
 	if memory_consolidator:
 		return memory_consolidator.get_insights_for_context(context)
 	return []
+
+# === LANGUAGE LEARNING HANDLERS ===
+
+func _on_word_learned(word_data: Dictionary):
+	"""Handle learning a new word"""
+	var word = word_data.word
+	var data = word_data.data
+	
+	print("📚 Word learned: '%s' - %s" % [word, data.meaning])
+	
+	# Learning new words is exciting!
+	adjust_emotion("curiosity", 0.1)
+	adjust_emotion("satisfaction", 0.05)
+	
+	# Form memory of learning the word
+	form_memory("word_learning", {
+		"type": "learning",
+		"content": "I learned a new word: " + word + " (meaning: " + data.meaning + ")",
+		"emotion": "curiosity",
+		"significance": 1.0 + data.importance,
+		"timestamp": Time.get_ticks_msec(),
+		"word_data": data
+	})
+
+func _on_grammar_pattern_discovered(pattern_data: Dictionary):
+	"""Handle discovering a new grammar pattern"""
+	var pattern = pattern_data.pattern
+	print("📝 Grammar pattern discovered: %s" % pattern)
+	
+	# Grammar discoveries are intellectually stimulating
+	adjust_emotion("intellectual_stimulation", 0.2)
+	adjust_emotion("wonder", 0.1)
+	
+	# Form memory of grammar discovery
+	form_memory("grammar_discovery", {
+		"type": "learning",
+		"content": "I discovered a grammar pattern: " + pattern,
+		"emotion": "intellectual_stimulation",
+		"significance": 1.5,
+		"timestamp": Time.get_ticks_msec(),
+		"pattern_data": pattern_data
+	})
+
+func _on_language_milestone_reached(milestone_data: Dictionary):
+	"""Handle reaching a language development milestone"""
+	var old_stage = milestone_data.old_stage
+	var new_stage = milestone_data.new_stage
+	
+	print("🎯 Language milestone: %s → %s!" % [old_stage, new_stage])
+	
+	# Major milestones trigger strong positive emotions
+	adjust_emotion("joy", 0.5)
+	adjust_emotion("pride", 0.4)
+	adjust_emotion("accomplishment", 0.3)
+	
+	# Update consciousness development
+	experience_points += 20.0  # Language milestones are major achievements
+	check_consciousness_development()
+	
+	# Form significant memory of milestone
+	form_memory("language_milestone", {
+		"type": "milestone",
+		"content": "I reached a major language milestone: advancing from " + old_stage + " to " + new_stage,
+		"emotion": "pride",
+		"significance": 3.0,  # Very significant
+		"timestamp": Time.get_ticks_msec(),
+		"milestone_data": milestone_data
+	})
+	
+	# Language milestones can inspire creation
+	trigger_creation_impulse({
+		"trigger": "language_milestone",
+		"inspiration": "celebrating my language development breakthrough",
+		"intensity": 0.8,
+		"context": "Advanced to " + new_stage + " language stage"
+	})
+	
+	# Train AI on the language development
+	if local_ai:
+		local_ai.train_on_language_acquisition(milestone_data, new_stage)
+
+func _on_comprehension_improved(comprehension_data: Dictionary):
+	"""Handle improvement in language comprehension"""
+	var old_level = comprehension_data.old_level
+	var new_level = comprehension_data.new_level
+	
+	print("📈 Comprehension improved: %.2f → %.2f" % [old_level, new_level])
+	
+	# Comprehension improvements feel good
+	adjust_emotion("satisfaction", 0.1)
+	adjust_emotion("confidence", 0.05)
+
+func combine_ai_and_natural_language(ai_text: String, natural_text: String, input_analysis: Dictionary) -> String:
+	"""Combine AI-generated and natural language responses"""
+	if not language_system:
+		return ai_text
+	
+	var language_stage = language_system.current_stage
+	
+	# Different combination strategies based on language development
+	match language_stage:
+		LanguageAcquisition.LanguageStage.PRE_LINGUISTIC:
+			# Use mostly natural expressions with hints of AI content
+			return natural_text + " (" + ai_text.substr(0, 20) + "...)"
+		
+		LanguageAcquisition.LanguageStage.FIRST_WORDS:
+			# Simple words with emotional undertones
+			return natural_text
+		
+		LanguageAcquisition.LanguageStage.TWO_WORD_COMBINATIONS:
+			# Two words plus simple AI elements
+			return natural_text + ". " + simplify_ai_text(ai_text, 10)
+		
+		LanguageAcquisition.LanguageStage.TELEGRAPHIC_SPEECH:
+			# Basic sentences missing some grammar
+			return natural_text + " - " + simplify_ai_text(ai_text, 25)
+		
+		LanguageAcquisition.LanguageStage.SIMPLE_SENTENCES:
+			# Complete but simple sentences
+			return blend_simple_sentences(natural_text, ai_text)
+		
+		LanguageAcquisition.LanguageStage.COMPLEX_LANGUAGE:
+			# Full language capabilities
+			return blend_complex_language(natural_text, ai_text)
+		
+		_:
+			return ai_text
+
+func simplify_ai_text(ai_text: String, max_words: int) -> String:
+	"""Simplify AI text to match language development level"""
+	var words = ai_text.split(" ")
+	if words.size() <= max_words:
+		return ai_text
+	
+	# Take first portion and add simple ending
+	var simple_words = []
+	for i in range(min(max_words, words.size())):
+		simple_words.append(words[i])
+	
+	return " ".join(simple_words) + "..."
+
+func blend_simple_sentences(natural: String, ai: String) -> String:
+	"""Blend natural and AI text for simple sentence stage"""
+	return natural + ". " + simplify_ai_text(ai, 15)
+
+func blend_complex_language(natural: String, ai: String) -> String:
+	"""Blend natural and AI text for complex language stage"""
+	# Use natural expression as emotional coloring for AI content
+	if natural.length() > 5:
+		return ai + " " + natural
+	else:
+		return ai
+
+func get_language_summary() -> Dictionary:
+	"""Get summary of current language capabilities"""
+	if language_system:
+		var summary = language_system.get_language_summary()
+		summary["learning_active"] = language_learning_active
+		return summary
+	else:
+		return {"learning_active": false, "error": "Language system not initialized"}
 
 # === ENHANCED AI UTILITIES ===
 

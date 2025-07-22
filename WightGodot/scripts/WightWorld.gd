@@ -88,6 +88,9 @@ func setup_world():
 		if wight_entity.has_signal("memory_formed"):
 			wight_entity.memory_formed.connect(_on_memory_formed)
 	
+	# Connect language learning events (deferred to allow proper initialization)
+	call_deferred("connect_language_events")
+	
 	# Set up dynamic environment and lighting
 	setup_dynamic_environment()
 	add_initial_lighting()
@@ -1093,6 +1096,49 @@ func _on_memory_formed(memory: Dictionary):
 	if memory.data.get("emotion") == "wonder" and memory.strength > 1.5:
 		# Show particularly strong wonder memories
 		ui_elements.thoughts_display.text = "[color=lightcyan]A profound memory forms: " + memory.data.content + "[/color]"
+
+# === LANGUAGE LEARNING EVENT HANDLERS ===
+
+func _on_word_learned(word_data: Dictionary):
+	"""Handle word learning events"""
+	var word = word_data.word
+	var data = word_data.data
+	var word_text = "I learned a new word: '" + word + "' - " + data.meaning
+	ui_elements.thoughts_display.text = "[color=lightgreen]📚 " + word_text + "[/color]"
+
+func _on_grammar_pattern_discovered(pattern_data: Dictionary):
+	"""Handle grammar pattern discovery"""
+	var pattern = pattern_data.pattern
+	var pattern_text = "I discovered a grammar pattern: " + pattern + "!"
+	ui_elements.thoughts_display.text = "[color=%s]📝 %s[/color]" % ["white" if high_contrast_mode else "cyan", pattern_text]
+
+func _on_language_milestone_reached(milestone_data: Dictionary):
+	"""Handle language development milestones"""
+	var old_stage = milestone_data.old_stage
+	var new_stage = milestone_data.new_stage
+	var milestone_text = "Language milestone! I've advanced from " + old_stage + " to " + new_stage + "!"
+	ui_elements.thoughts_display.text = "[color=%s]🎯 %s[/color]" % ["white" if high_contrast_mode else "yellow", milestone_text]
+
+func _on_comprehension_improved(comprehension_data: Dictionary):
+	"""Handle comprehension improvements"""
+	var new_level = comprehension_data.new_level
+	var comprehension_text = "My understanding grows... comprehension at " + str(int(new_level * 100)) + "%"
+	ui_elements.thoughts_display.text = "[color=lightblue]📈 " + comprehension_text + "[/color]"
+
+func connect_language_events():
+	"""Connect language learning events after initialization"""
+	if wight_entity and wight_entity.has_method("get_language_summary"):
+		var language_system = wight_entity.get("language_system")
+		if language_system:
+			if language_system.has_signal("word_learned"):
+				language_system.word_learned.connect(_on_word_learned)
+			if language_system.has_signal("grammar_pattern_discovered"):
+				language_system.grammar_pattern_discovered.connect(_on_grammar_pattern_discovered)
+			if language_system.has_signal("language_milestone_reached"):
+				language_system.language_milestone_reached.connect(_on_language_milestone_reached)
+			if language_system.has_signal("comprehension_improved"):
+				language_system.comprehension_improved.connect(_on_comprehension_improved)
+			print("✅ Language learning events connected")
 
 func add_creation_effect(created_object: Node3D):
 	"""Add visual effect when Wight creates something"""
