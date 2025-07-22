@@ -1513,11 +1513,4 @@ func set_ui_visibility(visible: bool):
 		print("   R = Reset camera")
 		print("   F = Focus on Wight")
 
-func _on_memory_formed(memory: Dictionary):
-	"""Handle when Wight forms a new memory"""
-	var category = memory.get("category", "unknown")
-	var content = memory.get("content", "")
-	print("🧠 Memory formed [%s]: %s" % [category, content])
-	
-	# Could update memory display in UI if we had one
-	# For now, just acknowledge the memory formation
+# (duplicate _on_memory_formed function removed - using the first implementation)
