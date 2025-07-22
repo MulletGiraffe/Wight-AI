@@ -12,6 +12,9 @@ var ui_elements: Dictionary = {}
 var voice_recognition_active: bool = false
 var sensor_manager: Node
 
+# Dynamic environment
+var dynamic_environment: Node3D
+
 # Touch and gesture handling
 var touch_start_pos: Vector2
 var is_touching: bool = false
@@ -58,6 +61,17 @@ func _ready():
 	
 	# Start debug monitoring
 	setup_debug_monitoring()
+	
+	# Load saved settings if any
+	load_ui_settings()
+
+func _notification(what):
+	"""Handle system notifications"""
+	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		# Save settings when app is closing
+		save_ui_settings()
+		# Let the app continue closing
+		get_tree().quit()
 
 func setup_world():
 	"""Initialize the 3D world environment"""
@@ -83,9 +97,23 @@ func setup_world():
 
 func setup_dynamic_environment():
 	"""Create a responsive environment that evolves with Wight"""
-	# The environment will change based on Wight's emotional state and development
-	# For now, set up basic ambient lighting that responds to emotions
-	pass
+	# Set up ambient lighting that responds to emotions
+	print("🌍 Setting up dynamic environment...")
+	
+	# Create ambient environment nodes
+	var env_node = Node3D.new()
+	env_node.name = "DynamicEnvironment"
+	add_child(env_node)
+	
+	# Add subtle particle effects for ambiance
+	var ambient_particles = GPUParticles3D.new()
+	ambient_particles.position = Vector3(0, 8, 0)
+	ambient_particles.emitting = true
+	env_node.add_child(ambient_particles)
+	
+	# Store reference for later environmental updates
+	dynamic_environment = env_node
+	print("✨ Dynamic environment ready")
 
 func add_initial_lighting():
 	"""Add proper lighting to prevent black screen"""
@@ -184,17 +212,25 @@ func setup_ui():
 		"ui_toggle_button": $UI/UIToggleButton
 	}
 	
-	# Connect settings panel signals
-	ui_elements.ui_scale_slider.value_changed.connect(_on_ui_scale_changed)
-	ui_elements.contrast_button.toggled.connect(_on_contrast_toggled)
-	ui_elements.cancel_button.pressed.connect(_on_settings_cancel)
-	ui_elements.apply_button.pressed.connect(_on_settings_apply)
+	# Connect settings panel signals (with error checking)
+	if ui_elements.has("ui_scale_slider"):
+		ui_elements.ui_scale_slider.value_changed.connect(_on_ui_scale_changed)
+	if ui_elements.has("contrast_button"):
+		ui_elements.contrast_button.toggled.connect(_on_contrast_toggled)
+	if ui_elements.has("cancel_button"):
+		ui_elements.cancel_button.pressed.connect(_on_settings_cancel)
+	if ui_elements.has("apply_button"):
+		ui_elements.apply_button.pressed.connect(_on_settings_apply)
 	
-	# Connect main interface signals
-	ui_elements.send_button.pressed.connect(_on_send_button_pressed)
-	ui_elements.voice_button.pressed.connect(_on_voice_button_pressed)
-	ui_elements.text_input.text_submitted.connect(_on_text_submitted)
-	ui_elements.ui_toggle_button.pressed.connect(toggle_ui_visibility)
+	# Connect main interface signals (with error checking)
+	if ui_elements.has("send_button"):
+		ui_elements.send_button.pressed.connect(_on_send_button_pressed)
+	if ui_elements.has("voice_button"):
+		ui_elements.voice_button.pressed.connect(_on_voice_button_pressed)
+	if ui_elements.has("text_input"):
+		ui_elements.text_input.text_submitted.connect(_on_text_submitted)
+	if ui_elements.has("ui_toggle_button"):
+		ui_elements.ui_toggle_button.pressed.connect(toggle_ui_visibility)
 	
 	# Show settings panel initially, hide main interface
 	ui_elements.main_interface.visible = false
@@ -363,7 +399,13 @@ func simulate_sensor_input(delta: float):
 	# Simulate some movement occasionally
 	if randf() < 0.01:  # 1% chance per frame
 		# Simulate device movement
-		pass
+		var simulated_accel = Vector3(
+			randf_range(-1.0, 1.0),
+			randf_range(-1.0, 1.0), 
+			randf_range(-1.0, 1.0)
+		)
+		if sensor_manager and sensor_manager.has_method("simulate_accelerometer"):
+			sensor_manager.simulate_accelerometer(simulated_accel)
 	
 	# Simulate audio input detection
 	if randf() < 0.005:  # Simulate occasional "sound"
@@ -938,19 +980,51 @@ func add_creation_effect(created_object: Node3D):
 
 func start_voice_recognition():
 	"""Start Android voice recognition"""
-	if OS.has_feature("mobile"):
-		# Real Android implementation would use:
-		# - Android SpeechRecognizer API
-		# - Godot Android plugin system
-		print("🎤 Starting voice recognition...")
+	if OS.get_name() == "Android":
+		# Try to use Android speech recognition
+		if OS.has_method("start_speech_recognition"):
+			OS.start_speech_recognition()
+			print("📱 Using Android speech recognition")
+		else:
+			print("📱 Android speech recognition API not available")
+		voice_recognition_active = true
+	elif OS.has_feature("mobile"):
+		print("📱 Mobile platform - voice recognition simulated")
 		voice_recognition_active = true
 	else:
-		print("🎤 Voice recognition simulated")
+		print("🖥️ Desktop - voice recognition simulated")
+		voice_recognition_active = true
+	
+	# Start a timer to simulate speech recognition timeout if no real input
+	if voice_recognition_active:
+		var timeout_timer = Timer.new()
+		timeout_timer.wait_time = 10.0  # 10 second timeout
+		timeout_timer.one_shot = true
+		timeout_timer.timeout.connect(_on_voice_recognition_timeout)
+		add_child(timeout_timer)
+		timeout_timer.start()
 
 func stop_voice_recognition():
 	"""Stop Android voice recognition"""
 	voice_recognition_active = false
-	print("🎤 Voice recognition stopped")
+	
+	# Stop Android speech recognition if it was started
+	if OS.get_name() == "Android" and OS.has_method("stop_speech_recognition"):
+		OS.stop_speech_recognition()
+		print("📱 Android speech recognition stopped")
+	else:
+		print("🎤 Voice recognition stopped")
+
+func _on_voice_recognition_timeout():
+	"""Handle voice recognition timeout"""
+	if voice_recognition_active:
+		print("⏰ Voice recognition timed out")
+		stop_voice_recognition()
+		
+		# Reset UI if we have the voice button
+		if ui_elements.has("voice_button"):
+			ui_elements.voice_button.text = "🎤 Voice"
+			ui_elements.voice_button.modulate = Color.WHITE
 
 # Real Android sensor functions (to be implemented with proper Android plugins)
 func get_accelerometer_data() -> Vector3:
@@ -1102,40 +1176,82 @@ func speak_response(text: String):
 	"""Make Wight speak the response using text-to-speech"""
 	print("🗣️ Wight speaking: '%s'" % text)
 	
-	# In Android, this would use Android TTS
-	# For now, we'll simulate it with visual feedback
+	# Show speaking indicator in UI
 	if ui_elements.has("voice_button"):
 		ui_elements.voice_button.text = "🔊 Speaking"
 		ui_elements.voice_button.modulate = Color(0.3, 1.0, 0.3)
-		
-		# Simulate speech duration based on text length
-		var speech_duration = max(2.0, text.length() * 0.1)
-		
-		await get_tree().create_timer(speech_duration).timeout
-		
+	
+	# Calculate realistic speech duration (average 150 words per minute)
+	var word_count = text.split(" ").size()
+	var speech_duration = max(1.5, word_count * 0.4)  # 0.4 seconds per word
+	
+	# Use platform-specific TTS if available
+	if OS.get_name() == "Android":
+		# Try to use Android TTS via OS interface
+		if OS.has_method("tts_speak"):
+			OS.tts_speak(text)
+			print("📱 Using Android TTS")
+		else:
+			print("📱 Android TTS not available - using simulation")
+	else:
+		# For desktop, we could use DisplayServer.tts_speak in Godot 4.x
+		if DisplayServer.has_feature(DisplayServer.FEATURE_NATIVE_DIALOG):
+			# Some platforms support native TTS
+			print("🖥️ Using system TTS if available")
+		else:
+			print("🖥️ Desktop TTS simulation")
+	
+	# Wait for speech duration then reset UI
+	await get_tree().create_timer(speech_duration).timeout
+	
+	if ui_elements.has("voice_button"):
 		ui_elements.voice_button.text = "🎤 Voice" 
 		ui_elements.voice_button.modulate = Color.WHITE
 	
-	# Try to use Android TTS if available
-	if OS.get_name() == "Android":
-		# This would be implemented with Android TTS API
-		print("📱 Android TTS would speak here: '%s'" % text)
-	else:
-		print("🖥️ Desktop - TTS simulation complete")
+	print("✅ Speech complete")
 
 # === UI SETTINGS HANDLERS ===
 
 func load_ui_settings():
 	"""Load UI settings from file or set defaults"""
-	# For now, just set defaults - could expand to save/load from file
-	ui_scale = 3.0  # Start at maximum scale for mobile readability
-	high_contrast_mode = false
+	# Try to load saved settings
+	var file = FileAccess.open("user://wight_settings.json", FileAccess.READ)
+	if file:
+		var json_text = file.get_as_text()
+		file.close()
+		
+		var json = JSON.new()
+		var parse_result = json.parse(json_text)
+		if parse_result == OK:
+			var settings_data = json.data
+			ui_scale = settings_data.get("ui_scale", 3.0)
+			high_contrast_mode = settings_data.get("high_contrast_mode", false)
+			camera_distance = settings_data.get("camera_distance", 10.0)
+			camera_yaw = settings_data.get("camera_yaw", 45.0)
+			camera_pitch = settings_data.get("camera_pitch", -20.0)
+			print("📄 Loaded saved UI settings")
+		else:
+			print("❌ Failed to parse settings file")
+			load_default_settings()
+	else:
+		print("📄 No saved settings found, using defaults")
+		load_default_settings()
 	
-	# Update UI to reflect current settings
-	ui_elements.ui_scale_slider.value = ui_scale
-	ui_elements.contrast_button.button_pressed = high_contrast_mode
+	# Update UI to reflect current settings (with error checking)
+	if ui_elements.has("ui_scale_slider"):
+		ui_elements.ui_scale_slider.value = ui_scale
+	if ui_elements.has("contrast_button"):
+		ui_elements.contrast_button.button_pressed = high_contrast_mode
 	update_ui_scale_preview()
 	update_contrast_preview()
+
+func load_default_settings():
+	"""Load default UI settings"""
+	ui_scale = 3.0  # Start at maximum scale for mobile readability
+	high_contrast_mode = false
+	camera_distance = 10.0
+	camera_yaw = 45.0
+	camera_pitch = -20.0
 
 func _on_ui_scale_changed(value: float):
 	"""Handle UI scale slider changes"""
@@ -1346,8 +1462,23 @@ func hide_settings_panel():
 
 func save_ui_settings():
 	"""Save UI settings to file for next launch"""
-	# Could implement file saving here for persistent settings
-	pass
+	var settings_data = {
+		"ui_scale": ui_scale,
+		"high_contrast_mode": high_contrast_mode,
+		"voice_enabled": voice_recognition_active,
+		"camera_distance": camera_distance,
+		"camera_yaw": camera_yaw,
+		"camera_pitch": camera_pitch
+	}
+	
+	# Save to user://wight_settings.json
+	var file = FileAccess.open("user://wight_settings.json", FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(settings_data))
+		file.close()
+		print("💾 UI settings saved")
+	else:
+		print("❌ Failed to save UI settings")
 
 # === WIGHT AI INTEGRATION HANDLERS ===
 

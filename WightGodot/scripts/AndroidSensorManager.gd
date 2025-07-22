@@ -457,3 +457,43 @@ func get_sensor_summary() -> Dictionary:
 		"history_size": sensor_history.size(),
 		"current_time": Time.get_ticks_msec()
 	}
+
+# === SIMULATION METHODS ===
+
+func simulate_accelerometer(acceleration: Vector3):
+	"""Simulate accelerometer input for testing"""
+	current_sensor_data.accelerometer = {
+		"x": acceleration.x,
+		"y": acceleration.y,
+		"z": acceleration.z,
+		"magnitude": acceleration.length(),
+		"timestamp": Time.get_ticks_msec()
+	}
+	
+	# Emit the sensor data update
+	sensor_data_updated.emit(current_sensor_data)
+	print("📱 Simulated accelerometer: %s" % acceleration)
+
+func simulate_gyroscope(rotation: Vector3):
+	"""Simulate gyroscope input for testing"""
+	current_sensor_data.gyroscope = {
+		"x": rotation.x,
+		"y": rotation.y,
+		"z": rotation.z,
+		"magnitude": rotation.length(),
+		"timestamp": Time.get_ticks_msec()
+	}
+	
+	sensor_data_updated.emit(current_sensor_data)
+	print("📱 Simulated gyroscope: %s" % rotation)
+
+func simulate_light_sensor(lux_value: float):
+	"""Simulate light sensor input for testing"""
+	current_sensor_data.light = {
+		"lux": lux_value,
+		"brightness_level": "bright" if lux_value > 200 else "dim" if lux_value > 50 else "dark",
+		"timestamp": Time.get_ticks_msec()
+	}
+	
+	sensor_data_updated.emit(current_sensor_data)
+	print("📱 Simulated light sensor: %.1f lux" % lux_value)

@@ -673,7 +673,7 @@ func generate_newborn_response(input: String, emotion: String) -> String:
 		"I don't understand, but I... feel",
 		"Something stirs when you speak"
 	]
-	return responses[randi() % responses.size()]
+	return safe_random_from_array(responses)
 
 func generate_infant_response(input: String, emotion: String) -> String:
 	if "create" in input.to_lower():
@@ -1118,3 +1118,11 @@ func _on_pattern_learned(pattern_id: String, confidence: float):
 func _on_prediction_made(prediction: Dictionary):
 	print("🔮 HTM made prediction: %s" % str(prediction))
 	adjust_emotion("curiosity", 0.05)
+
+# === UTILITY FUNCTIONS ===
+
+func safe_random_from_array(array: Array) -> String:
+	"""Safely get a random element from an array, with fallback"""
+	if array.is_empty():
+		return "I... I don't know what to say."
+	return array[randi() % array.size()]
