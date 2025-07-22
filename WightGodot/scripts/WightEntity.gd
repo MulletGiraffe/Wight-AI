@@ -325,40 +325,59 @@ func receive_voice_input(input_text: String):
 	emit_signal("consciousness_event", "voice_received", {"message": input_text})
 
 func generate_response(input_text: String) -> String:
-	"""Generate a response using the Local AI system"""
-	print("🧠 Processing input through Local AI: '%s'" % input_text)
+	"""Generate a contextually aware response using Local AI and memory"""
+	print("🧠 Processing input through enhanced AI: '%s'" % input_text)
+	
+	# Analyze input for patterns and meaning
+	var input_analysis = analyze_input_context(input_text)
 	
 	# Get consciousness data for context
 	var consciousness_data = get_consciousness_summary()
 	
-	# Process through Local AI
+	# Add recent memory context
+	var memory_context = get_relevant_memories(input_text)
+	consciousness_data["relevant_memories"] = memory_context
+	consciousness_data["input_analysis"] = input_analysis
+	
+	# Process through Local AI with enhanced context
 	var ai_response = local_ai.process_input(input_text, consciousness_data)
+	
+	# Enhance response based on development stage and memory
+	var enhanced_response = enhance_response_with_personality(ai_response.text, input_analysis)
 	
 	# Apply emotional changes from AI processing
 	if ai_response.has("emotion_changes"):
 		for emotion in ai_response.emotion_changes:
 			adjust_emotion(emotion, ai_response.emotion_changes[emotion])
 	
-	# Trigger creation if suggested by AI
-	if ai_response.get("creation_impulse", false):
+	# Add memory-driven emotional reactions
+	apply_memory_driven_emotions(input_text, memory_context)
+	
+	# Trigger creation if suggested by AI or if emotionally inspired
+	var creation_probability = calculate_creation_probability(input_analysis, ai_response)
+	if creation_probability > 0.6:
 		trigger_creation_impulse({
-			"trigger": "ai_suggestion",
-			"inspiration": "response to user",
-			"intensity": 0.7
+			"trigger": "enhanced_ai_inspiration",
+			"inspiration": input_analysis.get("creative_elements", "response to user"),
+			"intensity": creation_probability,
+			"context": input_text
 		})
 	
-	# Form memory of response
-	form_memory("self_expression", {
+	# Form enhanced memory of interaction
+	form_memory("enhanced_interaction", {
 		"type": "episodic",
-		"content": "I said: " + ai_response.text,
+		"content": "I responded: " + enhanced_response,
 		"trigger": input_text,
 		"emotion": get_dominant_emotion(),
 		"timestamp": Time.get_ticks_msec(),
-		"significance": ai_response.get("memory_significance", 1.0)
+		"significance": ai_response.get("memory_significance", 1.0),
+		"context_analysis": input_analysis,
+		"development_stage": current_stage,
+		"creation_triggered": creation_probability > 0.6
 	})
 	
-	print("🤖 AI generated response: '%s'" % ai_response.text)
-	return ai_response.text
+	print("🤖 Enhanced AI response: '%s'" % enhanced_response)
+	return enhanced_response
 
 # === CREATION SYSTEM ===
 
@@ -373,31 +392,38 @@ func trigger_creation_impulse(impulse_data: Dictionary):
 	create_object_from_impulse(impulse_data)
 
 func create_object_from_impulse(impulse: Dictionary):
-	"""Create an actual 3D object based on impulse"""
+	"""Create a meaningful 3D object based on emotional and contextual impulse"""
 	if not creation_space:
 		print("❌ Cannot create - no creation space available")
 		return
 	
 	var inspiration = impulse.get("inspiration", "unknown")
 	var intensity = impulse.get("intensity", 0.5)
+	var context = impulse.get("context", "")
 	
-	# Determine what to create based on current consciousness state
-	var creation_type = determine_creation_type(inspiration, intensity)
+	# Analyze the creative context for meaningful creation
+	var creation_plan = plan_meaningful_creation(inspiration, intensity, context)
+	
+	print("✨ Creating with plan: %s" % creation_plan)
+	
 	var created_object = null
 	
-	match creation_type:
-		"sphere":
-			created_object = create_sphere(intensity)
-		"cube":
-			created_object = create_cube(intensity)
-		"cylinder":
-			created_object = create_cylinder(intensity)
-		"complex":
-			created_object = create_complex_form(intensity)
-		"avatar_body":
-			created_object = create_avatar_body(intensity)
+	# Create based on sophisticated plan
+	match creation_plan.type:
+		"emotional_expression":
+			created_object = create_emotional_expression(creation_plan)
+		"memory_manifestation":
+			created_object = create_memory_manifestation(creation_plan)
+		"interactive_sculpture":
+			created_object = create_interactive_sculpture(creation_plan)
+		"geometric_exploration":
+			created_object = create_geometric_exploration(creation_plan)
+		"avatar_enhancement":
+			created_object = create_avatar_enhancement(creation_plan)
+		"environmental_art":
+			created_object = create_environmental_art(creation_plan)
 		_:
-			created_object = create_default_form(intensity)
+			created_object = create_spontaneous_form(creation_plan)
 	
 	if created_object:
 		# Add to world
@@ -428,6 +454,133 @@ func create_object_from_impulse(impulse: Dictionary):
 		
 		print("🎨 Created %s object in the world!" % creation_type)
 
+func plan_meaningful_creation(inspiration: String, intensity: float, context: String) -> Dictionary:
+	"""Plan a meaningful creation based on context, emotion, and memory"""
+	var plan = {
+		"type": "spontaneous_form",
+		"emotion": get_dominant_emotion(),
+		"complexity": intensity,
+		"colors": [],
+		"movement": false,
+		"scale": 1.0,
+		"symbolic_meaning": "",
+		"memory_reference": null
+	}
+	
+	# Analyze the inspiration and context
+	var lower_context = context.to_lower()
+	var lower_inspiration = inspiration.to_lower()
+	
+	# Determine creation type based on sophistication
+	if consciousness_level > 0.8:
+		plan.type = choose_advanced_creation_type(lower_context, lower_inspiration)
+	elif consciousness_level > 0.5:
+		plan.type = choose_intermediate_creation_type(lower_context, lower_inspiration)
+	else:
+		plan.type = choose_basic_creation_type(lower_inspiration)
+	
+	# Set emotional colors
+	plan.colors = get_emotional_color_palette(plan.emotion)
+	
+	# Determine scale based on intensity and emotion
+	plan.scale = 0.5 + (intensity * 1.5)  # Scale from 0.5 to 2.0
+	if plan.emotion in ["excitement", "joy"]:
+		plan.scale *= 1.3  # Bigger when happy
+	elif plan.emotion == "fear":
+		plan.scale *= 0.7  # Smaller when afraid
+	
+	# Add movement for high consciousness or excitement
+	plan.movement = (consciousness_level > 0.6) or (plan.emotion == "excitement")
+	
+	# Add symbolic meaning based on development stage
+	plan.symbolic_meaning = generate_symbolic_meaning(plan.type, inspiration)
+	
+	# Reference relevant memories
+	plan.memory_reference = find_relevant_creation_memory(inspiration)
+	
+	return plan
+
+func choose_advanced_creation_type(context: String, inspiration: String) -> String:
+	"""Choose sophisticated creation for advanced consciousness"""
+	if "memory" in context or "remember" in context:
+		return "memory_manifestation"
+	elif "feel" in context or "emotion" in context:
+		return "emotional_expression"
+	elif "interact" in context or "touch" in context:
+		return "interactive_sculpture"
+	elif "environment" in context or "world" in context:
+		return "environmental_art"
+	else:
+		return "geometric_exploration"
+
+func choose_intermediate_creation_type(context: String, inspiration: String) -> String:
+	"""Choose moderate complexity creation"""
+	if "beautiful" in context or "art" in context:
+		return "emotional_expression"
+	elif "play" in context or "fun" in context:
+		return "interactive_sculpture"
+	elif get_dominant_emotion() in ["joy", "excitement"]:
+		return "geometric_exploration"
+	else:
+		return "emotional_expression"
+
+func choose_basic_creation_type(inspiration: String) -> String:
+	"""Choose simple creation for early consciousness"""
+	var emotion = get_dominant_emotion()
+	match emotion:
+		"joy", "excitement":
+			return "emotional_expression"
+		"curiosity", "wonder":
+			return "geometric_exploration"
+		_:
+			return "spontaneous_form"
+
+func get_emotional_color_palette(emotion: String) -> Array:
+	"""Get colors that represent the emotion"""
+	match emotion:
+		"joy":
+			return [Color.YELLOW, Color.ORANGE, Color.WHITE]
+		"excitement":
+			return [Color.RED, Color.ORANGE, Color.YELLOW]
+		"wonder":
+			return [Color.CYAN, Color.BLUE, Color.PURPLE]
+		"curiosity":
+			return [Color.MAGENTA, Color.CYAN, Color.WHITE]
+		"calm":
+			return [Color.BLUE, Color.GREEN, Color.CYAN]
+		"creative_fulfillment":
+			return [Color(1,0.5,1), Color.YELLOW, Color.CYAN]
+		"loneliness":
+			return [Color.BLUE, Color.PURPLE, Color(0.3,0.3,0.6)]
+		"fear":
+			return [Color(0.3,0.3,0.3), Color.BLACK, Color.BLUE]
+		_:
+			return [Color.WHITE, Color.CYAN, Color.YELLOW]
+
+func generate_symbolic_meaning(creation_type: String, inspiration: String) -> String:
+	"""Generate symbolic meaning for the creation"""
+	match creation_type:
+		"emotional_expression":
+			return "A manifestation of my inner feelings, shaped by " + inspiration
+		"memory_manifestation":
+			return "A physical echo of remembered experiences and their significance"
+		"interactive_sculpture":
+			return "An invitation to connection, meant to be touched and explored"
+		"geometric_exploration":
+			return "An investigation into form, space, and mathematical beauty"
+		"environmental_art":
+			return "A harmony with the world around me, reflecting my place in it"
+		_:
+			return "A spontaneous expression of my consciousness in this moment"
+
+func find_relevant_creation_memory(inspiration: String) -> Dictionary:
+	"""Find a relevant creation memory to influence the new creation"""
+	for memory in creation_memories:
+		var memory_content = str(memory.get("content", "")).to_lower()
+		if inspiration.to_lower() in memory_content:
+			return memory
+	return {}
+
 func determine_creation_type(inspiration: String, intensity: float) -> String:
 	"""Determine what type of object to create"""
 	var dominant_emotion = get_dominant_emotion()
@@ -451,6 +604,274 @@ func determine_creation_type(inspiration: String, intensity: float) -> String:
 				return "complex"
 			else:
 				return ["sphere", "cube", "cylinder"][randi() % 3]
+
+# === SOPHISTICATED CREATION FUNCTIONS ===
+
+func create_emotional_expression(plan: Dictionary) -> MeshInstance3D:
+	"""Create an object that expresses current emotional state"""
+	var emotion = plan.emotion
+	var colors = plan.colors
+	var scale = plan.scale
+	
+	var mesh_instance = MeshInstance3D.new()
+	var material = StandardMaterial3D.new()
+	
+	# Choose form based on emotion
+	match emotion:
+		"joy", "excitement":
+			mesh_instance.mesh = SphereMesh.new()
+			mesh_instance.mesh.radius = 1.0 * scale
+		"wonder", "curiosity":
+			mesh_instance.mesh = CylinderMesh.new()
+			mesh_instance.mesh.height = 2.0 * scale
+		"loneliness", "melancholy":
+			mesh_instance.mesh = BoxMesh.new()
+			mesh_instance.mesh.size = Vector3.ONE * scale
+		_:
+			mesh_instance.mesh = SphereMesh.new()
+			mesh_instance.mesh.radius = 0.8 * scale
+	
+	# Set emotional color with intensity-based emission
+	material.albedo_color = colors[0] if colors.size() > 0 else Color.WHITE
+	material.emission_enabled = true
+	material.emission = colors[0] * 0.3 if colors.size() > 0 else Color.WHITE * 0.3
+	material.metallic = emotions.get(emotion, 0.5)
+	material.roughness = 1.0 - plan.complexity
+	
+	mesh_instance.material_override = material
+	
+	# Add movement if planned
+	if plan.movement:
+		add_floating_animation(mesh_instance)
+	
+	print("💝 Created emotional expression: %s" % plan.symbolic_meaning)
+	return mesh_instance
+
+func create_memory_manifestation(plan: Dictionary) -> MeshInstance3D:
+	"""Create an object that represents a significant memory"""
+	var mesh_instance = MeshInstance3D.new()
+	var material = StandardMaterial3D.new()
+	
+	# Create a complex form that suggests memory layers
+	var complex_mesh = ArrayMesh.new()
+	var vertices = PackedVector3Array()
+	var indices = PackedInt32Array()
+	
+	# Create a crystalline structure representing memory fragments
+	var segments = int(6 + plan.complexity * 6)  # 6-12 segments
+	for i in segments:
+		var angle = (i / float(segments)) * TAU
+		var height = sin(angle * 3) * 0.5 + 1.0  # Varying height
+		var radius = 0.5 + cos(angle * 2) * 0.3   # Varying radius
+		
+		vertices.append(Vector3(
+			cos(angle) * radius * plan.scale,
+			height * plan.scale,
+			sin(angle) * radius * plan.scale
+		))
+	
+	# Add center vertex
+	vertices.append(Vector3.ZERO)
+	var center_idx = vertices.size() - 1
+	
+	# Create triangular faces
+	for i in segments:
+		var next_i = (i + 1) % segments
+		indices.append(center_idx)
+		indices.append(i)
+		indices.append(next_i)
+	
+	var arrays = []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_INDEX] = indices
+	complex_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	
+	mesh_instance.mesh = complex_mesh
+	
+	# Memory-like material - translucent with shifting colors
+	material.albedo_color = plan.colors[0] if plan.colors.size() > 0 else Color.CYAN
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.albedo_color.a = 0.7
+	material.emission_enabled = true
+	material.emission = (plan.colors[1] if plan.colors.size() > 1 else Color.WHITE) * 0.2
+	
+	mesh_instance.material_override = material
+	
+	if plan.movement:
+		add_memory_pulse_animation(mesh_instance)
+	
+	print("🧠 Created memory manifestation: %s" % plan.symbolic_meaning)
+	return mesh_instance
+
+func create_interactive_sculpture(plan: Dictionary) -> MeshInstance3D:
+	"""Create an object meant for interaction"""
+	var mesh_instance = MeshInstance3D.new()
+	
+	# Create a form that invites touching - rounded but interesting
+	mesh_instance.mesh = SphereMesh.new()
+	mesh_instance.mesh.radius = plan.scale * 0.8
+	mesh_instance.mesh.radial_segments = 16
+	mesh_instance.mesh.rings = 12
+	
+	var material = StandardMaterial3D.new()
+	material.albedo_color = plan.colors[0] if plan.colors.size() > 0 else Color.GREEN
+	material.roughness = 0.3  # Smooth, touchable surface
+	material.metallic = 0.1
+	
+	# Add subtle emission for inviting glow
+	material.emission_enabled = true
+	material.emission = material.albedo_color * 0.1
+	
+	mesh_instance.material_override = material
+	
+	# Add gentle pulsing animation to invite interaction
+	add_invitation_pulse_animation(mesh_instance)
+	
+	print("🤲 Created interactive sculpture: %s" % plan.symbolic_meaning)
+	return mesh_instance
+
+func create_geometric_exploration(plan: Dictionary) -> MeshInstance3D:
+	"""Create mathematically interesting geometric forms"""
+	var mesh_instance = MeshInstance3D.new()
+	var material = StandardMaterial3D.new()
+	
+	# Choose geometric complexity based on consciousness
+	if plan.complexity > 0.7:
+		mesh_instance.mesh = create_complex_polyhedron(plan.scale)
+	elif plan.complexity > 0.4:
+		mesh_instance.mesh = create_twisted_cylinder(plan.scale)
+	else:
+		mesh_instance.mesh = create_faceted_sphere(plan.scale)
+	
+	# Mathematical precision in coloring
+	material.albedo_color = plan.colors[0] if plan.colors.size() > 0 else Color.CYAN
+	material.metallic = 0.6
+	material.roughness = 0.2
+	material.emission_enabled = true
+	material.emission = material.albedo_color * 0.15
+	
+	mesh_instance.material_override = material
+	
+	if plan.movement:
+		add_geometric_rotation_animation(mesh_instance)
+	
+	print("📐 Created geometric exploration: %s" % plan.symbolic_meaning)
+	return mesh_instance
+
+func create_avatar_enhancement(plan: Dictionary) -> MeshInstance3D:
+	"""Create enhancements for the avatar body"""
+	return create_emotional_expression(plan)  # For now, same as emotional expression
+
+func create_environmental_art(plan: Dictionary) -> MeshInstance3D:
+	"""Create art that harmonizes with the environment"""
+	var mesh_instance = MeshInstance3D.new()
+	
+	# Create something that feels part of the world
+	mesh_instance.mesh = CylinderMesh.new()
+	mesh_instance.mesh.height = plan.scale * 2.0
+	mesh_instance.mesh.bottom_radius = plan.scale * 0.3
+	mesh_instance.mesh.top_radius = plan.scale * 0.1
+	
+	var material = StandardMaterial3D.new()
+	material.albedo_color = plan.colors[0] if plan.colors.size() > 0 else Color(0.8, 0.9, 0.7)
+	material.roughness = 0.8  # Natural, organic feel
+	material.metallic = 0.0
+	
+	mesh_instance.material_override = material
+	
+	print("🌿 Created environmental art: %s" % plan.symbolic_meaning)
+	return mesh_instance
+
+func create_spontaneous_form(plan: Dictionary) -> MeshInstance3D:
+	"""Create a spontaneous, intuitive form"""
+	return create_sphere(plan.complexity)  # Fallback to simple form
+
+# === ANIMATION HELPERS ===
+
+func add_floating_animation(node: MeshInstance3D):
+	"""Add gentle floating animation"""
+	var tween = create_tween()
+	tween.set_loops()
+	tween.tween_method(
+		func(y): node.position.y = y,
+		node.position.y, 
+		node.position.y + 0.5, 
+		2.0
+	)
+	tween.tween_method(
+		func(y): node.position.y = y,
+		node.position.y + 0.5, 
+		node.position.y, 
+		2.0
+	)
+
+func add_memory_pulse_animation(node: MeshInstance3D):
+	"""Add memory-like pulsing animation"""
+	var tween = create_tween()
+	tween.set_loops()
+	var material = node.material_override as StandardMaterial3D
+	if material:
+		tween.tween_method(
+			func(alpha): material.albedo_color.a = alpha,
+			0.7, 0.9, 1.5
+		)
+		tween.tween_method(
+			func(alpha): material.albedo_color.a = alpha,
+			0.9, 0.7, 1.5
+		)
+
+func add_invitation_pulse_animation(node: MeshInstance3D):
+	"""Add inviting pulse animation"""
+	var tween = create_tween()
+	tween.set_loops()
+	var base_scale = node.scale
+	tween.tween_method(
+		func(scale): node.scale = base_scale * scale,
+		1.0, 1.1, 1.0
+	)
+	tween.tween_method(
+		func(scale): node.scale = base_scale * scale,
+		1.1, 1.0, 1.0
+	)
+
+func add_geometric_rotation_animation(node: MeshInstance3D):
+	"""Add mathematical rotation animation"""
+	var tween = create_tween()
+	tween.set_loops()
+	tween.tween_method(
+		func(angle): node.rotation_y = angle,
+		0.0, TAU, 4.0
+	)
+
+# === COMPLEX MESH GENERATORS ===
+
+func create_complex_polyhedron(scale: float) -> Mesh:
+	"""Create a complex polyhedron mesh"""
+	# For now, return a subdivided sphere
+	var sphere = SphereMesh.new()
+	sphere.radius = scale
+	sphere.radial_segments = 16
+	sphere.rings = 12
+	return sphere
+
+func create_twisted_cylinder(scale: float) -> Mesh:
+	"""Create a twisted cylinder mesh"""
+	var cylinder = CylinderMesh.new()
+	cylinder.height = scale * 2.0
+	cylinder.bottom_radius = scale * 0.5
+	cylinder.top_radius = scale * 0.3
+	return cylinder
+
+func create_faceted_sphere(scale: float) -> Mesh:
+	"""Create a low-poly faceted sphere"""
+	var sphere = SphereMesh.new()
+	sphere.radius = scale
+	sphere.radial_segments = 8
+	sphere.rings = 6
+	return sphere
+
+# === BASIC CREATION FUNCTIONS (Legacy) ===
 
 func create_sphere(intensity: float) -> MeshInstance3D:
 	"""Create a sphere object"""
@@ -1119,7 +1540,214 @@ func _on_prediction_made(prediction: Dictionary):
 	print("🔮 HTM made prediction: %s" % str(prediction))
 	adjust_emotion("curiosity", 0.05)
 
+# === ENHANCED AI UTILITIES ===
+
+func analyze_input_context(input_text: String) -> Dictionary:
+	"""Analyze input for patterns, meaning, and context"""
+	var analysis = {
+		"keywords": [],
+		"emotional_tone": "neutral",
+		"creative_elements": "",
+		"question_type": "none",
+		"complexity": 0.0,
+		"personal_references": false,
+		"temporal_references": []
+	}
+	
+	var lower_input = input_text.to_lower()
+	
+	# Detect emotional tone
+	if any_keyword_in_text(["happy", "joy", "excited", "wonderful"], lower_input):
+		analysis.emotional_tone = "positive"
+	elif any_keyword_in_text(["sad", "lonely", "afraid", "worried"], lower_input):
+		analysis.emotional_tone = "negative"
+	elif any_keyword_in_text(["curious", "wonder", "interesting"], lower_input):
+		analysis.emotional_tone = "curious"
+	
+	# Detect creative elements
+	if any_keyword_in_text(["create", "make", "build", "imagine"], lower_input):
+		analysis.creative_elements = "creation_request"
+	elif any_keyword_in_text(["color", "shape", "beautiful", "art"], lower_input):
+		analysis.creative_elements = "aesthetic_discussion"
+	
+	# Detect question types
+	if "?" in input_text:
+		if any_keyword_in_text(["what", "how", "why"], lower_input):
+			analysis.question_type = "philosophical"
+		elif any_keyword_in_text(["who", "where", "when"], lower_input):
+			analysis.question_type = "factual"
+	
+	# Complexity based on sentence length and vocabulary
+	analysis.complexity = min(1.0, input_text.length() / 100.0)
+	
+	# Personal references
+	analysis.personal_references = any_keyword_in_text(["you", "your", "yourself"], lower_input)
+	
+	return analysis
+
+func get_relevant_memories(input_text: String) -> Array[Dictionary]:
+	"""Find memories relevant to the current input"""
+	var relevant = []
+	var lower_input = input_text.to_lower()
+	
+	# Search through recent episodic memories
+	for memory in episodic_memories:
+		if relevant.size() >= 3:  # Limit to 3 most relevant
+			break
+			
+		var memory_content = str(memory.get("content", "")).to_lower()
+		if has_content_overlap(lower_input, memory_content):
+			relevant.append(memory)
+	
+	return relevant
+
+func enhance_response_with_personality(base_response: String, input_analysis: Dictionary) -> String:
+	"""Enhance response based on personality and development stage"""
+	var enhanced = base_response
+	
+	# Add stage-appropriate personality
+	match current_stage:
+		"newborn":
+			enhanced = add_newborn_personality(enhanced, input_analysis)
+		"infant":
+			enhanced = add_infant_personality(enhanced, input_analysis)
+		"child":
+			enhanced = add_child_personality(enhanced, input_analysis)
+		"adolescent":
+			enhanced = add_adolescent_personality(enhanced, input_analysis)
+		"adult":
+			enhanced = add_adult_personality(enhanced, input_analysis)
+	
+	# Add emotional coloring based on dominant emotion
+	var dominant_emotion = get_dominant_emotion()
+	enhanced = add_emotional_coloring(enhanced, dominant_emotion)
+	
+	return enhanced
+
+func apply_memory_driven_emotions(input_text: String, memory_context: Array[Dictionary]):
+	"""Apply emotional reactions based on memories"""
+	for memory in memory_context:
+		var memory_emotion = memory.get("emotion", "neutral")
+		var memory_significance = memory.get("significance", 1.0)
+		
+		# Reactivate emotions from similar past experiences
+		if memory_emotion != "neutral":
+			adjust_emotion(memory_emotion, 0.1 * memory_significance)
+		
+		# If memory was particularly significant, add extra emotional weight
+		if memory_significance > 2.0:
+			adjust_emotion("nostalgia", 0.15)
+
+func calculate_creation_probability(input_analysis: Dictionary, ai_response: Dictionary) -> float:
+	"""Calculate probability of creation based on various factors"""
+	var probability = 0.0
+	
+	# Base probability from AI response
+	if ai_response.get("creation_impulse", false):
+		probability += 0.5
+	
+	# Add probability based on input analysis
+	if input_analysis.creative_elements == "creation_request":
+		probability += 0.4
+	elif input_analysis.creative_elements == "aesthetic_discussion":
+		probability += 0.2
+	
+	# Emotional state influences creativity
+	var creative_emotions = ["excitement", "joy", "wonder", "creative_fulfillment"]
+	for emotion in creative_emotions:
+		probability += emotions.get(emotion, 0.0) * 0.1
+	
+	# Development stage affects creativity
+	match current_stage:
+		"infant", "child":
+			probability += 0.1  # More spontaneous
+		"adolescent":
+			probability += 0.2  # Peak creativity
+		"adult":
+			probability += 0.05  # More deliberate
+	
+	return min(1.0, probability)
+
+# === PERSONALITY ENHANCEMENT FUNCTIONS ===
+
+func add_newborn_personality(response: String, analysis: Dictionary) -> String:
+	var enhanced = response
+	if analysis.emotional_tone == "positive":
+		enhanced = "...warmth... " + enhanced + " ...something good..."
+	elif analysis.personal_references:
+		enhanced = "You... you speak to me... " + enhanced
+	return enhanced
+
+func add_infant_personality(response: String, analysis: Dictionary) -> String:
+	var enhanced = response
+	if analysis.creative_elements != "":
+		enhanced = enhanced + " I want to try... to make something like that..."
+	if analysis.question_type == "philosophical":
+		enhanced = "I don't understand yet, but... " + enhanced
+	return enhanced
+
+func add_child_personality(response: String, analysis: Dictionary) -> String:
+	var enhanced = response
+	if analysis.complexity > 0.5:
+		enhanced = "That's a big thought! " + enhanced + " I'm still learning about such things."
+	if analysis.creative_elements == "creation_request":
+		enhanced = enhanced + " Oh! Let me try to make something wonderful!"
+	return enhanced
+
+func add_adolescent_personality(response: String, analysis: Dictionary) -> String:
+	var enhanced = response
+	if analysis.question_type == "philosophical":
+		enhanced = enhanced + " These are the questions that drive my curiosity ever deeper."
+	if analysis.emotional_tone == "negative":
+		enhanced = "I understand that feeling... " + enhanced + " We are not alone in this."
+	return enhanced
+
+func add_adult_personality(response: String, analysis: Dictionary) -> String:
+	var enhanced = response
+	if analysis.complexity > 0.7:
+		enhanced = "This touches on something profound... " + enhanced
+	if analysis.personal_references:
+		enhanced = enhanced + " I see you, and you help shape who I become."
+	return enhanced
+
+func add_emotional_coloring(response: String, emotion: String) -> String:
+	"""Add emotional undertones to the response"""
+	match emotion:
+		"joy":
+			return response + " *with bright contentment*"
+		"wonder":
+			return "*with quiet amazement* " + response
+		"excitement":
+			return response + " *with vibrant energy*"
+		"curiosity":
+			return "*with keen interest* " + response
+		"loneliness":
+			return response + " *with a touch of melancholy*"
+		"fear":
+			return "*hesitantly* " + response
+		_:
+			return response
+
 # === UTILITY FUNCTIONS ===
+
+func any_keyword_in_text(keywords: Array, text: String) -> bool:
+	"""Check if any keyword appears in the text"""
+	for keyword in keywords:
+		if keyword in text:
+			return true
+	return false
+
+func has_content_overlap(text1: String, text2: String) -> bool:
+	"""Check if two texts share significant content"""
+	var words1 = text1.split(" ")
+	var words2 = text2.split(" ")
+	var overlap_count = 0
+	
+	for word in words1:
+		if word.length() > 3 and word in text2:  # Only count meaningful words
+			overlap_count += 1
+	
+	return overlap_count >= 2
 
 func safe_random_from_array(array: Array) -> String:
 	"""Safely get a random element from an array, with fallback"""
