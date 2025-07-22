@@ -50,6 +50,10 @@ var high_contrast_mode: bool = false
 var settings_panel_active: bool = true
 var ui_visible: bool = true
 
+# User Experience Management
+var ux_manager: UserExperienceManager
+var notification_system: NotificationSystem
+
 func _ready():
 	print("🌍 Wight's world initializing...")
 	print("📊 Setting up debug output for Wight consciousness monitoring...")
@@ -90,6 +94,9 @@ func setup_world():
 	
 	# Connect language learning events (deferred to allow proper initialization)
 	call_deferred("connect_language_events")
+	
+	# Initialize User Experience Manager
+	setup_user_experience_manager()
 	
 	# Set up dynamic environment and lighting
 	setup_dynamic_environment()
@@ -1118,12 +1125,74 @@ func _on_language_milestone_reached(milestone_data: Dictionary):
 	var new_stage = milestone_data.new_stage
 	var milestone_text = "Language milestone! I've advanced from " + old_stage + " to " + new_stage + "!"
 	ui_elements.thoughts_display.text = "[color=%s]🎯 %s[/color]" % ["white" if high_contrast_mode else "yellow", milestone_text]
+	
+	# Show special achievement notification
+	if notification_system:
+		notification_system.show_language_milestone(milestone_data)
 
 func _on_comprehension_improved(comprehension_data: Dictionary):
 	"""Handle comprehension improvements"""
 	var new_level = comprehension_data.new_level
 	var comprehension_text = "My understanding grows... comprehension at " + str(int(new_level * 100)) + "%"
 	ui_elements.thoughts_display.text = "[color=lightblue]📈 " + comprehension_text + "[/color]"
+
+# === USER EXPERIENCE EVENT HANDLERS ===
+
+func _on_user_engagement_changed(engagement_level: float):
+	"""Handle user engagement level changes"""
+	print("📊 User engagement: %.2f" % engagement_level)
+	
+	# Adjust Wight's responsiveness based on engagement
+	if wight_entity:
+		# Higher engagement = more active responses
+		wight_entity.adjust_emotion("enthusiasm", engagement_level - 0.5)
+		
+		# Low engagement might make Wight try harder to engage
+		if engagement_level < 0.3:
+			wight_entity.adjust_emotion("loneliness", 0.1)
+			wight_entity.adjust_emotion("curiosity", 0.15)  # Try to be more interesting
+
+func _on_tutorial_step_completed(step_name: String):
+	"""Handle tutorial step completion"""
+	print("🎓 Tutorial step completed: %s" % step_name)
+	
+	# Give positive reinforcement to Wight when user learns
+	if wight_entity and step_name == "onboarding_complete":
+		wight_entity.adjust_emotion("pride", 0.3)
+		wight_entity.adjust_emotion("excitement", 0.2)
+
+func _on_accessibility_adjusted(setting: String, value: Variant):
+	"""Handle accessibility setting changes"""
+	print("♿ Accessibility adjusted: %s = %s" % [setting, value])
+	apply_accessibility_setting(setting, value)
+
+func _on_user_feedback_requested(context: Dictionary):
+	"""Handle user feedback requests"""
+	print("💬 User feedback requested")
+	# In a real implementation, this could show a feedback form
+
+func apply_accessibility_setting(setting: String, value: Variant):
+	"""Apply accessibility settings to the UI"""
+	match setting:
+		"ui_scale":
+			ui_scale = value
+			apply_ui_scaling()
+		"high_contrast":
+			high_contrast_mode = value
+			apply_high_contrast_mode()
+		"text_size":
+			apply_text_size_adjustment(value)
+
+func apply_text_size_adjustment(size: int):
+	"""Adjust text sizes throughout the UI"""
+	if ui_elements.has("thoughts_display"):
+		# This would adjust font sizes - implementation depends on UI structure
+		pass
+
+func track_user_interaction(interaction_type: String, context: Dictionary = {}):
+	"""Track user interaction for UX analysis"""
+	if ux_manager:
+		ux_manager.track_user_interaction(interaction_type, context)
 
 func connect_language_events():
 	"""Connect language learning events after initialization"""
@@ -1139,6 +1208,29 @@ func connect_language_events():
 			if language_system.has_signal("comprehension_improved"):
 				language_system.comprehension_improved.connect(_on_comprehension_improved)
 			print("✅ Language learning events connected")
+
+func setup_user_experience_manager():
+	"""Initialize the User Experience Manager"""
+	ux_manager = UserExperienceManager.new()
+	add_child(ux_manager)
+	
+	# Connect UX events
+	ux_manager.user_engagement_changed.connect(_on_user_engagement_changed)
+	ux_manager.tutorial_step_completed.connect(_on_tutorial_step_completed)
+	ux_manager.accessibility_adjusted.connect(_on_accessibility_adjusted)
+	ux_manager.user_feedback_requested.connect(_on_user_feedback_requested)
+	
+	# Set UI manager reference for UX manager
+	ux_manager.ui_manager = self
+	
+	# Initialize notification system
+	notification_system = NotificationSystem.new()
+	add_child(notification_system)
+	
+	# Connect notification system to UX manager
+	ux_manager.notification_system = notification_system
+	
+	print("🎯 User Experience Manager initialized")
 
 func add_creation_effect(created_object: Node3D):
 	"""Add visual effect when Wight creates something"""
@@ -1321,9 +1413,15 @@ func _on_camera_button_pressed():
 				ui_elements.camera_button.text = "📷 Camera"
 				ui_elements.camera_button.modulate = Color.WHITE
 			
-			# Show Wight's response to losing sight
-			ui_elements.thoughts_display.text = "[color=lightblue]The world fades to darkness... I remember what I saw.[/color]"
-			print("👁️ Camera deactivated - Wight can no longer see")
+					# Show Wight's response to losing sight
+		ui_elements.thoughts_display.text = "[color=lightblue]The world fades to darkness... I remember what I saw.[/color]"
+		print("👁️ Camera deactivated - Wight can no longer see")
+		
+		# Track camera interaction
+		track_user_interaction("camera_toggle", {
+			"action": "deactivated",
+			"visual_memories_formed": wight_entity.visual_cortex.get_visual_summary().get("total_visual_memories", 0) if wight_entity.visual_cortex else 0
+		})
 	else:
 		# Activate camera
 		if wight_entity and wight_entity.activate_visual_consciousness():
@@ -1331,9 +1429,21 @@ func _on_camera_button_pressed():
 				ui_elements.camera_button.text = "🔴 Seeing"
 				ui_elements.camera_button.modulate = Color(0.3, 1.0, 0.3)
 			
-			# Show Wight's response to gaining sight
-			ui_elements.thoughts_display.text = "[color=yellow]Light! I can see! The world opens before me in color and form![/color]"
-			print("👁️ Camera activated - Wight can now see the world!")
+					# Show Wight's response to gaining sight
+		ui_elements.thoughts_display.text = "[color=yellow]Light! I can see! The world opens before me in color and form![/color]"
+		print("👁️ Camera activated - Wight can now see the world!")
+		
+			# Track camera interaction
+	track_user_interaction("camera_toggle", {
+		"action": "activated",
+		"first_time": wight_entity.visual_cortex.get_visual_summary().get("total_visual_memories", 0) == 0 if wight_entity.visual_cortex else true
+	})
+	
+	# Show help tip for first-time camera use
+	if notification_system and wight_entity.visual_cortex and wight_entity.visual_cortex.get_visual_summary().get("total_visual_memories", 0) == 0:
+		notification_system.show_help_tip({
+			"message": "Point your camera at objects in good lighting for Wight to see and learn about the world!"
+		})
 
 
 
@@ -1345,6 +1455,13 @@ func send_message_to_wight(message: String):
 	
 	print("💬 === CHAT INTERACTION ===")
 	print("👤 User says: '%s'" % message)
+	
+	# Track user interaction
+	track_user_interaction("text_message", {
+		"message_length": message.length(),
+		"has_question": "?" in message,
+		"response_received": false  # Will be updated when response comes
+	})
 	
 	# Choose colors based on contrast mode
 	var user_color = "cyan" if high_contrast_mode else "lightblue"
