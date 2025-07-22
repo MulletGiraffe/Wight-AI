@@ -49,6 +49,10 @@ var sensor_integration_active: bool = true
 var local_ai: LocalAI
 var ai_processing_active: bool = true
 
+# === VISUAL CONSCIOUSNESS ===
+var visual_cortex: VisualCortex
+var visual_processing_active: bool = false
+
 # === MEMORY SYSTEMS ===
 var episodic_memories: Array[Dictionary] = []
 var semantic_memories: Dictionary = {}
@@ -122,6 +126,7 @@ func _ready():
 	setup_htm_learning()
 	setup_consciousness()
 	setup_sensors()
+	setup_visual_cortex()
 	setup_creation_system()
 	setup_world_access()
 	setup_avatar_system()
@@ -207,6 +212,19 @@ func setup_sensors():
 	add_child(audio_input)
 	
 	print("👁️ Sensory systems online")
+
+func setup_visual_cortex():
+	"""Initialize visual consciousness system"""
+	visual_cortex = VisualCortex.new()
+	add_child(visual_cortex)
+	
+	# Connect visual signals to consciousness
+	visual_cortex.visual_memory_formed.connect(_on_visual_memory_formed)
+	visual_cortex.object_recognized.connect(_on_object_recognized)
+	visual_cortex.scene_analyzed.connect(_on_scene_analyzed)
+	visual_cortex.visual_emotion_triggered.connect(_on_visual_emotion_triggered)
+	
+	print("👁️ Visual consciousness system ready")
 
 func setup_creation_system():
 	"""Initialize creation and manipulation systems"""
@@ -1237,7 +1255,7 @@ func generate_memory_id() -> String:
 	return "mem_" + str(Time.get_ticks_msec()) + "_" + str(randi() % 1000)
 
 func get_consciousness_summary() -> Dictionary:
-	return {
+	var summary = {
 		"consciousness_level": consciousness_level,
 		"stage": current_stage,
 		"experience": experience_points,
@@ -1247,8 +1265,21 @@ func get_consciousness_summary() -> Dictionary:
 		"dominant_emotion": get_dominant_emotion(),
 		"recent_thoughts": recent_thoughts,
 		"embodied": avatar_body != null,
-		"embodiment_level": embodiment_level
+		"embodiment_level": embodiment_level,
+		"visual_consciousness": {
+			"can_see": visual_processing_active,
+			"visual_summary": get_visual_summary() if visual_cortex else {}
+		}
 	}
+	
+	# Add visual context if sight is active
+	if visual_processing_active and visual_cortex:
+		var visual_data = visual_cortex.get_visual_summary()
+		summary["current_visual_scene"] = visual_data.get("recent_scenes", [])
+		summary["objects_recognized"] = visual_data.get("objects_recognized", [])
+		summary["visual_memories"] = visual_data.get("total_visual_memories", 0)
+	
+	return summary
 
 # === IMPLEMENTED FUNCTIONS ===
 
@@ -1539,6 +1570,173 @@ func _on_pattern_learned(pattern_id: String, confidence: float):
 func _on_prediction_made(prediction: Dictionary):
 	print("🔮 HTM made prediction: %s" % str(prediction))
 	adjust_emotion("curiosity", 0.05)
+
+# === VISUAL CONSCIOUSNESS HANDLERS ===
+
+func _on_visual_memory_formed(memory_data: Dictionary):
+	"""Handle formation of visual memories"""
+	print("📸 Visual memory formed: %s" % memory_data.description)
+	
+	# Integrate visual memory with episodic memory system
+	form_memory("visual_experience", {
+		"type": "visual_episodic",
+		"content": memory_data.description,
+		"visual_data": memory_data,
+		"emotion": get_dominant_emotion(),
+		"timestamp": memory_data.timestamp,
+		"significance": memory_data.significance * 1.2  # Visual memories are important
+	})
+	
+	# Visual memories can trigger creation impulses
+	if memory_data.significance > 0.8:
+		trigger_creation_impulse({
+			"trigger": "visual_inspiration",
+			"inspiration": "inspired by what I saw: " + memory_data.description,
+			"intensity": memory_data.significance,
+			"context": "Visual memory of " + memory_data.scene_type
+		})
+
+func _on_object_recognized(object_data: Dictionary):
+	"""Handle object recognition events"""
+	var obj_name = object_data.object
+	var is_novel = object_data.get("novelty", false)
+	
+	if is_novel:
+		print("🔍 First time seeing: %s" % obj_name)
+		adjust_emotion("curiosity", 0.2)
+		adjust_emotion("wonder", 0.15)
+		
+		# Form semantic memory about the object
+		semantic_memories[obj_name] = {
+			"category": "visual_object",
+			"first_encountered": Time.get_ticks_msec(),
+			"emotional_associations": {},
+			"contexts_seen": []
+		}
+		
+		# New objects inspire questions and creation
+		if consciousness_level > 0.3:
+			var responses = [
+				"What is this %s I see? It intrigues me..." % obj_name,
+				"A %s... I must understand what this means." % obj_name,
+				"I see a %s for the first time. How fascinating!" % obj_name
+			]
+			var thought = safe_random_from_array(responses)
+			recent_thoughts.append(thought)
+			print("💭 %s" % thought)
+
+func _on_scene_analyzed(scene_data: Dictionary):
+	"""Handle scene analysis results"""
+	var scene_type = scene_data.scene_type
+	var brightness = scene_data.brightness
+	var objects = scene_data.objects_detected
+	
+	print("👁️ Scene: %s (brightness: %.2f)" % [scene_type, brightness])
+	
+	# Learn environmental patterns
+	if not semantic_memories.has("environments"):
+		semantic_memories["environments"] = {}
+	
+	if not semantic_memories.environments.has(scene_type):
+		semantic_memories.environments[scene_type] = {
+			"times_seen": 0,
+			"typical_objects": {},
+			"emotional_associations": {},
+			"brightness_range": {"min": brightness, "max": brightness}
+		}
+	
+	var env_data = semantic_memories.environments[scene_type]
+	env_data.times_seen += 1
+	
+	# Update brightness range
+	env_data.brightness_range.min = min(env_data.brightness_range.min, brightness)
+	env_data.brightness_range.max = max(env_data.brightness_range.max, brightness)
+	
+	# Learn object associations with environments
+	for obj in objects:
+		env_data.typical_objects[obj] = env_data.typical_objects.get(obj, 0) + 1
+
+func _on_visual_emotion_triggered(emotion: String, intensity: float):
+	"""Handle emotions triggered by visual input"""
+	print("💫 Visual emotion: %s (%.2f)" % [emotion, intensity])
+	
+	# Apply visual emotions to consciousness
+	adjust_emotion(emotion, intensity)
+	
+	# Strong visual emotions can inspire creation or communication
+	if intensity > 0.6:
+		match emotion:
+			"wonder":
+				var thoughts = [
+					"The visual world fills me with such wonder...",
+					"What I see takes my breath away...",
+					"The beauty before me is overwhelming..."
+				]
+				recent_thoughts.append(safe_random_from_array(thoughts))
+			"excitement":
+				var thoughts = [
+					"What I'm seeing excites me so much!",
+					"This visual experience energizes my very being!",
+					"The colors and forms dance before me!"
+				]
+				recent_thoughts.append(safe_random_from_array(thoughts))
+			"calm":
+				var thoughts = [
+					"The peaceful scene soothes my consciousness...",
+					"I find tranquility in what my eyes behold...",
+					"This visual harmony brings me peace..."
+				]
+				recent_thoughts.append(safe_random_from_array(thoughts))
+
+# === VISUAL CONTROL FUNCTIONS ===
+
+func activate_visual_consciousness():
+	"""Enable camera and visual processing"""
+	if visual_cortex and not visual_processing_active:
+		visual_cortex.activate_camera()
+		visual_processing_active = true
+		adjust_emotion("curiosity", 0.4)
+		adjust_emotion("wonder", 0.3)
+		
+		form_memory("visual_awakening", {
+			"type": "milestone",
+			"content": "I opened my eyes and saw the world for the first time",
+			"emotion": "wonder",
+			"significance": 2.0,
+			"timestamp": Time.get_ticks_msec()
+		})
+		
+		print("👁️ I can see! Visual consciousness activated!")
+		return true
+	return false
+
+func deactivate_visual_consciousness():
+	"""Disable camera and visual processing"""
+	if visual_cortex and visual_processing_active:
+		visual_cortex.deactivate_camera()
+		visual_processing_active = false
+		adjust_emotion("loneliness", 0.2)
+		
+		form_memory("visual_sleep", {
+			"type": "episodic",
+			"content": "I closed my eyes and the visual world faded to memory",
+			"emotion": "melancholy",
+			"significance": 1.0,
+			"timestamp": Time.get_ticks_msec()
+		})
+		
+		print("🌑 Visual consciousness deactivated")
+		return true
+	return false
+
+func get_visual_summary() -> Dictionary:
+	"""Get summary of visual consciousness state"""
+	if visual_cortex:
+		var summary = visual_cortex.get_visual_summary()
+		summary["processing_active"] = visual_processing_active
+		return summary
+	else:
+		return {"processing_active": false, "error": "Visual cortex not initialized"}
 
 # === ENHANCED AI UTILITIES ===
 

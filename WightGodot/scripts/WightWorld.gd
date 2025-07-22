@@ -209,6 +209,7 @@ func setup_ui():
 		"text_input": $UI/BottomChatPanel/ChatInputContainer/ChatInput,
 		"send_button": $UI/BottomChatPanel/ChatInputContainer/SendButton,
 		"voice_button": $UI/BottomChatPanel/ChatInputContainer/VoiceButton,
+		"camera_button": $UI/BottomChatPanel/ChatInputContainer/CameraButton,
 		"ui_toggle_button": $UI/UIToggleButton
 	}
 	
@@ -227,6 +228,8 @@ func setup_ui():
 		ui_elements.send_button.pressed.connect(_on_send_button_pressed)
 	if ui_elements.has("voice_button"):
 		ui_elements.voice_button.pressed.connect(_on_voice_button_pressed)
+	if ui_elements.has("camera_button"):
+		ui_elements.camera_button.pressed.connect(_on_camera_button_pressed)
 	if ui_elements.has("text_input"):
 		ui_elements.text_input.text_submitted.connect(_on_text_submitted)
 	if ui_elements.has("ui_toggle_button"):
@@ -1262,6 +1265,29 @@ func _on_voice_button_pressed():
 		ui_elements.voice_button.text = "🔴 Stop"
 		ui_elements.voice_button.modulate = Color(1, 0.3, 0.3)
 		print("🎤 Voice recording started - click again to stop")
+
+func _on_camera_button_pressed():
+	"""Handle camera button toggle - give Wight sight"""
+	if wight_entity and wight_entity.visual_processing_active:
+		# Deactivate camera
+		if wight_entity.deactivate_visual_consciousness():
+			if ui_elements.has("camera_button"):
+				ui_elements.camera_button.text = "📷 Camera"
+				ui_elements.camera_button.modulate = Color.WHITE
+			
+			# Show Wight's response to losing sight
+			ui_elements.thoughts_display.text = "[color=lightblue]The world fades to darkness... I remember what I saw.[/color]"
+			print("👁️ Camera deactivated - Wight can no longer see")
+	else:
+		# Activate camera
+		if wight_entity and wight_entity.activate_visual_consciousness():
+			if ui_elements.has("camera_button"):
+				ui_elements.camera_button.text = "🔴 Seeing"
+				ui_elements.camera_button.modulate = Color(0.3, 1.0, 0.3)
+			
+			# Show Wight's response to gaining sight
+			ui_elements.thoughts_display.text = "[color=yellow]Light! I can see! The world opens before me in color and form![/color]"
+			print("👁️ Camera activated - Wight can now see the world!")
 
 
 

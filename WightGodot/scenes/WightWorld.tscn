@@ -336,6 +336,13 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 16
 text = "🎤 Voice"
 
+[node name="CameraButton" type="Button" parent="UI/BottomChatPanel/ChatInputContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "📷 Camera"
+
 [node name="UIToggleButton" type="Button" parent="UI"]
 layout_mode = 1
 anchors_preset = 1
