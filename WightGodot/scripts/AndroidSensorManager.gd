@@ -8,15 +8,15 @@ signal sensor_data_updated(sensor_data: Dictionary)
 signal sensor_pattern_detected(pattern_type: String, data: Dictionary)
 
 # Sensor references
-var accelerometer_sensor: SensorData
-var gyroscope_sensor: SensorData
-var magnetometer_sensor: SensorData
-var light_sensor: SensorData
-var proximity_sensor: SensorData
+var accelerometer_sensor: Dictionary = {}
+var gyroscope_sensor: Dictionary = {}
+var magnetometer_sensor: Dictionary = {}
+var light_sensor: Dictionary = {}
+var proximity_sensor: Dictionary = {}
 
 # Audio input
 var audio_input: AudioStreamPlayer
-var audio_spectrum: AudioSpectrogramData
+var audio_spectrum: AudioEffectSpectrumAnalyzer
 
 # Current sensor readings
 var current_sensor_data: Dictionary = {}
@@ -71,7 +71,8 @@ func request_android_permissions():
 	
 	# Request permissions (Godot 4 method)
 	if OS.has_method("request_permissions"):
-		OS.request_permissions(permissions)
+		for permission in permissions:
+			OS.request_permission(permission)
 		permissions_granted = true
 		print("✅ Android permissions requested")
 	else:

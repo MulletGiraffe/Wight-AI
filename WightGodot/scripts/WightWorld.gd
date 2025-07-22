@@ -1075,14 +1075,14 @@ func send_message_to_wight(message: String):
 		var response = wight_entity.generate_response(message)
 		print("🤖 Wight responds: '%s'" % response)
 		
-			# Add Wight's response to conversation
-	add_to_conversation("[color=%s]Wight: %s[/color]" % [wight_color, response])
-	
-	# Update thoughts display with the response
-	ui_elements.thoughts_display.text = "[color=%s]%s[/color]" % [thought_color, response]
-	
-	# Make Wight speak the response out loud
-	speak_response(response)
+		# Add Wight's response to conversation
+		add_to_conversation("[color=%s]Wight: %s[/color]" % [wight_color, response])
+		
+		# Update thoughts display with the response
+		ui_elements.thoughts_display.text = "[color=%s]%s[/color]" % [thought_color, response]
+		
+		# Make Wight speak the response out loud
+		speak_response(response)
 	else:
 		print("❌ Wight cannot generate responses - method missing")
 	
@@ -1103,37 +1103,7 @@ func add_to_conversation(text: String):
 
 # === VOICE HANDLING FUNCTIONS ===
 
-func start_voice_recognition():
-	"""Start voice recognition"""
-	print("🎤 Starting voice recognition...")
-	voice_recognition_active = true
-	
-	# In a real implementation, this would start Android speech recognition
-	# For now, we'll simulate it
-	print("🔊 Voice recording active - speak now!")
-
-func stop_voice_recognition():
-	"""Stop voice recognition"""
-	print("🔇 Stopping voice recognition...")
-	voice_recognition_active = false
-
-func simulate_voice_input():
-	"""Simulate voice input for testing"""
-	var test_phrases = [
-		"Hello Wight, how are you feeling?",
-		"What are you thinking about?",
-		"Can you create something for me?",
-		"Tell me about your emotions",
-		"What do you see in your world?",
-		"I want to talk to you",
-		"Show me what you can do"
-	]
-	
-	var random_phrase = test_phrases[randi() % test_phrases.size()]
-	print("🎤 Simulated voice input: '%s'" % random_phrase)
-	
-	# Process the simulated voice input
-	send_message_to_wight(random_phrase)
+# (duplicate functions removed - using the first implementations above)
 
 func speak_response(text: String):
 	"""Make Wight speak the response using text-to-speech"""
