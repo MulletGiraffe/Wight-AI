@@ -177,7 +177,7 @@ func setup_ui():
 		"thoughts_display": $UI/MainInterface/ThoughtsPanel/ThoughtsContainer/WightThoughts,
 		"conversation_history": $UI/MainInterface/ChatPanel/ChatContainer/ConversationHistory,
 		
-		# Bottom chat panel
+		# Bottom chat panel  
 		"text_input": $UI/BottomChatPanel/ChatInputContainer/ChatInput,
 		"send_button": $UI/BottomChatPanel/ChatInputContainer/SendButton,
 		"voice_button": $UI/BottomChatPanel/ChatInputContainer/VoiceButton,
@@ -1474,16 +1474,7 @@ func describe_pattern(pattern_data: Dictionary) -> String:
 
 # === MISSING SIGNAL HANDLERS ===
 
-# (duplicate _on_consciousness_event function removed - using the first implementation)
-
-func _on_creation_impulse(creation_data: Dictionary):
-	"""Handle creation impulses from Wight"""
-	print("🎨 Creation impulse: %s" % creation_data.get("inspiration", "unknown"))
-	
-	# Update UI to show creation activity
-	if ui_elements.has("thoughts_display"):
-		var inspiration = creation_data.get("inspiration", "something new")
-		ui_elements.thoughts_display.text = "[color=yellow]I want to create %s![/color]" % inspiration
+# (duplicate functions removed - using the first implementations)
 
 # === UI VISIBILITY CONTROLS ===
 
