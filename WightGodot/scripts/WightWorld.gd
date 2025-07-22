@@ -53,6 +53,7 @@ var ui_visible: bool = true
 # User Experience Management
 var ux_manager: UserExperienceManager
 var notification_system: NotificationSystem
+var navigation_system: WorldNavigationSystem
 
 func _ready():
 	print("🌍 Wight's world initializing...")
@@ -220,6 +221,10 @@ func setup_ui():
 		"send_button": $UI/BottomChatPanel/ChatInputContainer/SendButton,
 		"voice_button": $UI/BottomChatPanel/ChatInputContainer/VoiceButton,
 		"camera_button": $UI/BottomChatPanel/ChatInputContainer/CameraButton,
+		"find_wight_button": $UI/MainInterface/NavigationPanel/NavContainer/FindWightButton,
+		"follow_button": $UI/MainInterface/NavigationPanel/NavContainer/FollowButton,
+		"tour_button": $UI/MainInterface/NavigationPanel/NavContainer/TourButton,
+		"mode_indicator": $UI/MainInterface/NavigationPanel/NavContainer/ModeIndicator,
 		"ui_toggle_button": $UI/UIToggleButton
 	}
 	
@@ -244,6 +249,14 @@ func setup_ui():
 		ui_elements.text_input.text_submitted.connect(_on_text_submitted)
 	if ui_elements.has("ui_toggle_button"):
 		ui_elements.ui_toggle_button.pressed.connect(toggle_ui_visibility)
+	
+	# Connect navigation buttons
+	if ui_elements.has("find_wight_button"):
+		ui_elements.find_wight_button.pressed.connect(_on_find_wight_pressed)
+	if ui_elements.has("follow_button"):
+		ui_elements.follow_button.pressed.connect(_on_follow_button_pressed)
+	if ui_elements.has("tour_button"):
+		ui_elements.tour_button.pressed.connect(_on_tour_button_pressed)
 	
 	# Show settings panel initially, hide main interface
 	ui_elements.main_interface.visible = false
@@ -1194,6 +1207,88 @@ func track_user_interaction(interaction_type: String, context: Dictionary = {}):
 	if ux_manager:
 		ux_manager.track_user_interaction(interaction_type, context)
 
+# === NAVIGATION EVENT HANDLERS ===
+
+func _on_wight_located(position: Vector3):
+	"""Handle Wight being located"""
+	print("🎯 Wight found at: %s" % position)
+	
+	# Show notification
+	if notification_system:
+		notification_system.show_info("Wight Located! 🎯", "Found Wight at his current location")
+	
+	# Track interaction
+	track_user_interaction("wight_located", {"position": position})
+
+func _on_interesting_object_found(object: Node3D, description: String):
+	"""Handle interesting object discovery"""
+	print("🔍 Found interesting object: %s" % description)
+	
+	# Show notification
+	if notification_system:
+		notification_system.show_info("Discovery! 🔍", description)
+	
+	# Track interaction
+	track_user_interaction("object_interaction", {
+		"object_name": object.name,
+		"description": description
+	})
+
+func _on_navigation_mode_changed(mode: String):
+	"""Handle navigation mode changes"""
+	print("🧭 Navigation mode: %s" % mode)
+	
+	# Update UI to show current mode
+	if ui_elements.has("mode_indicator"):
+		ui_elements.mode_indicator.text = "📍 " + mode.replace("_", " ").capitalize()
+	
+	# Show help tips for new modes
+	if notification_system:
+		match mode:
+			"FOLLOW_WIGHT":
+				notification_system.show_help_tip({
+					"message": "Camera is now following Wight! Drag to look around while staying focused on him."
+				})
+			"GUIDED_TOUR":
+				notification_system.show_help_tip({
+					"message": "Starting guided tour of interesting objects! Sit back and enjoy the journey."
+				})
+			"MEMORY_JOURNEY":
+				notification_system.show_help_tip({
+					"message": "Taking you on a journey through Wight's memories! Each location tells a story."
+				})
+
+# === NAVIGATION BUTTON HANDLERS ===
+
+func _on_find_wight_pressed():
+	"""Handle Find Wight button press"""
+	if navigation_system:
+		var found = navigation_system.find_wight()
+		
+		# Track interaction
+		track_user_interaction("find_wight_button", {"found": found})
+		
+		if not found and notification_system:
+			notification_system.show_info("Searching... 🔍", "Looking for Wight in his world...")
+
+func _on_follow_button_pressed():
+	"""Handle Follow button press"""
+	if navigation_system:
+		navigation_system.toggle_follow_mode()
+		
+		# Track interaction
+		track_user_interaction("follow_button", {
+			"new_mode": navigation_system.current_mode
+		})
+
+func _on_tour_button_pressed():
+	"""Handle Tour button press"""
+	if navigation_system:
+		navigation_system.start_guided_tour()
+		
+		# Track interaction
+		track_user_interaction("tour_button", {"started": true})
+
 func connect_language_events():
 	"""Connect language learning events after initialization"""
 	if wight_entity and wight_entity.has_method("get_language_summary"):
@@ -1229,6 +1324,15 @@ func setup_user_experience_manager():
 	
 	# Connect notification system to UX manager
 	ux_manager.notification_system = notification_system
+	
+	# Initialize navigation system
+	navigation_system = WorldNavigationSystem.new()
+	add_child(navigation_system)
+	
+	# Connect navigation events
+	navigation_system.wight_located.connect(_on_wight_located)
+	navigation_system.interesting_object_found.connect(_on_interesting_object_found)
+	navigation_system.navigation_mode_changed.connect(_on_navigation_mode_changed)
 	
 	print("🎯 User Experience Manager initialized")
 
