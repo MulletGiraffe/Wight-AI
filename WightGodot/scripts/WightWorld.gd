@@ -170,15 +170,17 @@ func setup_ui():
 		"cancel_button": $UI/SettingsPanel/SettingsContainer/ButtonContainer/CancelButton,
 		"apply_button": $UI/SettingsPanel/SettingsContainer/ButtonContainer/ApplyButton,
 		
-		# Main interface
+		# Main interface (top area)
 		"main_interface": $UI/MainInterface,
 		"status_label": $UI/MainInterface/TopPanel/StatusContainer/StatusLabel,
 		"emotion_label": $UI/MainInterface/TopPanel/StatusContainer/EmotionLabel,
 		"thoughts_display": $UI/MainInterface/ThoughtsPanel/ThoughtsContainer/WightThoughts,
 		"conversation_history": $UI/MainInterface/ChatPanel/ChatContainer/ConversationHistory,
-		"text_input": $UI/MainInterface/ChatPanel/ChatContainer/InputRow/TextInput,
-		"send_button": $UI/MainInterface/ChatPanel/ChatContainer/InputRow/SendButton,
-		"voice_button": $UI/MainInterface/ChatPanel/ChatContainer/InputRow/VoiceButton,
+		
+		# Bottom chat panel
+		"text_input": $UI/BottomChatPanel/ChatInputContainer/ChatInput,
+		"send_button": $UI/BottomChatPanel/ChatInputContainer/SendButton,
+		"voice_button": $UI/BottomChatPanel/ChatInputContainer/VoiceButton,
 		"ui_toggle_button": $UI/UIToggleButton
 	}
 	
@@ -1017,35 +1019,37 @@ func _on_send_button_pressed():
 	"""Handle send button press"""
 	var text = ui_elements.text_input.text.strip_edges()
 	if text.length() > 0:
+		print("📤 Send button pressed: '%s'" % text)
 		send_message_to_wight(text)
+		# Clear text input after processing
+		await get_tree().process_frame
 		ui_elements.text_input.text = ""
+		ui_elements.text_input.call_deferred("grab_focus")
 
 func _on_text_submitted(text: String):
 	"""Handle text input submission (Enter key)"""
 	var clean_text = text.strip_edges()
 	if clean_text.length() > 0:
+		print("📝 Text submitted: '%s'" % clean_text)
 		send_message_to_wight(clean_text)
+		# Clear text input after processing
+		await get_tree().process_frame
 		ui_elements.text_input.text = ""
+		ui_elements.text_input.call_deferred("grab_focus")
 
 func _on_voice_button_pressed():
-	"""Handle voice button press"""
+	"""Handle voice button press - toggle voice recording"""
 	# Toggle voice recording
 	if voice_recognition_active:
 		stop_voice_recognition()
 		ui_elements.voice_button.text = "🎤 Voice"
 		ui_elements.voice_button.modulate = Color.WHITE
+		print("🔇 Voice recording stopped")
 	else:
 		start_voice_recognition()
 		ui_elements.voice_button.text = "🔴 Stop"
 		ui_elements.voice_button.modulate = Color(1, 0.3, 0.3)
-		
-		# Simulate voice input for now
-		await get_tree().create_timer(2.0).timeout
-		if voice_recognition_active:
-			simulate_voice_input()
-			stop_voice_recognition()
-			ui_elements.voice_button.text = "🎤 Voice"
-			ui_elements.voice_button.modulate = Color.WHITE
+		print("🎤 Voice recording started - click again to stop")
 
 
 
@@ -1470,19 +1474,7 @@ func describe_pattern(pattern_data: Dictionary) -> String:
 
 # === MISSING SIGNAL HANDLERS ===
 
-func _on_consciousness_event(event_type: String, data: Dictionary):
-	"""Handle consciousness events from Wight"""
-	print("🧠 Consciousness event: %s" % event_type)
-	
-	match event_type:
-		"voice_received":
-			print("📢 Wight received voice input: %s" % data.get("message", ""))
-		"emotion_change":
-			print("😊 Wight's emotion changed: %s" % data.get("emotion", ""))
-		"memory_formed":
-			print("🧠 Wight formed memory: %s" % data.get("category", ""))
-		_:
-			print("❓ Unknown consciousness event: %s" % event_type)
+# (duplicate _on_consciousness_event function removed - using the first implementation)
 
 func _on_creation_impulse(creation_data: Dictionary):
 	"""Handle creation impulses from Wight"""
