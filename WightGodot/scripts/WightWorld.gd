@@ -54,6 +54,7 @@ var ui_visible: bool = true
 var ux_manager: UserExperienceManager
 var notification_system: NotificationSystem
 var navigation_system: WorldNavigationSystem
+var joystick_controller: DualJoystickController
 
 func _ready():
 	print("🌍 Wight's world initializing...")
@@ -1286,8 +1287,69 @@ func _on_tour_button_pressed():
 	if navigation_system:
 		navigation_system.start_guided_tour()
 		
-		# Track interaction
-		track_user_interaction("tour_button", {"started": true})
+			# Track interaction
+	track_user_interaction("tour_button", {"started": true})
+
+# === JOYSTICK CONTROL HANDLERS ===
+
+func _on_left_joystick_moved(direction: Vector2, intensity: float):
+	"""Handle left joystick movement (Camera control)"""
+	if navigation_system and intensity > 0.0:
+		# Convert 2D joystick input to camera orbit rotation
+		var rotation_speed = 2.0 * intensity
+		
+		# X-axis controls yaw (left/right rotation)
+		navigation_system.orbit_yaw += direction.x * rotation_speed
+		
+		# Y-axis controls pitch (up/down rotation) 
+		navigation_system.orbit_pitch = clamp(
+			navigation_system.orbit_pitch - direction.y * rotation_speed, 
+			-80, 80
+		)
+		
+		# Update camera position
+		navigation_system.update_camera_position()
+
+func _on_right_joystick_moved(direction: Vector2, intensity: float):
+	"""Handle right joystick movement (World navigation)"""
+	if navigation_system and intensity > 0.0:
+		var camera = get_viewport().get_camera_3d()
+		if not camera:
+			return
+		
+		# Calculate movement relative to camera orientation
+		var camera_forward = -camera.global_transform.basis.z
+		var camera_right = camera.global_transform.basis.x
+		
+		# Project to horizontal plane (remove Y component for ground movement)
+		camera_forward.y = 0
+		camera_right.y = 0
+		camera_forward = camera_forward.normalized()
+		camera_right = camera_right.normalized()
+		
+		# Calculate movement direction
+		var movement_speed = 10.0 * intensity
+		var movement_vector = (camera_right * direction.x + camera_forward * -direction.y) * movement_speed
+		
+		# Apply world movement with momentum
+		navigation_system.apply_world_movement(movement_vector * get_process_delta_time())
+		
+		# Track movement
+		track_user_interaction("world_movement", {
+			"direction": direction,
+			"intensity": intensity,
+			"movement_vector": movement_vector
+		})
+
+func _on_joystick_released(joystick_id: String):
+	"""Handle joystick release"""
+	print("🕹️ %s joystick released" % joystick_id.capitalize())
+	
+	# Track interaction
+	track_user_interaction("joystick_released", {"joystick": joystick_id})
+	
+	# Optional: Add momentum/smoothing when joystick is released
+	# This could make movement feel more natural
 
 func connect_language_events():
 	"""Connect language learning events after initialization"""
@@ -1333,6 +1395,15 @@ func setup_user_experience_manager():
 	navigation_system.wight_located.connect(_on_wight_located)
 	navigation_system.interesting_object_found.connect(_on_interesting_object_found)
 	navigation_system.navigation_mode_changed.connect(_on_navigation_mode_changed)
+	
+	# Initialize dual joystick controller
+	joystick_controller = DualJoystickController.new()
+	add_child(joystick_controller)
+	
+	# Connect joystick events
+	joystick_controller.left_joystick_moved.connect(_on_left_joystick_moved)
+	joystick_controller.right_joystick_moved.connect(_on_right_joystick_moved)
+	joystick_controller.joystick_released.connect(_on_joystick_released)
 	
 	print("🎯 User Experience Manager initialized")
 

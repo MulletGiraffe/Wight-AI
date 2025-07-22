@@ -33,6 +33,11 @@ var zoom_speed: float = 2.0
 var min_distance: float = 2.0
 var max_distance: float = 20.0
 
+# Movement smoothing
+var movement_smoothing: bool = true
+var movement_momentum: Vector3 = Vector3.ZERO
+var momentum_decay: float = 0.95
+
 # Touch/mouse input handling
 var is_dragging: bool = false
 var drag_start_position: Vector2
@@ -445,8 +450,22 @@ func update_memory_locations():
 
 # === NAVIGATION STATE ===
 
+func apply_world_movement(movement_vector: Vector3):
+	"""Apply movement to the world with optional momentum"""
+	if movement_smoothing:
+		movement_momentum = movement_momentum.lerp(movement_vector, 0.3)
+		orbit_center += movement_momentum
+	else:
+		orbit_center += movement_vector
+
 func update_navigation(delta):
 	"""Update navigation system each frame"""
+	# Apply momentum decay
+	if movement_smoothing and movement_momentum.length() > 0.01:
+		movement_momentum *= momentum_decay
+		if movement_momentum.length() < 0.01:
+			movement_momentum = Vector3.ZERO
+	
 	# Smooth camera movement
 	update_camera_position()
 	
