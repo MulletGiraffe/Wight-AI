@@ -92,20 +92,20 @@ func add_initial_lighting():
 	print("💡 Setting up initial lighting...")
 	
 	# Add point lights around the scene
-	var light1 = PointLight3D.new()
+	var light1 = OmniLight3D.new()
 	light1.position = Vector3(5, 5, 5)
 	light1.light_energy = 2.0
 	light1.light_color = Color(1.0, 0.9, 0.8)
 	add_child(light1)
 	
-	var light2 = PointLight3D.new()
+	var light2 = OmniLight3D.new()
 	light2.position = Vector3(-5, 5, -5)
 	light2.light_energy = 1.5
 	light2.light_color = Color(0.8, 0.9, 1.0)
 	add_child(light2)
 	
 	# Add a subtle fill light
-	var fill_light = PointLight3D.new()
+	var fill_light = OmniLight3D.new()
 	fill_light.position = Vector3(0, 8, 0)
 	fill_light.light_energy = 1.0
 	fill_light.light_color = Color(0.9, 0.9, 1.0)
@@ -855,17 +855,6 @@ func focus_camera_on_wight():
 		camera_target = Vector3.ZERO
 		update_camera_position()
 		print("📹 Camera focused on world center")
-	
-	# Show voice activity in UI
-	ui_elements.voice_indicator.modulate = Color(0.2, 0.8, 0.2, 0.8)
-	
-	# Send to Wight entity
-	if wight_entity:
-		wight_entity.receive_voice_input(text)
-	
-	# Fade voice indicator back to inactive
-	var tween = create_tween()
-	tween.tween_property(ui_elements.voice_indicator, "modulate", Color(0.3, 0.3, 0.3, 0.5), 2.0)
 
 func print_memory_summary():
 	"""Print a summary of Wight's current state (for debugging)"""
