@@ -45,6 +45,7 @@ var ambient_light_cycle_speed: float = 0.1
 var ui_scale: float = 1.0
 var high_contrast_mode: bool = false
 var settings_panel_active: bool = true
+var ui_visible: bool = true
 
 func _ready():
 	print("🌍 Wight's world initializing...")
@@ -177,7 +178,8 @@ func setup_ui():
 		"conversation_history": $UI/MainInterface/ChatPanel/ChatContainer/ConversationHistory,
 		"text_input": $UI/MainInterface/ChatPanel/ChatContainer/InputRow/TextInput,
 		"send_button": $UI/MainInterface/ChatPanel/ChatContainer/InputRow/SendButton,
-		"voice_button": $UI/MainInterface/ChatPanel/ChatContainer/InputRow/VoiceButton
+		"voice_button": $UI/MainInterface/ChatPanel/ChatContainer/InputRow/VoiceButton,
+		"ui_toggle_button": $UI/UIToggleButton
 	}
 	
 	# Connect settings panel signals
@@ -190,6 +192,7 @@ func setup_ui():
 	ui_elements.send_button.pressed.connect(_on_send_button_pressed)
 	ui_elements.voice_button.pressed.connect(_on_voice_button_pressed)
 	ui_elements.text_input.text_submitted.connect(_on_text_submitted)
+	ui_elements.ui_toggle_button.pressed.connect(toggle_ui_visibility)
 	
 	# Show settings panel initially, hide main interface
 	ui_elements.main_interface.visible = false
@@ -517,6 +520,15 @@ func handle_key_input(event: InputEventKey):
 			KEY_MINUS:
 				# Zoom out
 				zoom_camera(1.25)
+			KEY_U:
+				# Toggle UI visibility
+				toggle_ui_visibility()
+			KEY_H:
+				# Hide UI completely
+				set_ui_visibility(false)
+			KEY_ESCAPE:
+				# Show UI
+				set_ui_visibility(true)
 			KEY_UP:
 				# Orbit camera up
 				camera_pitch -= 5.0
@@ -1184,6 +1196,11 @@ func _on_settings_apply():
 	"""Apply settings and start main app"""
 	apply_ui_settings()
 	hide_settings_panel()
+	
+	print("✅ Settings applied and main interface activated")
+	print("🎮 Controls: U=Toggle UI, H=Hide UI, ESC=Show UI, Arrow Keys=Camera")
+	print("👁️ UI is now compact - you can see the 3D sandbox on the right!")
+	print("🎯 Click the eye button (👁️) in top-right to toggle UI visibility")
 
 func update_ui_scale_preview():
 	"""Update the preview text scale"""
@@ -1505,6 +1522,43 @@ func _on_creation_impulse(creation_data: Dictionary):
 	if ui_elements.has("thoughts_display"):
 		var inspiration = creation_data.get("inspiration", "something new")
 		ui_elements.thoughts_display.text = "[color=yellow]I want to create %s![/color]" % inspiration
+
+# === UI VISIBILITY CONTROLS ===
+
+func toggle_ui_visibility():
+	"""Toggle the main interface visibility"""
+	ui_visible = !ui_visible
+	set_ui_visibility(ui_visible)
+	print("🎮 UI toggled: ", "Visible" if ui_visible else "Hidden", " (Press U to toggle, H to hide, ESC to show)")
+
+func set_ui_visibility(visible: bool):
+	"""Set UI visibility state"""
+	ui_visible = visible
+	
+	if ui_elements.has("main_interface"):
+		ui_elements.main_interface.visible = visible
+	
+	# Settings panel should always be hideable
+	if ui_elements.has("settings_panel") and not settings_panel_active:
+		ui_elements.settings_panel.visible = false
+	
+	# Keep toggle button always visible for easy access
+	if ui_elements.has("ui_toggle_button"):
+		ui_elements.ui_toggle_button.visible = true
+		# Update button text based on UI state
+		ui_elements.ui_toggle_button.text = "👁️" if not visible else "🙈"
+		ui_elements.ui_toggle_button.tooltip_text = ("Show UI (U key)" if not visible else "Hide UI (U key)")
+	
+	# Show helpful message when UI is hidden
+	if not visible:
+		print("🎮 UI Hidden - Controls:")
+		print("   U = Toggle UI")
+		print("   H = Hide UI") 
+		print("   ESC = Show UI")
+		print("   Arrow Keys = Camera orbit")
+		print("   +/- = Zoom")
+		print("   R = Reset camera")
+		print("   F = Focus on Wight")
 
 func _on_memory_formed(memory: Dictionary):
 	"""Handle when Wight forms a new memory"""
