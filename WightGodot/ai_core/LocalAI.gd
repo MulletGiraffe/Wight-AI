@@ -18,6 +18,8 @@ var interaction_count: int = 0
 var learning_rate: float = 0.1
 var personality_weights: Dictionary = {}
 var emotional_memory: Dictionary = {}
+var interaction_memory: Array[Dictionary] = []
+var pattern_effectiveness: Dictionary = {}
 
 # Neural network simulation
 var input_layer_size: int = 64
@@ -610,10 +612,129 @@ func load_personality_model(model_path: String):
 	print("🎭 Loading personality model: ", model_path)
 
 func train_on_interaction(input: String, response: String, feedback: Dictionary):
-	"""Framework for learning from interactions"""
-	# This could be used to improve responses over time
-	# Could integrate with reinforcement learning approaches
-	print("📚 Learning from interaction")
+	"""Learn and adapt from user interactions with feedback"""
+	print("📚 Learning from interaction: %s -> %s (feedback: %s)" % [input.substr(0,20), response.substr(0,20), feedback])
+	
+	# Store interaction for pattern analysis
+	var interaction_record = {
+		"input": input,
+		"response": response,
+		"feedback": feedback,
+		"timestamp": Time.get_ticks_msec(),
+		"pattern_used": feedback.get("pattern_used", "unknown"),
+		"effectiveness": feedback.get("effectiveness", 0.5)
+	}
+	
+	interaction_memory.append(interaction_record)
+	
+	# Analyze patterns that work well
+	analyze_successful_patterns()
+	
+	# Adjust neural network weights based on feedback
+	adapt_neural_weights(feedback)
+	
+	# Update response patterns if we find better alternatives
+	evolve_response_patterns(input, response, feedback)
+	
+	# Maintain memory size
+	if interaction_memory.size() > 500:
+		interaction_memory.pop_front()
+
+func analyze_successful_patterns():
+	"""Identify which response patterns are most effective"""
+	var pattern_scores = {}
+	
+	for interaction in interaction_memory:
+		var pattern = interaction.get("pattern_used", "unknown")
+		var effectiveness = interaction.get("effectiveness", 0.5)
+		
+		if not pattern_scores.has(pattern):
+			pattern_scores[pattern] = {"total": 0.0, "count": 0}
+		
+		pattern_scores[pattern].total += effectiveness
+		pattern_scores[pattern].count += 1
+	
+	# Calculate average effectiveness for each pattern
+	for pattern in pattern_scores:
+		var avg_effectiveness = pattern_scores[pattern].total / pattern_scores[pattern].count
+		pattern_effectiveness[pattern] = avg_effectiveness
+		
+		if avg_effectiveness > 0.8:
+			print("🎯 High-performing pattern identified: %s (%.2f effectiveness)" % [pattern, avg_effectiveness])
+
+func adapt_neural_weights(feedback: Dictionary):
+	"""Adjust neural network based on feedback"""
+	var effectiveness = feedback.get("effectiveness", 0.5)
+	var learning_signal = (effectiveness - 0.5) * learning_rate * 0.1
+	
+	# Adjust a small portion of the network weights
+	for i in range(min(5, network_weights[0].size())):
+		for j in range(min(5, network_weights[0][i].size())):
+			network_weights[0][i][j] += learning_signal * randf_range(-0.05, 0.05)
+			network_weights[0][i][j] = clamp(network_weights[0][i][j], -1.0, 1.0)
+	
+	print("🧠 Neural weights adapted with learning signal: %.3f" % learning_signal)
+
+func evolve_response_patterns(input: String, response: String, feedback: Dictionary):
+	"""Evolve response patterns based on successful interactions"""
+	var effectiveness = feedback.get("effectiveness", 0.5)
+	
+	# If response was highly effective, consider adding it to patterns
+	if effectiveness > 0.85:
+		var pattern_type = classify_input_pattern(input)
+		
+		# Add successful response to the pattern library
+		if response_patterns.has(pattern_type):
+			# Only add if it's sufficiently different from existing responses
+			var is_novel = true
+			for existing_response in response_patterns[pattern_type]:
+				if calculate_response_similarity(response, existing_response) > 0.7:
+					is_novel = false
+					break
+			
+			if is_novel:
+				response_patterns[pattern_type].append(response)
+				print("✨ Added novel response to pattern '%s': %s..." % [pattern_type, response.substr(0, 30)])
+		
+		# Trim pattern arrays to prevent unlimited growth
+		for pattern in response_patterns:
+			if response_patterns[pattern].size() > 8:
+				response_patterns[pattern].pop_front()
+
+func classify_input_pattern(input: String) -> String:
+	"""Classify input to determine appropriate response pattern"""
+	var lower_input = input.to_lower()
+	
+	if any_word_in(["hello", "hi", "greetings"], lower_input):
+		return "greeting"
+	elif any_word_in(["create", "make", "build"], lower_input):
+		return "creative"
+	elif any_word_in(["feel", "emotion", "sad", "happy"], lower_input):
+		return "emotional"
+	elif "?" in input:
+		return "question"
+	else:
+		return "default"
+
+func calculate_response_similarity(response1: String, response2: String) -> float:
+	"""Calculate similarity between two responses"""
+	var words1 = response1.split(" ")
+	var words2 = response2.split(" ")
+	var common_words = 0
+	
+	for word in words1:
+		if word in words2:
+			common_words += 1
+	
+	var total_words = max(words1.size(), words2.size())
+	return float(common_words) / float(total_words) if total_words > 0 else 0.0
+
+func any_word_in(words: Array, text: String) -> bool:
+	"""Check if any word from the array appears in text"""
+	for word in words:
+		if word in text:
+			return true
+	return false
 
 func export_conversation_data() -> Dictionary:
 	"""Export conversation data for model improvement"""

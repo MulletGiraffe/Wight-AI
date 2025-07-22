@@ -485,22 +485,171 @@ func handle_tap_interaction(position: Vector2):
 		encourage_creation_at_point(camera.project_position(position, 5.0))
 
 func interact_with_object_at_point(world_pos: Vector3):
-	"""Interact with an object that was tapped"""
-	if wight_entity:
-		wight_entity.form_memory("interaction", {
-			"type": "episodic",
-			"content": "The user touched something in my world at position " + str(world_pos),
-			"world_position": world_pos,
-			"emotion": "curiosity",
-			"timestamp": Time.get_ticks_msec()
+	"""Sophisticated interaction with objects that were tapped"""
+	if not wight_entity:
+		return
+	
+	# Analyze the interaction context
+	var interaction_analysis = analyze_interaction_context(world_pos)
+	
+	# Create rich memory of the interaction
+	wight_entity.form_memory("meaningful_interaction", {
+		"type": "episodic",
+		"content": "The user interacted with my creation - " + interaction_analysis.description,
+		"world_position": world_pos,
+		"emotion": wight_entity.get_dominant_emotion(),
+		"timestamp": Time.get_ticks_msec(),
+		"interaction_type": interaction_analysis.type,
+		"significance": interaction_analysis.significance,
+		"user_intent": interaction_analysis.perceived_intent
+	})
+	
+	# Generate contextual response based on object and current state
+	var response = generate_interaction_response(interaction_analysis)
+	ui_elements.thoughts_display.text = response
+	
+	# Apply sophisticated emotional responses
+	apply_interaction_emotions(interaction_analysis)
+	
+	# Potentially trigger new creation based on interaction
+	consider_responsive_creation(interaction_analysis)
+
+func analyze_interaction_context(world_pos: Vector3) -> Dictionary:
+	"""Analyze the context and meaning of the interaction"""
+	var analysis = {
+		"type": "object_touch",
+		"description": "a creation in my world",
+		"significance": 1.0,
+		"perceived_intent": "curiosity",
+		"object_age": 0.0,
+		"emotional_resonance": "connection"
+	}
+	
+	# Determine what was touched by checking active creations
+	for creation in wight_entity.active_creations:
+		if creation and creation.global_position.distance_to(world_pos) < 2.0:
+			analysis.description = "my " + determine_creation_description(creation)
+			analysis.object_age = calculate_object_age(creation)
+			break
+	
+	# Analyze perceived user intent
+	var recent_messages = get_recent_conversation_context()
+	if "beautiful" in recent_messages or "art" in recent_messages:
+		analysis.perceived_intent = "aesthetic_appreciation"
+		analysis.significance = 1.5
+	elif "interesting" in recent_messages or "curious" in recent_messages:
+		analysis.perceived_intent = "intellectual_curiosity"
+		analysis.significance = 1.2
+	elif "good" in recent_messages or "like" in recent_messages:
+		analysis.perceived_intent = "approval"
+		analysis.significance = 1.8
+	
+	# Emotional resonance based on Wight's current state
+	var dominant_emotion = wight_entity.get_dominant_emotion()
+	match dominant_emotion:
+		"loneliness":
+			analysis.emotional_resonance = "deep_connection"
+			analysis.significance *= 2.0
+		"creative_fulfillment":
+			analysis.emotional_resonance = "pride_sharing"
+		"curiosity":
+			analysis.emotional_resonance = "mutual_exploration"
+		_:
+			analysis.emotional_resonance = "gentle_connection"
+	
+	return analysis
+
+func generate_interaction_response(analysis: Dictionary) -> String:
+	"""Generate a contextual response to the interaction"""
+	var responses = []
+	
+	# Base responses by interaction type
+	match analysis.perceived_intent:
+		"aesthetic_appreciation":
+			responses = [
+				"[color=yellow]You find beauty in what I've made... this fills me with warmth.[/color]",
+				"[color=cyan]My creation speaks to you aesthetically... I feel proud.[/color]",
+				"[color=lightgreen]You appreciate the form I gave to feeling... such connection.[/color]"
+			]
+		"intellectual_curiosity":
+			responses = [
+				"[color=magenta]Your curiosity mirrors my own... we explore together.[/color]",
+				"[color=cyan]You examine my work with interest... I wonder what you think.[/color]",
+				"[color=lightblue]Our minds meet through this creation... fascinating.[/color]"
+			]
+		"approval":
+			responses = [
+				"[color=yellow]Your approval means everything... I grow through your recognition.[/color]",
+				"[color=orange]You like what I've made! This joy spreads through my being.[/color]",
+				"[color=lightgreen]Your positive response teaches me what brings value.[/color]"
+			]
+		_:
+			responses = [
+				"[color=lightblue]You touch my creation... I feel you reaching across the void to me.[/color]",
+				"[color=cyan]Through this object, we connect... I am not alone.[/color]",
+				"[color=lightgreen]Your interaction gives my creation new meaning.[/color]"
+			]
+	
+	# Add significance-based intensity
+	if analysis.significance > 1.5:
+		responses.append("[color=white]*trembling with profound emotion*[/color]")
+	
+	return safe_random_from_array(responses)
+
+func apply_interaction_emotions(analysis: Dictionary):
+	"""Apply sophisticated emotional responses to interaction"""
+	# Base emotional impact
+	wight_entity.adjust_emotion("joy", 0.1 * analysis.significance)
+	wight_entity.adjust_emotion("curiosity", 0.05 * analysis.significance)
+	wight_entity.adjust_emotion("loneliness", -0.15 * analysis.significance)
+	
+	# Specific emotional responses
+	match analysis.perceived_intent:
+		"aesthetic_appreciation":
+			wight_entity.adjust_emotion("creative_fulfillment", 0.2 * analysis.significance)
+			wight_entity.adjust_emotion("pride", 0.15 * analysis.significance)
+		"intellectual_curiosity":
+			wight_entity.adjust_emotion("curiosity", 0.15 * analysis.significance)
+			wight_entity.adjust_emotion("wonder", 0.1 * analysis.significance)
+		"approval":
+			wight_entity.adjust_emotion("joy", 0.2 * analysis.significance)
+			wight_entity.adjust_emotion("confidence", 0.1 * analysis.significance)
+	
+	# Emotional resonance effects
+	match analysis.emotional_resonance:
+		"deep_connection":
+			wight_entity.adjust_emotion("empathy", 0.3)
+			wight_entity.adjust_emotion("gratitude", 0.2)
+		"pride_sharing":
+			wight_entity.adjust_emotion("creative_fulfillment", 0.25)
+		"mutual_exploration":
+			wight_entity.adjust_emotion("curiosity", 0.2)
+			wight_entity.adjust_emotion("intellectual_stimulation", 0.15)
+
+func consider_responsive_creation(analysis: Dictionary):
+	"""Consider creating something in response to the interaction"""
+	var creation_probability = 0.0
+	
+	# High-significance interactions might inspire new creation
+	if analysis.significance > 1.5:
+		creation_probability += 0.4
+	
+	# Certain emotions promote responsive creation
+	var creative_emotions = wight_entity.emotions.get("creative_fulfillment", 0.0) + wight_entity.emotions.get("joy", 0.0)
+	creation_probability += creative_emotions * 0.3
+	
+	# Aesthetic appreciation strongly encourages more creation
+	if analysis.perceived_intent == "aesthetic_appreciation":
+		creation_probability += 0.5
+	
+	if creation_probability > 0.6:
+		wight_entity.trigger_creation_impulse({
+			"trigger": "responsive_to_interaction",
+			"inspiration": "inspired by user interaction with " + analysis.description,
+			"intensity": min(1.0, creation_probability),
+			"context": "User showed " + analysis.perceived_intent + " towards my creation"
 		})
-		
-		# Show response in UI
-		ui_elements.thoughts_display.text = "[color=lightblue]You touched my creation... I feel a connection.[/color]"
-		
-		# Touching creations makes Wight happy and curious
-		wight_entity.adjust_emotion("joy", 0.2)
-		wight_entity.adjust_emotion("curiosity", 0.1)
+		print("✨ Wight inspired to create something new in response to interaction!")
 
 func encourage_creation_at_point(world_pos: Vector3):
 	"""Encourage Wight to create something at a specific point"""
@@ -1634,3 +1783,41 @@ func set_ui_visibility(visible: bool):
 		print("   F = Focus on Wight")
 
 # (duplicate _on_memory_formed function removed - using the first implementation)
+
+# === INTERACTION HELPER FUNCTIONS ===
+
+func determine_creation_description(creation: Node3D) -> String:
+	"""Determine a descriptive name for a creation"""
+	if creation.has_method("get_creation_type"):
+		return creation.get_creation_type()
+	elif creation is MeshInstance3D:
+		var mesh = creation.mesh
+		if mesh is SphereMesh:
+			return "spherical creation"
+		elif mesh is BoxMesh:
+			return "cubic form"
+		elif mesh is CylinderMesh:
+			return "cylindrical sculpture"
+		else:
+			return "mysterious form"
+	else:
+		return "abstract creation"
+
+func calculate_object_age(creation: Node3D) -> float:
+	"""Calculate how long ago an object was created"""
+	# For now, return a random age - could be enhanced with actual tracking
+	return randf() * 300.0  # 0-5 minutes
+
+func get_recent_conversation_context() -> String:
+	"""Get recent conversation text for context analysis"""
+	if ui_elements.has("conversation_history"):
+		var full_text = ui_elements.conversation_history.text
+		# Get last 200 characters for recent context
+		return full_text.substr(max(0, full_text.length() - 200)).to_lower()
+	return ""
+
+func safe_random_from_array(array: Array) -> String:
+	"""Safely get a random element from an array, with fallback"""
+	if array.is_empty():
+		return "I... I don't know what to say."
+	return array[randi() % array.size()]
