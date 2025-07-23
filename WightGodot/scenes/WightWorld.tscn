@@ -149,8 +149,8 @@ layout_mode = 1
 anchors_preset = 1
 anchor_left = 0.0
 anchor_top = 0.0
-anchor_right = 0.4
-anchor_bottom = 1.0
+anchor_right = 0.3
+anchor_bottom = 0.4
 offset_left = 10.0
 offset_top = 10.0
 offset_right = -10.0
@@ -198,7 +198,7 @@ custom_minimum_size = Vector2(0, 20)
 
 [node name="ThoughtsPanel" type="Panel" parent="UI/MainInterface"]
 layout_mode = 2
-size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 80)
 theme_override_styles/panel = SubResource("StyleBoxFlat_1")
 
 [node name="ThoughtsContainer" type="VBoxContainer" parent="UI/MainInterface/ThoughtsPanel"]
@@ -234,7 +234,7 @@ custom_minimum_size = Vector2(0, 20)
 
 [node name="ChatPanel" type="Panel" parent="UI/MainInterface"]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 200)
+custom_minimum_size = Vector2(0, 150)
 theme_override_styles/panel = SubResource("StyleBoxFlat_1")
 
 [node name="ChatContainer" type="VBoxContainer" parent="UI/MainInterface/ChatPanel"]
@@ -290,6 +290,58 @@ custom_minimum_size = Vector2(80, 0)
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 16
 text = "🎤 Voice"
+
+[node name="BottomChatPanel" type="Panel" parent="UI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 0.85
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 0.0
+offset_right = -10.0
+offset_bottom = -10.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_1")
+
+[node name="ChatInputContainer" type="HBoxContainer" parent="UI/BottomChatPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+
+[node name="ChatInput" type="LineEdit" parent="UI/BottomChatPanel/ChatInputContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color_uneditable = Color(1, 1, 1, 1)
+theme_override_colors/font_placeholder_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 16
+placeholder_text = "Type your message to Wight..."
+
+[node name="SendButton" type="Button" parent="UI/BottomChatPanel/ChatInputContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "Send"
+
+[node name="VoiceButton" type="Button" parent="UI/BottomChatPanel/ChatInputContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "🎤 Voice"
+
+[node name="CameraButton" type="Button" parent="UI/BottomChatPanel/ChatInputContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "📷 Camera"
 
 [node name="UIToggleButton" type="Button" parent="UI"]
 layout_mode = 1

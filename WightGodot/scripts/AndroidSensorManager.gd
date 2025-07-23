@@ -8,15 +8,15 @@ signal sensor_data_updated(sensor_data: Dictionary)
 signal sensor_pattern_detected(pattern_type: String, data: Dictionary)
 
 # Sensor references
-var accelerometer_sensor: SensorData
-var gyroscope_sensor: SensorData
-var magnetometer_sensor: SensorData
-var light_sensor: SensorData
-var proximity_sensor: SensorData
+var accelerometer_sensor: Dictionary = {}
+var gyroscope_sensor: Dictionary = {}
+var magnetometer_sensor: Dictionary = {}
+var light_sensor: Dictionary = {}
+var proximity_sensor: Dictionary = {}
 
 # Audio input
 var audio_input: AudioStreamPlayer
-var audio_spectrum: AudioSpectrogramData
+var audio_spectrum: AudioEffectSpectrumAnalyzer
 
 # Current sensor readings
 var current_sensor_data: Dictionary = {}
@@ -71,7 +71,8 @@ func request_android_permissions():
 	
 	# Request permissions (Godot 4 method)
 	if OS.has_method("request_permissions"):
-		OS.request_permissions(permissions)
+		for permission in permissions:
+			OS.request_permission(permission)
 		permissions_granted = true
 		print("✅ Android permissions requested")
 	else:
@@ -456,3 +457,43 @@ func get_sensor_summary() -> Dictionary:
 		"history_size": sensor_history.size(),
 		"current_time": Time.get_ticks_msec()
 	}
+
+# === SIMULATION METHODS ===
+
+func simulate_accelerometer(acceleration: Vector3):
+	"""Simulate accelerometer input for testing"""
+	current_sensor_data.accelerometer = {
+		"x": acceleration.x,
+		"y": acceleration.y,
+		"z": acceleration.z,
+		"magnitude": acceleration.length(),
+		"timestamp": Time.get_ticks_msec()
+	}
+	
+	# Emit the sensor data update
+	sensor_data_updated.emit(current_sensor_data)
+	print("📱 Simulated accelerometer: %s" % acceleration)
+
+func simulate_gyroscope(rotation: Vector3):
+	"""Simulate gyroscope input for testing"""
+	current_sensor_data.gyroscope = {
+		"x": rotation.x,
+		"y": rotation.y,
+		"z": rotation.z,
+		"magnitude": rotation.length(),
+		"timestamp": Time.get_ticks_msec()
+	}
+	
+	sensor_data_updated.emit(current_sensor_data)
+	print("📱 Simulated gyroscope: %s" % rotation)
+
+func simulate_light_sensor(lux_value: float):
+	"""Simulate light sensor input for testing"""
+	current_sensor_data.light = {
+		"lux": lux_value,
+		"brightness_level": "bright" if lux_value > 200 else "dim" if lux_value > 50 else "dark",
+		"timestamp": Time.get_ticks_msec()
+	}
+	
+	sensor_data_updated.emit(current_sensor_data)
+	print("📱 Simulated light sensor: %.1f lux" % lux_value)

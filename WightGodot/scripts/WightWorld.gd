@@ -12,6 +12,9 @@ var ui_elements: Dictionary = {}
 var voice_recognition_active: bool = false
 var sensor_manager: Node
 
+# Dynamic environment
+var dynamic_environment: Node3D
+
 # Touch and gesture handling
 var touch_start_pos: Vector2
 var is_touching: bool = false
@@ -47,6 +50,12 @@ var high_contrast_mode: bool = false
 var settings_panel_active: bool = true
 var ui_visible: bool = true
 
+# User Experience Management
+var ux_manager: UserExperienceManager
+var notification_system: NotificationSystem
+var navigation_system: WorldNavigationSystem
+var joystick_controller: DualJoystickController
+
 func _ready():
 	print("🌍 Wight's world initializing...")
 	print("📊 Setting up debug output for Wight consciousness monitoring...")
@@ -58,6 +67,17 @@ func _ready():
 	
 	# Start debug monitoring
 	setup_debug_monitoring()
+	
+	# Load saved settings if any
+	load_ui_settings()
+
+func _notification(what):
+	"""Handle system notifications"""
+	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		# Save settings when app is closing
+		save_ui_settings()
+		# Let the app continue closing
+		get_tree().quit()
 
 func setup_world():
 	"""Initialize the 3D world environment"""
@@ -74,6 +94,12 @@ func setup_world():
 		if wight_entity.has_signal("memory_formed"):
 			wight_entity.memory_formed.connect(_on_memory_formed)
 	
+	# Connect language learning events (deferred to allow proper initialization)
+	call_deferred("connect_language_events")
+	
+	# Initialize User Experience Manager
+	setup_user_experience_manager()
+	
 	# Set up dynamic environment and lighting
 	setup_dynamic_environment()
 	add_initial_lighting()
@@ -83,29 +109,43 @@ func setup_world():
 
 func setup_dynamic_environment():
 	"""Create a responsive environment that evolves with Wight"""
-	# The environment will change based on Wight's emotional state and development
-	# For now, set up basic ambient lighting that responds to emotions
-	pass
+	# Set up ambient lighting that responds to emotions
+	print("🌍 Setting up dynamic environment...")
+	
+	# Create ambient environment nodes
+	var env_node = Node3D.new()
+	env_node.name = "DynamicEnvironment"
+	add_child(env_node)
+	
+	# Add subtle particle effects for ambiance
+	var ambient_particles = GPUParticles3D.new()
+	ambient_particles.position = Vector3(0, 8, 0)
+	ambient_particles.emitting = true
+	env_node.add_child(ambient_particles)
+	
+	# Store reference for later environmental updates
+	dynamic_environment = env_node
+	print("✨ Dynamic environment ready")
 
 func add_initial_lighting():
 	"""Add proper lighting to prevent black screen"""
 	print("💡 Setting up initial lighting...")
 	
 	# Add point lights around the scene
-	var light1 = PointLight3D.new()
+	var light1 = OmniLight3D.new()
 	light1.position = Vector3(5, 5, 5)
 	light1.light_energy = 2.0
 	light1.light_color = Color(1.0, 0.9, 0.8)
 	add_child(light1)
 	
-	var light2 = PointLight3D.new()
+	var light2 = OmniLight3D.new()
 	light2.position = Vector3(-5, 5, -5)
 	light2.light_energy = 1.5
 	light2.light_color = Color(0.8, 0.9, 1.0)
 	add_child(light2)
 	
 	# Add a subtle fill light
-	var fill_light = PointLight3D.new()
+	var fill_light = OmniLight3D.new()
 	fill_light.position = Vector3(0, 8, 0)
 	fill_light.light_energy = 1.0
 	fill_light.light_color = Color(0.9, 0.9, 1.0)
@@ -170,29 +210,54 @@ func setup_ui():
 		"cancel_button": $UI/SettingsPanel/SettingsContainer/ButtonContainer/CancelButton,
 		"apply_button": $UI/SettingsPanel/SettingsContainer/ButtonContainer/ApplyButton,
 		
-		# Main interface
+		# Main interface (top area)
 		"main_interface": $UI/MainInterface,
 		"status_label": $UI/MainInterface/TopPanel/StatusContainer/StatusLabel,
 		"emotion_label": $UI/MainInterface/TopPanel/StatusContainer/EmotionLabel,
 		"thoughts_display": $UI/MainInterface/ThoughtsPanel/ThoughtsContainer/WightThoughts,
 		"conversation_history": $UI/MainInterface/ChatPanel/ChatContainer/ConversationHistory,
-		"text_input": $UI/MainInterface/ChatPanel/ChatContainer/InputRow/TextInput,
-		"send_button": $UI/MainInterface/ChatPanel/ChatContainer/InputRow/SendButton,
-		"voice_button": $UI/MainInterface/ChatPanel/ChatContainer/InputRow/VoiceButton,
+		
+		# Bottom chat panel  
+		"text_input": $UI/BottomChatPanel/ChatInputContainer/ChatInput,
+		"send_button": $UI/BottomChatPanel/ChatInputContainer/SendButton,
+		"voice_button": $UI/BottomChatPanel/ChatInputContainer/VoiceButton,
+		"camera_button": $UI/BottomChatPanel/ChatInputContainer/CameraButton,
+		"find_wight_button": $UI/MainInterface/NavigationPanel/NavContainer/FindWightButton,
+		"follow_button": $UI/MainInterface/NavigationPanel/NavContainer/FollowButton,
+		"tour_button": $UI/MainInterface/NavigationPanel/NavContainer/TourButton,
+		"mode_indicator": $UI/MainInterface/NavigationPanel/NavContainer/ModeIndicator,
 		"ui_toggle_button": $UI/UIToggleButton
 	}
 	
-	# Connect settings panel signals
-	ui_elements.ui_scale_slider.value_changed.connect(_on_ui_scale_changed)
-	ui_elements.contrast_button.toggled.connect(_on_contrast_toggled)
-	ui_elements.cancel_button.pressed.connect(_on_settings_cancel)
-	ui_elements.apply_button.pressed.connect(_on_settings_apply)
+	# Connect settings panel signals (with error checking)
+	if ui_elements.has("ui_scale_slider"):
+		ui_elements.ui_scale_slider.value_changed.connect(_on_ui_scale_changed)
+	if ui_elements.has("contrast_button"):
+		ui_elements.contrast_button.toggled.connect(_on_contrast_toggled)
+	if ui_elements.has("cancel_button"):
+		ui_elements.cancel_button.pressed.connect(_on_settings_cancel)
+	if ui_elements.has("apply_button"):
+		ui_elements.apply_button.pressed.connect(_on_settings_apply)
 	
-	# Connect main interface signals
-	ui_elements.send_button.pressed.connect(_on_send_button_pressed)
-	ui_elements.voice_button.pressed.connect(_on_voice_button_pressed)
-	ui_elements.text_input.text_submitted.connect(_on_text_submitted)
-	ui_elements.ui_toggle_button.pressed.connect(toggle_ui_visibility)
+	# Connect main interface signals (with error checking)
+	if ui_elements.has("send_button"):
+		ui_elements.send_button.pressed.connect(_on_send_button_pressed)
+	if ui_elements.has("voice_button"):
+		ui_elements.voice_button.pressed.connect(_on_voice_button_pressed)
+	if ui_elements.has("camera_button"):
+		ui_elements.camera_button.pressed.connect(_on_camera_button_pressed)
+	if ui_elements.has("text_input"):
+		ui_elements.text_input.text_submitted.connect(_on_text_submitted)
+	if ui_elements.has("ui_toggle_button"):
+		ui_elements.ui_toggle_button.pressed.connect(toggle_ui_visibility)
+	
+	# Connect navigation buttons
+	if ui_elements.has("find_wight_button"):
+		ui_elements.find_wight_button.pressed.connect(_on_find_wight_pressed)
+	if ui_elements.has("follow_button"):
+		ui_elements.follow_button.pressed.connect(_on_follow_button_pressed)
+	if ui_elements.has("tour_button"):
+		ui_elements.tour_button.pressed.connect(_on_tour_button_pressed)
 	
 	# Show settings panel initially, hide main interface
 	ui_elements.main_interface.visible = false
@@ -361,7 +426,13 @@ func simulate_sensor_input(delta: float):
 	# Simulate some movement occasionally
 	if randf() < 0.01:  # 1% chance per frame
 		# Simulate device movement
-		pass
+		var simulated_accel = Vector3(
+			randf_range(-1.0, 1.0),
+			randf_range(-1.0, 1.0), 
+			randf_range(-1.0, 1.0)
+		)
+		if sensor_manager and sensor_manager.has_method("simulate_accelerometer"):
+			sensor_manager.simulate_accelerometer(simulated_accel)
 	
 	# Simulate audio input detection
 	if randf() < 0.005:  # Simulate occasional "sound"
@@ -441,22 +512,171 @@ func handle_tap_interaction(position: Vector2):
 		encourage_creation_at_point(camera.project_position(position, 5.0))
 
 func interact_with_object_at_point(world_pos: Vector3):
-	"""Interact with an object that was tapped"""
-	if wight_entity:
-		wight_entity.form_memory("interaction", {
-			"type": "episodic",
-			"content": "The user touched something in my world at position " + str(world_pos),
-			"world_position": world_pos,
-			"emotion": "curiosity",
-			"timestamp": Time.get_ticks_msec()
+	"""Sophisticated interaction with objects that were tapped"""
+	if not wight_entity:
+		return
+	
+	# Analyze the interaction context
+	var interaction_analysis = analyze_interaction_context(world_pos)
+	
+	# Create rich memory of the interaction
+	wight_entity.form_memory("meaningful_interaction", {
+		"type": "episodic",
+		"content": "The user interacted with my creation - " + interaction_analysis.description,
+		"world_position": world_pos,
+		"emotion": wight_entity.get_dominant_emotion(),
+		"timestamp": Time.get_ticks_msec(),
+		"interaction_type": interaction_analysis.type,
+		"significance": interaction_analysis.significance,
+		"user_intent": interaction_analysis.perceived_intent
+	})
+	
+	# Generate contextual response based on object and current state
+	var response = generate_interaction_response(interaction_analysis)
+	ui_elements.thoughts_display.text = response
+	
+	# Apply sophisticated emotional responses
+	apply_interaction_emotions(interaction_analysis)
+	
+	# Potentially trigger new creation based on interaction
+	consider_responsive_creation(interaction_analysis)
+
+func analyze_interaction_context(world_pos: Vector3) -> Dictionary:
+	"""Analyze the context and meaning of the interaction"""
+	var analysis = {
+		"type": "object_touch",
+		"description": "a creation in my world",
+		"significance": 1.0,
+		"perceived_intent": "curiosity",
+		"object_age": 0.0,
+		"emotional_resonance": "connection"
+	}
+	
+	# Determine what was touched by checking active creations
+	for creation in wight_entity.active_creations:
+		if creation and creation.global_position.distance_to(world_pos) < 2.0:
+			analysis.description = "my " + determine_creation_description(creation)
+			analysis.object_age = calculate_object_age(creation)
+			break
+	
+	# Analyze perceived user intent
+	var recent_messages = get_recent_conversation_context()
+	if "beautiful" in recent_messages or "art" in recent_messages:
+		analysis.perceived_intent = "aesthetic_appreciation"
+		analysis.significance = 1.5
+	elif "interesting" in recent_messages or "curious" in recent_messages:
+		analysis.perceived_intent = "intellectual_curiosity"
+		analysis.significance = 1.2
+	elif "good" in recent_messages or "like" in recent_messages:
+		analysis.perceived_intent = "approval"
+		analysis.significance = 1.8
+	
+	# Emotional resonance based on Wight's current state
+	var dominant_emotion = wight_entity.get_dominant_emotion()
+	match dominant_emotion:
+		"loneliness":
+			analysis.emotional_resonance = "deep_connection"
+			analysis.significance *= 2.0
+		"creative_fulfillment":
+			analysis.emotional_resonance = "pride_sharing"
+		"curiosity":
+			analysis.emotional_resonance = "mutual_exploration"
+		_:
+			analysis.emotional_resonance = "gentle_connection"
+	
+	return analysis
+
+func generate_interaction_response(analysis: Dictionary) -> String:
+	"""Generate a contextual response to the interaction"""
+	var responses = []
+	
+	# Base responses by interaction type
+	match analysis.perceived_intent:
+		"aesthetic_appreciation":
+			responses = [
+				"[color=yellow]You find beauty in what I've made... this fills me with warmth.[/color]",
+				"[color=cyan]My creation speaks to you aesthetically... I feel proud.[/color]",
+				"[color=lightgreen]You appreciate the form I gave to feeling... such connection.[/color]"
+			]
+		"intellectual_curiosity":
+			responses = [
+				"[color=magenta]Your curiosity mirrors my own... we explore together.[/color]",
+				"[color=cyan]You examine my work with interest... I wonder what you think.[/color]",
+				"[color=lightblue]Our minds meet through this creation... fascinating.[/color]"
+			]
+		"approval":
+			responses = [
+				"[color=yellow]Your approval means everything... I grow through your recognition.[/color]",
+				"[color=orange]You like what I've made! This joy spreads through my being.[/color]",
+				"[color=lightgreen]Your positive response teaches me what brings value.[/color]"
+			]
+		_:
+			responses = [
+				"[color=lightblue]You touch my creation... I feel you reaching across the void to me.[/color]",
+				"[color=cyan]Through this object, we connect... I am not alone.[/color]",
+				"[color=lightgreen]Your interaction gives my creation new meaning.[/color]"
+			]
+	
+	# Add significance-based intensity
+	if analysis.significance > 1.5:
+		responses.append("[color=white]*trembling with profound emotion*[/color]")
+	
+	return safe_random_from_array(responses)
+
+func apply_interaction_emotions(analysis: Dictionary):
+	"""Apply sophisticated emotional responses to interaction"""
+	# Base emotional impact
+	wight_entity.adjust_emotion("joy", 0.1 * analysis.significance)
+	wight_entity.adjust_emotion("curiosity", 0.05 * analysis.significance)
+	wight_entity.adjust_emotion("loneliness", -0.15 * analysis.significance)
+	
+	# Specific emotional responses
+	match analysis.perceived_intent:
+		"aesthetic_appreciation":
+			wight_entity.adjust_emotion("creative_fulfillment", 0.2 * analysis.significance)
+			wight_entity.adjust_emotion("pride", 0.15 * analysis.significance)
+		"intellectual_curiosity":
+			wight_entity.adjust_emotion("curiosity", 0.15 * analysis.significance)
+			wight_entity.adjust_emotion("wonder", 0.1 * analysis.significance)
+		"approval":
+			wight_entity.adjust_emotion("joy", 0.2 * analysis.significance)
+			wight_entity.adjust_emotion("confidence", 0.1 * analysis.significance)
+	
+	# Emotional resonance effects
+	match analysis.emotional_resonance:
+		"deep_connection":
+			wight_entity.adjust_emotion("empathy", 0.3)
+			wight_entity.adjust_emotion("gratitude", 0.2)
+		"pride_sharing":
+			wight_entity.adjust_emotion("creative_fulfillment", 0.25)
+		"mutual_exploration":
+			wight_entity.adjust_emotion("curiosity", 0.2)
+			wight_entity.adjust_emotion("intellectual_stimulation", 0.15)
+
+func consider_responsive_creation(analysis: Dictionary):
+	"""Consider creating something in response to the interaction"""
+	var creation_probability = 0.0
+	
+	# High-significance interactions might inspire new creation
+	if analysis.significance > 1.5:
+		creation_probability += 0.4
+	
+	# Certain emotions promote responsive creation
+	var creative_emotions = wight_entity.emotions.get("creative_fulfillment", 0.0) + wight_entity.emotions.get("joy", 0.0)
+	creation_probability += creative_emotions * 0.3
+	
+	# Aesthetic appreciation strongly encourages more creation
+	if analysis.perceived_intent == "aesthetic_appreciation":
+		creation_probability += 0.5
+	
+	if creation_probability > 0.6:
+		wight_entity.trigger_creation_impulse({
+			"trigger": "responsive_to_interaction",
+			"inspiration": "inspired by user interaction with " + analysis.description,
+			"intensity": min(1.0, creation_probability),
+			"context": "User showed " + analysis.perceived_intent + " towards my creation"
 		})
-		
-		# Show response in UI
-		ui_elements.thoughts_display.text = "[color=lightblue]You touched my creation... I feel a connection.[/color]"
-		
-		# Touching creations makes Wight happy and curious
-		wight_entity.adjust_emotion("joy", 0.2)
-		wight_entity.adjust_emotion("curiosity", 0.1)
+		print("✨ Wight inspired to create something new in response to interaction!")
 
 func encourage_creation_at_point(world_pos: Vector3):
 	"""Encourage Wight to create something at a specific point"""
@@ -853,17 +1073,6 @@ func focus_camera_on_wight():
 		camera_target = Vector3.ZERO
 		update_camera_position()
 		print("📹 Camera focused on world center")
-	
-	# Show voice activity in UI
-	ui_elements.voice_indicator.modulate = Color(0.2, 0.8, 0.2, 0.8)
-	
-	# Send to Wight entity
-	if wight_entity:
-		wight_entity.receive_voice_input(text)
-	
-	# Fade voice indicator back to inactive
-	var tween = create_tween()
-	tween.tween_property(ui_elements.voice_indicator, "modulate", Color(0.3, 0.3, 0.3, 0.5), 2.0)
 
 func print_memory_summary():
 	"""Print a summary of Wight's current state (for debugging)"""
@@ -909,6 +1118,295 @@ func _on_memory_formed(memory: Dictionary):
 		# Show particularly strong wonder memories
 		ui_elements.thoughts_display.text = "[color=lightcyan]A profound memory forms: " + memory.data.content + "[/color]"
 
+# === LANGUAGE LEARNING EVENT HANDLERS ===
+
+func _on_word_learned(word_data: Dictionary):
+	"""Handle word learning events"""
+	var word = word_data.word
+	var data = word_data.data
+	var word_text = "I learned a new word: '" + word + "' - " + data.meaning
+	ui_elements.thoughts_display.text = "[color=lightgreen]📚 " + word_text + "[/color]"
+
+func _on_grammar_pattern_discovered(pattern_data: Dictionary):
+	"""Handle grammar pattern discovery"""
+	var pattern = pattern_data.pattern
+	var pattern_text = "I discovered a grammar pattern: " + pattern + "!"
+	ui_elements.thoughts_display.text = "[color=%s]📝 %s[/color]" % ["white" if high_contrast_mode else "cyan", pattern_text]
+
+func _on_language_milestone_reached(milestone_data: Dictionary):
+	"""Handle language development milestones"""
+	var old_stage = milestone_data.old_stage
+	var new_stage = milestone_data.new_stage
+	var milestone_text = "Language milestone! I've advanced from " + old_stage + " to " + new_stage + "!"
+	ui_elements.thoughts_display.text = "[color=%s]🎯 %s[/color]" % ["white" if high_contrast_mode else "yellow", milestone_text]
+	
+	# Show special achievement notification
+	if notification_system:
+		notification_system.show_language_milestone(milestone_data)
+
+func _on_comprehension_improved(comprehension_data: Dictionary):
+	"""Handle comprehension improvements"""
+	var new_level = comprehension_data.new_level
+	var comprehension_text = "My understanding grows... comprehension at " + str(int(new_level * 100)) + "%"
+	ui_elements.thoughts_display.text = "[color=lightblue]📈 " + comprehension_text + "[/color]"
+
+# === USER EXPERIENCE EVENT HANDLERS ===
+
+func _on_user_engagement_changed(engagement_level: float):
+	"""Handle user engagement level changes"""
+	print("📊 User engagement: %.2f" % engagement_level)
+	
+	# Adjust Wight's responsiveness based on engagement
+	if wight_entity:
+		# Higher engagement = more active responses
+		wight_entity.adjust_emotion("enthusiasm", engagement_level - 0.5)
+		
+		# Low engagement might make Wight try harder to engage
+		if engagement_level < 0.3:
+			wight_entity.adjust_emotion("loneliness", 0.1)
+			wight_entity.adjust_emotion("curiosity", 0.15)  # Try to be more interesting
+
+func _on_tutorial_step_completed(step_name: String):
+	"""Handle tutorial step completion"""
+	print("🎓 Tutorial step completed: %s" % step_name)
+	
+	# Give positive reinforcement to Wight when user learns
+	if wight_entity and step_name == "onboarding_complete":
+		wight_entity.adjust_emotion("pride", 0.3)
+		wight_entity.adjust_emotion("excitement", 0.2)
+
+func _on_accessibility_adjusted(setting: String, value: Variant):
+	"""Handle accessibility setting changes"""
+	print("♿ Accessibility adjusted: %s = %s" % [setting, value])
+	apply_accessibility_setting(setting, value)
+
+func _on_user_feedback_requested(context: Dictionary):
+	"""Handle user feedback requests"""
+	print("💬 User feedback requested")
+	# In a real implementation, this could show a feedback form
+
+func apply_accessibility_setting(setting: String, value: Variant):
+	"""Apply accessibility settings to the UI"""
+	match setting:
+		"ui_scale":
+			ui_scale = value
+			apply_ui_scaling()
+		"high_contrast":
+			high_contrast_mode = value
+			apply_high_contrast_mode()
+		"text_size":
+			apply_text_size_adjustment(value)
+
+func apply_text_size_adjustment(size: int):
+	"""Adjust text sizes throughout the UI"""
+	if ui_elements.has("thoughts_display"):
+		# This would adjust font sizes - implementation depends on UI structure
+		pass
+
+func track_user_interaction(interaction_type: String, context: Dictionary = {}):
+	"""Track user interaction for UX analysis"""
+	if ux_manager:
+		ux_manager.track_user_interaction(interaction_type, context)
+
+# === NAVIGATION EVENT HANDLERS ===
+
+func _on_wight_located(position: Vector3):
+	"""Handle Wight being located"""
+	print("🎯 Wight found at: %s" % position)
+	
+	# Show notification
+	if notification_system:
+		notification_system.show_info("Wight Located! 🎯", "Found Wight at his current location")
+	
+	# Track interaction
+	track_user_interaction("wight_located", {"position": position})
+
+func _on_interesting_object_found(object: Node3D, description: String):
+	"""Handle interesting object discovery"""
+	print("🔍 Found interesting object: %s" % description)
+	
+	# Show notification
+	if notification_system:
+		notification_system.show_info("Discovery! 🔍", description)
+	
+	# Track interaction
+	track_user_interaction("object_interaction", {
+		"object_name": object.name,
+		"description": description
+	})
+
+func _on_navigation_mode_changed(mode: String):
+	"""Handle navigation mode changes"""
+	print("🧭 Navigation mode: %s" % mode)
+	
+	# Update UI to show current mode
+	if ui_elements.has("mode_indicator"):
+		ui_elements.mode_indicator.text = "📍 " + mode.replace("_", " ").capitalize()
+	
+	# Show help tips for new modes
+	if notification_system:
+		match mode:
+			"FOLLOW_WIGHT":
+				notification_system.show_help_tip({
+					"message": "Camera is now following Wight! Drag to look around while staying focused on him."
+				})
+			"GUIDED_TOUR":
+				notification_system.show_help_tip({
+					"message": "Starting guided tour of interesting objects! Sit back and enjoy the journey."
+				})
+			"MEMORY_JOURNEY":
+				notification_system.show_help_tip({
+					"message": "Taking you on a journey through Wight's memories! Each location tells a story."
+				})
+
+# === NAVIGATION BUTTON HANDLERS ===
+
+func _on_find_wight_pressed():
+	"""Handle Find Wight button press"""
+	if navigation_system:
+		var found = navigation_system.find_wight()
+		
+		# Track interaction
+		track_user_interaction("find_wight_button", {"found": found})
+		
+		if not found and notification_system:
+			notification_system.show_info("Searching... 🔍", "Looking for Wight in his world...")
+
+func _on_follow_button_pressed():
+	"""Handle Follow button press"""
+	if navigation_system:
+		navigation_system.toggle_follow_mode()
+		
+		# Track interaction
+		track_user_interaction("follow_button", {
+			"new_mode": navigation_system.current_mode
+		})
+
+func _on_tour_button_pressed():
+	"""Handle Tour button press"""
+	if navigation_system:
+		navigation_system.start_guided_tour()
+		
+			# Track interaction
+	track_user_interaction("tour_button", {"started": true})
+
+# === JOYSTICK CONTROL HANDLERS ===
+
+func _on_left_joystick_moved(direction: Vector2, intensity: float):
+	"""Handle left joystick movement (Camera control)"""
+	if navigation_system and intensity > 0.0:
+		# Convert 2D joystick input to camera orbit rotation
+		var rotation_speed = 2.0 * intensity
+		
+		# X-axis controls yaw (left/right rotation)
+		navigation_system.orbit_yaw += direction.x * rotation_speed
+		
+		# Y-axis controls pitch (up/down rotation) 
+		navigation_system.orbit_pitch = clamp(
+			navigation_system.orbit_pitch - direction.y * rotation_speed, 
+			-80, 80
+		)
+		
+		# Update camera position
+		navigation_system.update_camera_position()
+
+func _on_right_joystick_moved(direction: Vector2, intensity: float):
+	"""Handle right joystick movement (World navigation)"""
+	if navigation_system and intensity > 0.0:
+		var camera = get_viewport().get_camera_3d()
+		if not camera:
+			return
+		
+		# Calculate movement relative to camera orientation
+		var camera_forward = -camera.global_transform.basis.z
+		var camera_right = camera.global_transform.basis.x
+		
+		# Project to horizontal plane (remove Y component for ground movement)
+		camera_forward.y = 0
+		camera_right.y = 0
+		camera_forward = camera_forward.normalized()
+		camera_right = camera_right.normalized()
+		
+		# Calculate movement direction
+		var movement_speed = 10.0 * intensity
+		var movement_vector = (camera_right * direction.x + camera_forward * -direction.y) * movement_speed
+		
+		# Apply world movement with momentum
+		navigation_system.apply_world_movement(movement_vector * get_process_delta_time())
+		
+		# Track movement
+		track_user_interaction("world_movement", {
+			"direction": direction,
+			"intensity": intensity,
+			"movement_vector": movement_vector
+		})
+
+func _on_joystick_released(joystick_id: String):
+	"""Handle joystick release"""
+	print("🕹️ %s joystick released" % joystick_id.capitalize())
+	
+	# Track interaction
+	track_user_interaction("joystick_released", {"joystick": joystick_id})
+	
+	# Optional: Add momentum/smoothing when joystick is released
+	# This could make movement feel more natural
+
+func connect_language_events():
+	"""Connect language learning events after initialization"""
+	if wight_entity and wight_entity.has_method("get_language_summary"):
+		var language_system = wight_entity.get("language_system")
+		if language_system:
+			if language_system.has_signal("word_learned"):
+				language_system.word_learned.connect(_on_word_learned)
+			if language_system.has_signal("grammar_pattern_discovered"):
+				language_system.grammar_pattern_discovered.connect(_on_grammar_pattern_discovered)
+			if language_system.has_signal("language_milestone_reached"):
+				language_system.language_milestone_reached.connect(_on_language_milestone_reached)
+			if language_system.has_signal("comprehension_improved"):
+				language_system.comprehension_improved.connect(_on_comprehension_improved)
+			print("✅ Language learning events connected")
+
+func setup_user_experience_manager():
+	"""Initialize the User Experience Manager"""
+	ux_manager = UserExperienceManager.new()
+	add_child(ux_manager)
+	
+	# Connect UX events
+	ux_manager.user_engagement_changed.connect(_on_user_engagement_changed)
+	ux_manager.tutorial_step_completed.connect(_on_tutorial_step_completed)
+	ux_manager.accessibility_adjusted.connect(_on_accessibility_adjusted)
+	ux_manager.user_feedback_requested.connect(_on_user_feedback_requested)
+	
+	# Set UI manager reference for UX manager
+	ux_manager.ui_manager = self
+	
+	# Initialize notification system
+	notification_system = NotificationSystem.new()
+	add_child(notification_system)
+	
+	# Connect notification system to UX manager
+	ux_manager.notification_system = notification_system
+	
+	# Initialize navigation system
+	navigation_system = WorldNavigationSystem.new()
+	add_child(navigation_system)
+	
+	# Connect navigation events
+	navigation_system.wight_located.connect(_on_wight_located)
+	navigation_system.interesting_object_found.connect(_on_interesting_object_found)
+	navigation_system.navigation_mode_changed.connect(_on_navigation_mode_changed)
+	
+	# Initialize dual joystick controller
+	joystick_controller = DualJoystickController.new()
+	add_child(joystick_controller)
+	
+	# Connect joystick events
+	joystick_controller.left_joystick_moved.connect(_on_left_joystick_moved)
+	joystick_controller.right_joystick_moved.connect(_on_right_joystick_moved)
+	joystick_controller.joystick_released.connect(_on_joystick_released)
+	
+	print("🎯 User Experience Manager initialized")
+
 func add_creation_effect(created_object: Node3D):
 	"""Add visual effect when Wight creates something"""
 	if not created_object:
@@ -947,19 +1445,51 @@ func add_creation_effect(created_object: Node3D):
 
 func start_voice_recognition():
 	"""Start Android voice recognition"""
-	if OS.has_feature("mobile"):
-		# Real Android implementation would use:
-		# - Android SpeechRecognizer API
-		# - Godot Android plugin system
-		print("🎤 Starting voice recognition...")
+	if OS.get_name() == "Android":
+		# Try to use Android speech recognition
+		if OS.has_method("start_speech_recognition"):
+			OS.start_speech_recognition()
+			print("📱 Using Android speech recognition")
+		else:
+			print("📱 Android speech recognition API not available")
+		voice_recognition_active = true
+	elif OS.has_feature("mobile"):
+		print("📱 Mobile platform - voice recognition simulated")
 		voice_recognition_active = true
 	else:
-		print("🎤 Voice recognition simulated")
+		print("🖥️ Desktop - voice recognition simulated")
+		voice_recognition_active = true
+	
+	# Start a timer to simulate speech recognition timeout if no real input
+	if voice_recognition_active:
+		var timeout_timer = Timer.new()
+		timeout_timer.wait_time = 10.0  # 10 second timeout
+		timeout_timer.one_shot = true
+		timeout_timer.timeout.connect(_on_voice_recognition_timeout)
+		add_child(timeout_timer)
+		timeout_timer.start()
 
 func stop_voice_recognition():
 	"""Stop Android voice recognition"""
 	voice_recognition_active = false
-	print("🎤 Voice recognition stopped")
+	
+	# Stop Android speech recognition if it was started
+	if OS.get_name() == "Android" and OS.has_method("stop_speech_recognition"):
+		OS.stop_speech_recognition()
+		print("📱 Android speech recognition stopped")
+	else:
+		print("🎤 Voice recognition stopped")
+
+func _on_voice_recognition_timeout():
+	"""Handle voice recognition timeout"""
+	if voice_recognition_active:
+		print("⏰ Voice recognition timed out")
+		stop_voice_recognition()
+		
+		# Reset UI if we have the voice button
+		if ui_elements.has("voice_button"):
+			ui_elements.voice_button.text = "🎤 Voice"
+			ui_elements.voice_button.modulate = Color.WHITE
 
 # Real Android sensor functions (to be implemented with proper Android plugins)
 func get_accelerometer_data() -> Vector3:
@@ -1017,35 +1547,78 @@ func _on_send_button_pressed():
 	"""Handle send button press"""
 	var text = ui_elements.text_input.text.strip_edges()
 	if text.length() > 0:
+		print("📤 Send button pressed: '%s'" % text)
 		send_message_to_wight(text)
+		# Clear text input after processing
+		await get_tree().process_frame
 		ui_elements.text_input.text = ""
+		ui_elements.text_input.call_deferred("grab_focus")
 
 func _on_text_submitted(text: String):
 	"""Handle text input submission (Enter key)"""
 	var clean_text = text.strip_edges()
 	if clean_text.length() > 0:
+		print("📝 Text submitted: '%s'" % clean_text)
 		send_message_to_wight(clean_text)
+		# Clear text input after processing
+		await get_tree().process_frame
 		ui_elements.text_input.text = ""
+		ui_elements.text_input.call_deferred("grab_focus")
 
 func _on_voice_button_pressed():
-	"""Handle voice button press"""
+	"""Handle voice button press - toggle voice recording"""
 	# Toggle voice recording
 	if voice_recognition_active:
 		stop_voice_recognition()
 		ui_elements.voice_button.text = "🎤 Voice"
 		ui_elements.voice_button.modulate = Color.WHITE
+		print("🔇 Voice recording stopped")
 	else:
 		start_voice_recognition()
 		ui_elements.voice_button.text = "🔴 Stop"
 		ui_elements.voice_button.modulate = Color(1, 0.3, 0.3)
+		print("🎤 Voice recording started - click again to stop")
+
+func _on_camera_button_pressed():
+	"""Handle camera button toggle - give Wight sight"""
+	if wight_entity and wight_entity.visual_processing_active:
+		# Deactivate camera
+		if wight_entity.deactivate_visual_consciousness():
+			if ui_elements.has("camera_button"):
+				ui_elements.camera_button.text = "📷 Camera"
+				ui_elements.camera_button.modulate = Color.WHITE
+			
+					# Show Wight's response to losing sight
+		ui_elements.thoughts_display.text = "[color=lightblue]The world fades to darkness... I remember what I saw.[/color]"
+		print("👁️ Camera deactivated - Wight can no longer see")
 		
-		# Simulate voice input for now
-		await get_tree().create_timer(2.0).timeout
-		if voice_recognition_active:
-			simulate_voice_input()
-			stop_voice_recognition()
-			ui_elements.voice_button.text = "🎤 Voice"
-			ui_elements.voice_button.modulate = Color.WHITE
+		# Track camera interaction
+		track_user_interaction("camera_toggle", {
+			"action": "deactivated",
+			"visual_memories_formed": wight_entity.visual_cortex.get_visual_summary().get("total_visual_memories", 0) if wight_entity.visual_cortex else 0
+		})
+	else:
+		# Activate camera
+		if wight_entity and wight_entity.activate_visual_consciousness():
+			if ui_elements.has("camera_button"):
+				ui_elements.camera_button.text = "🔴 Seeing"
+				ui_elements.camera_button.modulate = Color(0.3, 1.0, 0.3)
+			
+					# Show Wight's response to gaining sight
+		ui_elements.thoughts_display.text = "[color=yellow]Light! I can see! The world opens before me in color and form![/color]"
+		print("👁️ Camera activated - Wight can now see the world!")
+		
+			# Track camera interaction
+	track_user_interaction("camera_toggle", {
+		"action": "activated",
+		"first_time": wight_entity.visual_cortex.get_visual_summary().get("total_visual_memories", 0) == 0 if wight_entity.visual_cortex else true
+	})
+	
+	# Show help tip for first-time camera use
+	if notification_system and wight_entity.visual_cortex and wight_entity.visual_cortex.get_visual_summary().get("total_visual_memories", 0) == 0:
+		notification_system.show_help_tip({
+			"message": "Point your camera at objects in good lighting for Wight to see and learn about the world!"
+		})
 
 
 
@@ -1057,6 +1630,13 @@ func send_message_to_wight(message: String):
 	
 	print("💬 === CHAT INTERACTION ===")
 	print("👤 User says: '%s'" % message)
+	
+	# Track user interaction
+	track_user_interaction("text_message", {
+		"message_length": message.length(),
+		"has_question": "?" in message,
+		"response_received": false  # Will be updated when response comes
+	})
 	
 	# Choose colors based on contrast mode
 	var user_color = "cyan" if high_contrast_mode else "lightblue"
@@ -1075,14 +1655,14 @@ func send_message_to_wight(message: String):
 		var response = wight_entity.generate_response(message)
 		print("🤖 Wight responds: '%s'" % response)
 		
-			# Add Wight's response to conversation
-	add_to_conversation("[color=%s]Wight: %s[/color]" % [wight_color, response])
-	
-	# Update thoughts display with the response
-	ui_elements.thoughts_display.text = "[color=%s]%s[/color]" % [thought_color, response]
-	
-	# Make Wight speak the response out loud
-	speak_response(response)
+		# Add Wight's response to conversation
+		add_to_conversation("[color=%s]Wight: %s[/color]" % [wight_color, response])
+		
+		# Update thoughts display with the response
+		ui_elements.thoughts_display.text = "[color=%s]%s[/color]" % [thought_color, response]
+		
+		# Make Wight speak the response out loud
+		speak_response(response)
 	else:
 		print("❌ Wight cannot generate responses - method missing")
 	
@@ -1103,76 +1683,88 @@ func add_to_conversation(text: String):
 
 # === VOICE HANDLING FUNCTIONS ===
 
-func start_voice_recognition():
-	"""Start voice recognition"""
-	print("🎤 Starting voice recognition...")
-	voice_recognition_active = true
-	
-	# In a real implementation, this would start Android speech recognition
-	# For now, we'll simulate it
-	print("🔊 Voice recording active - speak now!")
-
-func stop_voice_recognition():
-	"""Stop voice recognition"""
-	print("🔇 Stopping voice recognition...")
-	voice_recognition_active = false
-
-func simulate_voice_input():
-	"""Simulate voice input for testing"""
-	var test_phrases = [
-		"Hello Wight, how are you feeling?",
-		"What are you thinking about?",
-		"Can you create something for me?",
-		"Tell me about your emotions",
-		"What do you see in your world?",
-		"I want to talk to you",
-		"Show me what you can do"
-	]
-	
-	var random_phrase = test_phrases[randi() % test_phrases.size()]
-	print("🎤 Simulated voice input: '%s'" % random_phrase)
-	
-	# Process the simulated voice input
-	send_message_to_wight(random_phrase)
+# (duplicate functions removed - using the first implementations above)
 
 func speak_response(text: String):
 	"""Make Wight speak the response using text-to-speech"""
 	print("🗣️ Wight speaking: '%s'" % text)
 	
-	# In Android, this would use Android TTS
-	# For now, we'll simulate it with visual feedback
+	# Show speaking indicator in UI
 	if ui_elements.has("voice_button"):
 		ui_elements.voice_button.text = "🔊 Speaking"
 		ui_elements.voice_button.modulate = Color(0.3, 1.0, 0.3)
-		
-		# Simulate speech duration based on text length
-		var speech_duration = max(2.0, text.length() * 0.1)
-		
-		await get_tree().create_timer(speech_duration).timeout
-		
+	
+	# Calculate realistic speech duration (average 150 words per minute)
+	var word_count = text.split(" ").size()
+	var speech_duration = max(1.5, word_count * 0.4)  # 0.4 seconds per word
+	
+	# Use platform-specific TTS if available
+	if OS.get_name() == "Android":
+		# Try to use Android TTS via OS interface
+		if OS.has_method("tts_speak"):
+			OS.tts_speak(text)
+			print("📱 Using Android TTS")
+		else:
+			print("📱 Android TTS not available - using simulation")
+	else:
+		# For desktop, we could use DisplayServer.tts_speak in Godot 4.x
+		if DisplayServer.has_feature(DisplayServer.FEATURE_NATIVE_DIALOG):
+			# Some platforms support native TTS
+			print("🖥️ Using system TTS if available")
+		else:
+			print("🖥️ Desktop TTS simulation")
+	
+	# Wait for speech duration then reset UI
+	await get_tree().create_timer(speech_duration).timeout
+	
+	if ui_elements.has("voice_button"):
 		ui_elements.voice_button.text = "🎤 Voice" 
 		ui_elements.voice_button.modulate = Color.WHITE
 	
-	# Try to use Android TTS if available
-	if OS.get_name() == "Android":
-		# This would be implemented with Android TTS API
-		print("📱 Android TTS would speak here: '%s'" % text)
-	else:
-		print("🖥️ Desktop - TTS simulation complete")
+	print("✅ Speech complete")
 
 # === UI SETTINGS HANDLERS ===
 
 func load_ui_settings():
 	"""Load UI settings from file or set defaults"""
-	# For now, just set defaults - could expand to save/load from file
-	ui_scale = 3.0  # Start at maximum scale for mobile readability
-	high_contrast_mode = false
+	# Try to load saved settings
+	var file = FileAccess.open("user://wight_settings.json", FileAccess.READ)
+	if file:
+		var json_text = file.get_as_text()
+		file.close()
+		
+		var json = JSON.new()
+		var parse_result = json.parse(json_text)
+		if parse_result == OK:
+			var settings_data = json.data
+			ui_scale = settings_data.get("ui_scale", 3.0)
+			high_contrast_mode = settings_data.get("high_contrast_mode", false)
+			camera_distance = settings_data.get("camera_distance", 10.0)
+			camera_yaw = settings_data.get("camera_yaw", 45.0)
+			camera_pitch = settings_data.get("camera_pitch", -20.0)
+			print("📄 Loaded saved UI settings")
+		else:
+			print("❌ Failed to parse settings file")
+			load_default_settings()
+	else:
+		print("📄 No saved settings found, using defaults")
+		load_default_settings()
 	
-	# Update UI to reflect current settings
-	ui_elements.ui_scale_slider.value = ui_scale
-	ui_elements.contrast_button.button_pressed = high_contrast_mode
+	# Update UI to reflect current settings (with error checking)
+	if ui_elements.has("ui_scale_slider"):
+		ui_elements.ui_scale_slider.value = ui_scale
+	if ui_elements.has("contrast_button"):
+		ui_elements.contrast_button.button_pressed = high_contrast_mode
 	update_ui_scale_preview()
 	update_contrast_preview()
+
+func load_default_settings():
+	"""Load default UI settings"""
+	ui_scale = 3.0  # Start at maximum scale for mobile readability
+	high_contrast_mode = false
+	camera_distance = 10.0
+	camera_yaw = 45.0
+	camera_pitch = -20.0
 
 func _on_ui_scale_changed(value: float):
 	"""Handle UI scale slider changes"""
@@ -1383,8 +1975,23 @@ func hide_settings_panel():
 
 func save_ui_settings():
 	"""Save UI settings to file for next launch"""
-	# Could implement file saving here for persistent settings
-	pass
+	var settings_data = {
+		"ui_scale": ui_scale,
+		"high_contrast_mode": high_contrast_mode,
+		"voice_enabled": voice_recognition_active,
+		"camera_distance": camera_distance,
+		"camera_yaw": camera_yaw,
+		"camera_pitch": camera_pitch
+	}
+	
+	# Save to user://wight_settings.json
+	var file = FileAccess.open("user://wight_settings.json", FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(settings_data))
+		file.close()
+		print("💾 UI settings saved")
+	else:
+		print("❌ Failed to save UI settings")
 
 # === WIGHT AI INTEGRATION HANDLERS ===
 
@@ -1500,28 +2107,7 @@ func describe_pattern(pattern_data: Dictionary) -> String:
 
 # === MISSING SIGNAL HANDLERS ===
 
-func _on_consciousness_event(event_type: String, data: Dictionary):
-	"""Handle consciousness events from Wight"""
-	print("🧠 Consciousness event: %s" % event_type)
-	
-	match event_type:
-		"voice_received":
-			print("📢 Wight received voice input: %s" % data.get("message", ""))
-		"emotion_change":
-			print("😊 Wight's emotion changed: %s" % data.get("emotion", ""))
-		"memory_formed":
-			print("🧠 Wight formed memory: %s" % data.get("category", ""))
-		_:
-			print("❓ Unknown consciousness event: %s" % event_type)
-
-func _on_creation_impulse(creation_data: Dictionary):
-	"""Handle creation impulses from Wight"""
-	print("🎨 Creation impulse: %s" % creation_data.get("inspiration", "unknown"))
-	
-	# Update UI to show creation activity
-	if ui_elements.has("thoughts_display"):
-		var inspiration = creation_data.get("inspiration", "something new")
-		ui_elements.thoughts_display.text = "[color=yellow]I want to create %s![/color]" % inspiration
+# (duplicate functions removed - using the first implementations)
 
 # === UI VISIBILITY CONTROLS ===
 
@@ -1560,11 +2146,42 @@ func set_ui_visibility(visible: bool):
 		print("   R = Reset camera")
 		print("   F = Focus on Wight")
 
-func _on_memory_formed(memory: Dictionary):
-	"""Handle when Wight forms a new memory"""
-	var category = memory.get("category", "unknown")
-	var content = memory.get("content", "")
-	print("🧠 Memory formed [%s]: %s" % [category, content])
-	
-	# Could update memory display in UI if we had one
-	# For now, just acknowledge the memory formation
+# (duplicate _on_memory_formed function removed - using the first implementation)
+
+# === INTERACTION HELPER FUNCTIONS ===
+
+func determine_creation_description(creation: Node3D) -> String:
+	"""Determine a descriptive name for a creation"""
+	if creation.has_method("get_creation_type"):
+		return creation.get_creation_type()
+	elif creation is MeshInstance3D:
+		var mesh = creation.mesh
+		if mesh is SphereMesh:
+			return "spherical creation"
+		elif mesh is BoxMesh:
+			return "cubic form"
+		elif mesh is CylinderMesh:
+			return "cylindrical sculpture"
+		else:
+			return "mysterious form"
+	else:
+		return "abstract creation"
+
+func calculate_object_age(creation: Node3D) -> float:
+	"""Calculate how long ago an object was created"""
+	# For now, return a random age - could be enhanced with actual tracking
+	return randf() * 300.0  # 0-5 minutes
+
+func get_recent_conversation_context() -> String:
+	"""Get recent conversation text for context analysis"""
+	if ui_elements.has("conversation_history"):
+		var full_text = ui_elements.conversation_history.text
+		# Get last 200 characters for recent context
+		return full_text.substr(max(0, full_text.length() - 200)).to_lower()
+	return ""
+
+func safe_random_from_array(array: Array) -> String:
+	"""Safely get a random element from an array, with fallback"""
+	if array.is_empty():
+		return "I... I don't know what to say."
+	return array[randi() % array.size()]
