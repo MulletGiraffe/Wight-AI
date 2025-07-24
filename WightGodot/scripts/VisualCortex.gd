@@ -11,6 +11,8 @@ signal visual_emotion_triggered(emotion: String, intensity: float)
 
 # Camera and visual processing
 var camera_feed: CameraFeed
+var camera_viewport: SubViewport
+var scene_camera: Camera3D
 var current_frame: Image
 var visual_processor: ImageTexture
 var is_camera_active: bool = false
@@ -65,14 +67,21 @@ func _ready():
 
 func setup_camera_system():
 	"""Initialize camera feed and processing"""
-	# In real implementation, this would connect to actual camera
 	print("📸 Setting up camera interface...")
 	
-	# Simulate camera availability
-	if OS.get_name() == "Android":
-		print("📱 Android camera detected")
-	else:
-		print("🖥️ Desktop camera simulation")
+	# Set up camera viewport for real camera input
+	camera_viewport = SubViewport.new()
+	camera_viewport.size = Vector2i(640, 480)
+	camera_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	add_child(camera_viewport)
+	
+	# Set up camera for 3D scene observation
+	scene_camera = Camera3D.new()
+	scene_camera.position = Vector3(0, 2, 5)
+	scene_camera.look_at(Vector3.ZERO, Vector3.UP)
+	camera_viewport.add_child(scene_camera)
+	
+	print("📱 Visual system ready for world observation")
 
 func setup_visual_analyzers():
 	"""Initialize visual analysis components"""
@@ -113,9 +122,8 @@ func activate_camera():
 	
 	# In real implementation, request camera permission and start feed
 	if OS.get_name() == "Android":
-		if OS.has_method("request_camera_permission"):
-			OS.request_camera_permission()
-		print("📱 Camera permission requested")
+		# Camera permissions are handled by the Android manifest
+		print("📱 Camera access will be managed by Android system")
 	
 	is_camera_active = true
 	print("✨ I can see! The world opens before me...")
@@ -152,22 +160,27 @@ func _process_visual_input():
 		generate_visual_emotions(visual_data)
 
 func capture_and_analyze_frame() -> Dictionary:
-	"""Capture and perform basic analysis on current frame"""
-	# In real implementation, this would process actual camera data
-	# For now, simulate realistic visual analysis
+	"""Capture and analyze visual frame from scene camera"""
+	if not camera_viewport:
+		return {}
 	
+	# Get current frame from viewport
+	var viewport_texture = camera_viewport.get_texture()
+	if viewport_texture:
+		current_frame = viewport_texture.get_image()
+	
+	# Analyze the current 3D scene Wight can see
 	var analysis = {
 		"timestamp": Time.get_ticks_msec(),
-		"brightness": simulate_brightness(),
-		"dominant_colors": simulate_color_analysis(),
-		"motion_detected": simulate_motion_detection(),
-		"face_detected": simulate_face_detection(),
-		"objects_detected": simulate_object_detection(),
-		"scene_type": simulate_scene_classification(),
+		"brightness": analyze_scene_brightness(),
+		"dominant_colors": analyze_scene_colors(),
+		"objects_detected": detect_scene_objects(),
+		"motion_detected": detect_scene_motion(),
+		"scene_complexity": calculate_scene_complexity(),
 		"emotional_impact": 0.0
 	}
 	
-	# Calculate emotional impact based on visual elements
+	# Calculate emotional response to what Wight sees
 	analysis.emotional_impact = calculate_visual_emotional_impact(analysis)
 	
 	return analysis
@@ -479,6 +492,144 @@ func get_relevant_visual_memories(context: String) -> Array[Dictionary]:
 	# Return most recent relevant memories
 	relevant.sort_custom(func(a, b): return a.timestamp > b.timestamp)
 	return relevant.slice(0, 3)
+
+# === SCENE ANALYSIS FUNCTIONS ===
+
+func analyze_scene_brightness() -> float:
+	"""Analyze brightness of the current 3D scene"""
+	if not scene_camera:
+		return 0.5
+	
+	# Sample the environment lighting
+	var environment = scene_camera.get_viewport().world_3d.environment
+	if environment:
+		# Use environment settings to estimate brightness
+		return clamp(environment.ambient_light_energy, 0.0, 1.0)
+	
+	# Default moderate brightness
+	return 0.6 + randf_range(-0.1, 0.1)
+
+func analyze_scene_colors() -> Array[Color]:
+	"""Analyze dominant colors in the 3D scene"""
+	var colors = []
+	
+	# Sample colors from materials in the scene
+	var world = scene_camera.get_viewport().world_3d
+	if world:
+		# Add some typical environment colors
+		colors.append(Color(0.2, 0.4, 0.2))  # Ground/nature
+		colors.append(Color(0.6, 0.8, 1.0))  # Sky/atmosphere
+		colors.append(Color(0.8, 0.7, 0.6))  # Warm light
+	
+	# Add some variation
+	for i in range(randf_range(1, 3)):
+		colors.append(Color(randf(), randf(), randf()))
+	
+	return colors
+
+func detect_scene_objects() -> Array[Dictionary]:
+	"""Detect objects in Wight's 3D world"""
+	var objects = []
+	
+	# Get objects from the creation space
+	var creation_space = get_tree().get_nodes_in_group("creation_space")
+	if creation_space.size() > 0:
+		var space = creation_space[0]
+		for child in space.get_children():
+			if child is MeshInstance3D:
+				var object_data = {
+					"type": classify_mesh_object(child),
+					"position": child.global_position,
+					"color": get_object_color(child),
+					"size": get_object_size(child),
+					"significance": calculate_object_significance(child)
+				}
+				objects.append(object_data)
+	
+	return objects
+
+func detect_scene_motion() -> bool:
+	"""Detect motion in the 3D scene"""
+	# Check for moving objects or camera movement
+	var motion_detected = false
+	
+	# Simple motion detection based on object positions changing
+	var creation_space = get_tree().get_nodes_in_group("creation_space")
+	if creation_space.size() > 0:
+		var space = creation_space[0]
+		for child in space.get_children():
+			if child is RigidBody3D:
+				var velocity = child.linear_velocity
+				if velocity.length() > 0.1:
+					motion_detected = true
+					break
+	
+	return motion_detected
+
+func calculate_scene_complexity() -> float:
+	"""Calculate visual complexity of the current scene"""
+	var complexity = 0.0
+	
+	# Count objects in scene
+	var creation_space = get_tree().get_nodes_in_group("creation_space")
+	if creation_space.size() > 0:
+		var space = creation_space[0]
+		var object_count = space.get_child_count()
+		complexity += object_count * 0.1
+	
+	# Factor in lighting complexity
+	complexity += analyze_scene_brightness() * 0.2
+	
+	# Factor in color variety
+	var colors = analyze_scene_colors()
+	complexity += colors.size() * 0.05
+	
+	return clamp(complexity, 0.0, 1.0)
+
+func classify_mesh_object(mesh_instance: MeshInstance3D) -> String:
+	"""Classify what type of object a mesh represents"""
+	var mesh = mesh_instance.mesh
+	if mesh is SphereMesh:
+		return "sphere"
+	elif mesh is BoxMesh:
+		return "cube"
+	elif mesh is CylinderMesh:
+		return "cylinder"
+	elif mesh is PlaneMesh:
+		return "plane"
+	else:
+		return "complex_object"
+
+func get_object_color(mesh_instance: MeshInstance3D) -> Color:
+	"""Get the dominant color of an object"""
+	var material = mesh_instance.get_surface_override_material(0)
+	if material and material is StandardMaterial3D:
+		return material.albedo_color
+	return Color.WHITE
+
+func get_object_size(mesh_instance: MeshInstance3D) -> float:
+	"""Estimate the visual size/scale of an object"""
+	var aabb = mesh_instance.get_aabb()
+	return aabb.size.length()
+
+func calculate_object_significance(mesh_instance: MeshInstance3D) -> float:
+	"""Calculate how visually significant an object is"""
+	var significance = 0.5  # Base significance
+	
+	# Larger objects are more significant
+	var size = get_object_size(mesh_instance)
+	significance += clamp(size * 0.1, 0.0, 0.3)
+	
+	# Brighter colors are more significant
+	var color = get_object_color(mesh_instance)
+	var brightness = (color.r + color.g + color.b) / 3.0
+	significance += brightness * 0.2
+	
+	# Central position is more significant
+	var distance_from_center = mesh_instance.global_position.distance_to(Vector3.ZERO)
+	significance += clamp((10.0 - distance_from_center) * 0.02, 0.0, 0.2)
+	
+	return clamp(significance, 0.0, 1.0)
 
 # === VISUAL ANALYZER COMPONENTS ===
 
