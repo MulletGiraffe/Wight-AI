@@ -518,8 +518,8 @@ func create_object_from_impulse(impulse: Dictionary):
 		# Form creation memory
 		form_memory("creation", {
 			"type": "episodic",
-			"content": "I created a %s in response to %s" % [creation_type, inspiration],
-			"object_type": creation_type,
+			"content": "I created a %s in response to %s" % [creation_plan.type, inspiration],
+			"object_type": creation_plan.type,
 			"inspiration": inspiration,
 			"timestamp": Time.get_ticks_msec(),
 			"significance": 1.5
@@ -532,12 +532,12 @@ func create_object_from_impulse(impulse: Dictionary):
 		
 		# Emit creation event
 		emit_signal("creation_impulse", {
-			"type": creation_type,
+			"type": creation_plan.type,
 			"object": created_object,
 			"inspiration": inspiration
 		})
 		
-		print("🎨 Created %s object in the world!" % creation_type)
+		print("🎨 Created %s object in the world!" % creation_plan.type)
 
 func plan_meaningful_creation(inspiration: String, intensity: float, context: String) -> Dictionary:
 	"""Plan a meaningful creation based on context, emotion, and memory"""
@@ -872,39 +872,9 @@ func create_spontaneous_form(plan: Dictionary) -> MeshInstance3D:
 	"""Create a spontaneous, intuitive form"""
 	return create_sphere(plan.complexity)  # Fallback to simple form
 
-# === ANIMATION HELPERS ===
+# === ANIMATION HELPERS (MOVED TO END OF FILE) ===
 
-func add_floating_animation(node: MeshInstance3D):
-	"""Add gentle floating animation"""
-	var tween = create_tween()
-	tween.set_loops()
-	tween.tween_method(
-		func(y): node.position.y = y,
-		node.position.y, 
-		node.position.y + 0.5, 
-		2.0
-	)
-	tween.tween_method(
-		func(y): node.position.y = y,
-		node.position.y + 0.5, 
-		node.position.y, 
-		2.0
-	)
 
-func add_memory_pulse_animation(node: MeshInstance3D):
-	"""Add memory-like pulsing animation"""
-	var tween = create_tween()
-	tween.set_loops()
-	var material = node.material_override as StandardMaterial3D
-	if material:
-		tween.tween_method(
-			func(alpha): material.albedo_color.a = alpha,
-			0.7, 0.9, 1.5
-		)
-		tween.tween_method(
-			func(alpha): material.albedo_color.a = alpha,
-			0.9, 0.7, 1.5
-		)
 
 func add_invitation_pulse_animation(node: MeshInstance3D):
 	"""Add inviting pulse animation"""
@@ -1411,6 +1381,20 @@ func calculate_development_stage() -> DevelopmentStage:
 		return DevelopmentStage.INFANT
 	else:
 		return DevelopmentStage.NEWBORN
+
+func check_consciousness_development():
+	"""Check if consciousness has developed enough to advance to next stage"""
+	var new_stage = calculate_development_stage()
+	if new_stage != current_stage:
+		print("🧠 Consciousness development milestone reached!")
+		advance_to_stage(new_stage)
+		
+		# Emit consciousness event for UI updates
+		emit_signal("consciousness_event", "stage_progression", {
+			"new_stage": new_stage,
+			"experience_points": experience_points,
+			"consciousness_level": consciousness_level
+		})
 
 func advance_to_stage(stage: DevelopmentStage):
 	"""Advance to a new development stage"""
@@ -2314,3 +2298,107 @@ func safe_random_from_array(array: Array) -> String:
 	if array.is_empty():
 		return "I... I don't know what to say."
 	return array[randi() % array.size()]
+
+# === ANIMATION FUNCTIONS ===
+
+func add_floating_animation(object: Node3D):
+	"""Add gentle floating animation to an object"""
+	var tween = create_tween()
+	tween.set_loops()
+	
+	# Create floating motion
+	var start_pos = object.position
+	var float_height = 0.3
+	
+	tween.tween_method(func(pos): object.position = pos, 
+		start_pos, 
+		start_pos + Vector3(0, float_height, 0), 
+		2.0)
+	tween.tween_method(func(pos): object.position = pos,
+		start_pos + Vector3(0, float_height, 0),
+		start_pos,
+		2.0)
+	
+	# Add gentle rotation
+	var rotation_tween = create_tween()
+	rotation_tween.set_loops()
+	rotation_tween.tween_method(func(rot): object.rotation = rot,
+		Vector3.ZERO,
+		Vector3(0, TAU, 0),
+		8.0)
+
+func add_memory_pulse_animation(object: Node3D):
+	"""Add pulsing animation representing memory recall"""
+	var tween = create_tween()
+	tween.set_loops()
+	
+	var original_scale = object.scale
+	var pulse_scale = original_scale * 1.2
+	
+	# Pulsing scale animation
+	tween.tween_method(func(scale): object.scale = scale,
+		original_scale,
+		pulse_scale,
+		1.5)
+	tween.tween_method(func(scale): object.scale = scale,
+		pulse_scale,
+		original_scale,
+		1.5)
+	
+	# Add material emission pulsing if possible
+	var material = object.get_surface_override_material(0)
+	if material and material is StandardMaterial3D:
+		var emission_tween = create_tween()
+		emission_tween.set_loops()
+		var base_emission = material.emission
+		var bright_emission = base_emission * 2.0
+		
+		emission_tween.tween_method(func(emission): material.emission = emission,
+			base_emission,
+			bright_emission,
+			1.5)
+		emission_tween.tween_method(func(emission): material.emission = emission,
+			bright_emission,
+			base_emission,
+			1.5)
+
+func add_spiral_animation(object: Node3D):
+	"""Add spiraling animation to an object"""
+	var tween = create_tween()
+	tween.set_loops()
+	
+	var center = object.position
+	var radius = 1.0
+	
+	tween.tween_method(func(angle): 
+		object.position = center + Vector3(cos(angle) * radius, sin(angle * 0.5) * 0.5, sin(angle) * radius),
+		0.0, TAU, 6.0)
+
+func add_rhythmic_animation(object: Node3D):
+	"""Add rhythmic pulsing animation based on emotional state"""
+	var emotion_intensity = get_dominant_emotion_intensity()
+	var rhythm_speed = 1.0 + emotion_intensity
+	
+	var tween = create_tween()
+	tween.set_loops()
+	
+	# Scale pulsing
+	var base_scale = object.scale
+	var pulse_scale = base_scale * (1.0 + emotion_intensity * 0.3)
+	
+	tween.tween_method(func(scale): object.scale = scale,
+		base_scale,
+		pulse_scale,
+		rhythm_speed)
+	tween.tween_method(func(scale): object.scale = scale,
+		pulse_scale,
+		base_scale,
+		rhythm_speed)
+
+func get_dominant_emotion_intensity() -> float:
+	"""Get the intensity of the current dominant emotion"""
+	var max_intensity = 0.0
+	for emotion in emotions:
+		if emotions[emotion] > max_intensity:
+			max_intensity = emotions[emotion]
+	return max_intensity

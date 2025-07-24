@@ -105,6 +105,9 @@ func setup_world():
 	add_initial_lighting()
 	create_test_objects()
 	
+	# Set up creation space group for visual cortex access
+	setup_creation_space_group()
+	
 	print("🧠 Connected to Wight's consciousness")
 
 func setup_dynamic_environment():
@@ -198,6 +201,15 @@ func create_test_objects():
 	
 	print("🌍 Initial world objects created")
 
+func setup_creation_space_group():
+	"""Set up the creation space node group for visual cortex access"""
+	var creation_space = get_node("CreationSpace")
+	if creation_space:
+		creation_space.add_to_group("creation_space")
+		print("✅ CreationSpace added to group for visual processing")
+	else:
+		print("❌ CreationSpace node not found!")
+
 func setup_ui():
 	"""Initialize user interface elements"""
 	ui_elements = {
@@ -222,10 +234,6 @@ func setup_ui():
 		"send_button": $UI/BottomChatPanel/ChatInputContainer/SendButton,
 		"voice_button": $UI/BottomChatPanel/ChatInputContainer/VoiceButton,
 		"camera_button": $UI/BottomChatPanel/ChatInputContainer/CameraButton,
-		"find_wight_button": $UI/MainInterface/NavigationPanel/NavContainer/FindWightButton,
-		"follow_button": $UI/MainInterface/NavigationPanel/NavContainer/FollowButton,
-		"tour_button": $UI/MainInterface/NavigationPanel/NavContainer/TourButton,
-		"mode_indicator": $UI/MainInterface/NavigationPanel/NavContainer/ModeIndicator,
 		"ui_toggle_button": $UI/UIToggleButton
 	}
 	
@@ -250,14 +258,6 @@ func setup_ui():
 		ui_elements.text_input.text_submitted.connect(_on_text_submitted)
 	if ui_elements.has("ui_toggle_button"):
 		ui_elements.ui_toggle_button.pressed.connect(toggle_ui_visibility)
-	
-	# Connect navigation buttons
-	if ui_elements.has("find_wight_button"):
-		ui_elements.find_wight_button.pressed.connect(_on_find_wight_pressed)
-	if ui_elements.has("follow_button"):
-		ui_elements.follow_button.pressed.connect(_on_follow_button_pressed)
-	if ui_elements.has("tour_button"):
-		ui_elements.tour_button.pressed.connect(_on_tour_button_pressed)
 	
 	# Show settings panel initially, hide main interface
 	ui_elements.main_interface.visible = false
@@ -368,8 +368,8 @@ func setup_input_handling():
 	set_process_input(true)
 	set_process(true)
 	
-	# Create touch joystick for camera controls
-	create_touch_joystick()
+	# Create dual joystick system for navigation
+	setup_dual_joystick_system()
 	
 	# Initialize camera position
 	initialize_camera_position()
@@ -378,8 +378,8 @@ func _process(delta):
 	"""Main world update loop"""
 	world_evolution_timer += delta
 	
-	# Update camera with joystick input
-	update_camera_with_joystick(delta)
+	# Update camera and navigation with dual joysticks
+	update_dual_joystick_navigation(delta)
 	
 	# Update environment based on Wight's state
 	update_environment_for_wight_state(delta)
@@ -786,7 +786,85 @@ func process_voice_input(text: String):
 	"""Process voice input from user"""
 	print("🎤 Voice input: " + text)
 
-# === ENHANCED TOUCH JOYSTICK CONTROLS ===
+# === DUAL JOYSTICK NAVIGATION SYSTEM ===
+
+func setup_dual_joystick_system():
+	"""Initialize the dual joystick controller for camera and movement"""
+	print("🕹️ Setting up dual joystick navigation system...")
+	
+	# Create dual joystick controller
+	joystick_controller = DualJoystickController.new()
+	joystick_controller.name = "DualJoystickController"
+	
+	# Connect joystick signals
+	joystick_controller.left_joystick_moved.connect(_on_left_joystick_moved)
+	joystick_controller.right_joystick_moved.connect(_on_right_joystick_moved)
+	joystick_controller.joystick_released.connect(_on_joystick_released)
+	
+	# Add to UI
+	$UI.add_child(joystick_controller)
+	
+	# Hide joysticks initially during settings phase
+	joystick_controller.set_joystick_visibility(false)
+	
+	print("✨ Dual joystick system ready - Left: Camera, Right: Movement")
+
+func update_dual_joystick_navigation(delta: float):
+	"""Update camera and world navigation based on dual joysticks"""
+	# The joystick controller handles input automatically
+	# We just need to process any ongoing movements here
+	
+	# Smooth camera transitions
+	if camera_yaw != 0 or camera_pitch != 0:
+		update_camera_position()
+
+func _on_left_joystick_moved(direction: Vector2, intensity: float):
+	"""Handle left joystick input for camera control"""
+	if intensity < 0.1:
+		return
+	
+	# Camera orbit control
+	var camera_speed = camera_orbit_speed * intensity
+	camera_yaw += direction.x * camera_speed * get_process_delta_time()
+	camera_pitch -= direction.y * camera_speed * get_process_delta_time()
+	
+	# Clamp pitch to prevent camera flipping
+	camera_pitch = clamp(camera_pitch, -80, 80)
+	
+	update_camera_position()
+	
+	print("📹 Camera orbit: yaw=%.1f, pitch=%.1f" % [camera_yaw, camera_pitch])
+
+func _on_right_joystick_moved(direction: Vector2, intensity: float):
+	"""Handle right joystick input for world navigation/camera movement"""
+	if intensity < 0.1:
+		return
+	
+	# World navigation - move the camera through space
+	var movement_speed = 5.0 * intensity
+	var movement_vector = Vector3(direction.x, 0, direction.y) * movement_speed * get_process_delta_time()
+	
+	# Transform movement relative to camera orientation
+	var camera_transform = camera.transform.basis
+	var forward = -camera_transform.z
+	var right = camera_transform.x
+	
+	# Apply movement
+	camera_target += right * movement_vector.x + forward * movement_vector.z
+	
+	update_camera_position()
+	
+	print("🚶 World navigation: moving to %s" % camera_target)
+
+func _on_joystick_released(joystick_id: String):
+	"""Handle joystick release"""
+	match joystick_id:
+		"left":
+			print("📹 Camera control released")
+		"right":
+			print("🚶 Movement control released")
+
+# === LEGACY TOUCH JOYSTICK CONTROLS (DEPRECATED) ===
 
 func create_touch_joystick():
 	"""Create virtual joystick for camera controls"""
@@ -1190,10 +1268,10 @@ func apply_accessibility_setting(setting: String, value: Variant):
 	match setting:
 		"ui_scale":
 			ui_scale = value
-			apply_ui_scaling()
+			apply_ui_scale(value)
 		"high_contrast":
 			high_contrast_mode = value
-			apply_high_contrast_mode()
+			apply_contrast_mode(value)
 		"text_size":
 			apply_text_size_adjustment(value)
 
@@ -1290,66 +1368,9 @@ func _on_tour_button_pressed():
 			# Track interaction
 	track_user_interaction("tour_button", {"started": true})
 
-# === JOYSTICK CONTROL HANDLERS ===
+# === JOYSTICK CONTROL HANDLERS (REMOVED DUPLICATE) ===
 
-func _on_left_joystick_moved(direction: Vector2, intensity: float):
-	"""Handle left joystick movement (Camera control)"""
-	if navigation_system and intensity > 0.0:
-		# Convert 2D joystick input to camera orbit rotation
-		var rotation_speed = 2.0 * intensity
-		
-		# X-axis controls yaw (left/right rotation)
-		navigation_system.orbit_yaw += direction.x * rotation_speed
-		
-		# Y-axis controls pitch (up/down rotation) 
-		navigation_system.orbit_pitch = clamp(
-			navigation_system.orbit_pitch - direction.y * rotation_speed, 
-			-80, 80
-		)
-		
-		# Update camera position
-		navigation_system.update_camera_position()
 
-func _on_right_joystick_moved(direction: Vector2, intensity: float):
-	"""Handle right joystick movement (World navigation)"""
-	if navigation_system and intensity > 0.0:
-		var camera = get_viewport().get_camera_3d()
-		if not camera:
-			return
-		
-		# Calculate movement relative to camera orientation
-		var camera_forward = -camera.global_transform.basis.z
-		var camera_right = camera.global_transform.basis.x
-		
-		# Project to horizontal plane (remove Y component for ground movement)
-		camera_forward.y = 0
-		camera_right.y = 0
-		camera_forward = camera_forward.normalized()
-		camera_right = camera_right.normalized()
-		
-		# Calculate movement direction
-		var movement_speed = 10.0 * intensity
-		var movement_vector = (camera_right * direction.x + camera_forward * -direction.y) * movement_speed
-		
-		# Apply world movement with momentum
-		navigation_system.apply_world_movement(movement_vector * get_process_delta_time())
-		
-		# Track movement
-		track_user_interaction("world_movement", {
-			"direction": direction,
-			"intensity": intensity,
-			"movement_vector": movement_vector
-		})
-
-func _on_joystick_released(joystick_id: String):
-	"""Handle joystick release"""
-	print("🕹️ %s joystick released" % joystick_id.capitalize())
-	
-	# Track interaction
-	track_user_interaction("joystick_released", {"joystick": joystick_id})
-	
-	# Optional: Add momentum/smoothing when joystick is released
-	# This could make movement feel more natural
 
 func connect_language_events():
 	"""Connect language learning events after initialization"""
@@ -1446,12 +1467,8 @@ func add_creation_effect(created_object: Node3D):
 func start_voice_recognition():
 	"""Start Android voice recognition"""
 	if OS.get_name() == "Android":
-		# Try to use Android speech recognition
-		if OS.has_method("start_speech_recognition"):
-			OS.start_speech_recognition()
-			print("📱 Using Android speech recognition")
-		else:
-			print("📱 Android speech recognition API not available")
+		# Android speech recognition would be handled by Java plugins
+		print("📱 Android speech recognition (simulated)")
 		voice_recognition_active = true
 	elif OS.has_feature("mobile"):
 		print("📱 Mobile platform - voice recognition simulated")
@@ -1473,9 +1490,8 @@ func stop_voice_recognition():
 	"""Stop Android voice recognition"""
 	voice_recognition_active = false
 	
-	# Stop Android speech recognition if it was started
-	if OS.get_name() == "Android" and OS.has_method("stop_speech_recognition"):
-		OS.stop_speech_recognition()
+	# Stop Android speech recognition (simulated)
+	if OS.get_name() == "Android":
 		print("📱 Android speech recognition stopped")
 	else:
 		print("🎤 Voice recognition stopped")
@@ -1700,19 +1716,11 @@ func speak_response(text: String):
 	
 	# Use platform-specific TTS if available
 	if OS.get_name() == "Android":
-		# Try to use Android TTS via OS interface
-		if OS.has_method("tts_speak"):
-			OS.tts_speak(text)
-			print("📱 Using Android TTS")
-		else:
-			print("📱 Android TTS not available - using simulation")
+		# Android TTS would be handled by Java plugins
+		print("📱 Android TTS (simulated)")
 	else:
-		# For desktop, we could use DisplayServer.tts_speak in Godot 4.x
-		if DisplayServer.has_feature(DisplayServer.FEATURE_NATIVE_DIALOG):
-			# Some platforms support native TTS
-			print("🖥️ Using system TTS if available")
-		else:
-			print("🖥️ Desktop TTS simulation")
+		# For desktop, TTS would require additional setup
+		print("🖥️ Desktop TTS (simulated)")
 	
 	# Wait for speech duration then reset UI
 	await get_tree().create_timer(speech_duration).timeout
@@ -1725,273 +1733,229 @@ func speak_response(text: String):
 
 # === UI SETTINGS HANDLERS ===
 
-func load_ui_settings():
-	"""Load UI settings from file or set defaults"""
-	# Try to load saved settings
-	var file = FileAccess.open("user://wight_settings.json", FileAccess.READ)
-	if file:
-		var json_text = file.get_as_text()
-		file.close()
-		
-		var json = JSON.new()
-		var parse_result = json.parse(json_text)
-		if parse_result == OK:
-			var settings_data = json.data
-			ui_scale = settings_data.get("ui_scale", 3.0)
-			high_contrast_mode = settings_data.get("high_contrast_mode", false)
-			camera_distance = settings_data.get("camera_distance", 10.0)
-			camera_yaw = settings_data.get("camera_yaw", 45.0)
-			camera_pitch = settings_data.get("camera_pitch", -20.0)
-			print("📄 Loaded saved UI settings")
-		else:
-			print("❌ Failed to parse settings file")
-			load_default_settings()
-	else:
-		print("📄 No saved settings found, using defaults")
-		load_default_settings()
-	
-	# Update UI to reflect current settings (with error checking)
-	if ui_elements.has("ui_scale_slider"):
-		ui_elements.ui_scale_slider.value = ui_scale
-	if ui_elements.has("contrast_button"):
-		ui_elements.contrast_button.button_pressed = high_contrast_mode
-	update_ui_scale_preview()
-	update_contrast_preview()
 
-func load_default_settings():
-	"""Load default UI settings"""
-	ui_scale = 3.0  # Start at maximum scale for mobile readability
-	high_contrast_mode = false
-	camera_distance = 10.0
-	camera_yaw = 45.0
-	camera_pitch = -20.0
 
 func _on_ui_scale_changed(value: float):
 	"""Handle UI scale slider changes"""
 	ui_scale = value
-	ui_elements.ui_scale_label.text = "UI Scale: %d%%" % (ui_scale * 100)
-	update_ui_scale_preview()
+	
+	# Update the label to show current scale
+	if ui_elements.has("ui_scale_label"):
+		ui_elements.ui_scale_label.text = "UI Scale: %d%%" % (value * 100)
+	
+	# Apply scale to all UI elements immediately for preview
+	apply_ui_scale_preview(value)
+	
+	print("🎚️ UI Scale changed to: %.1f" % value)
 
-func _on_contrast_toggled(pressed: bool):
-	"""Handle contrast mode toggle"""
-	high_contrast_mode = pressed
-	update_contrast_preview()
-
-func _on_settings_cancel():
-	"""Cancel settings and use defaults"""
-	ui_scale = 3.0  # Use minimum readable scale
-	high_contrast_mode = false
-	apply_ui_settings()
-	hide_settings_panel()
+func _on_contrast_toggled(enabled: bool):
+	"""Handle high contrast mode toggle"""
+	high_contrast_mode = enabled
+	
+	# Apply contrast changes immediately for preview
+	apply_contrast_preview(enabled)
+	
+	print("🎨 High contrast mode: ", "Enabled" if enabled else "Disabled")
 
 func _on_settings_apply():
-	"""Apply settings and start main app"""
-	apply_ui_settings()
-	hide_settings_panel()
+	"""Apply settings and close the settings panel"""
+	print("✅ Applying UI settings...")
 	
-	print("✅ Settings applied and main interface activated")
-	print("🎮 Controls: U=Toggle UI, H=Hide UI, ESC=Show UI, Arrow Keys=Camera")
-	print("👁️ UI is now compact - you can see the 3D sandbox on the right!")
-	print("🎯 Click the eye button (👁️) in top-right to toggle UI visibility")
-
-func update_ui_scale_preview():
-	"""Update the preview text scale"""
-	if ui_elements.has("preview_text"):
-		ui_elements.preview_text.add_theme_font_size_override("font_size", int(20 * ui_scale))
-
-func update_contrast_preview():
-	"""Update the preview with contrast changes"""
-	if ui_elements.has("preview_text"):
-		if high_contrast_mode:
-			ui_elements.preview_text.add_theme_color_override("font_color", Color.WHITE)
-			ui_elements.preview_text.text = "High Contrast Mode: Bold white text on dark backgrounds for maximum readability. Font scaling now properly enlarges text without breaking layout."
-		else:
-			ui_elements.preview_text.add_theme_color_override("font_color", Color(0.8, 1, 1, 1))
-			ui_elements.preview_text.text = "Normal Mode: Softer colors with good contrast for comfortable viewing. Fonts scale from 300% (minimum) to 600% (maximum)."
-
-func apply_ui_settings():
-	"""Apply the selected UI settings to the main interface"""
-	if not ui_elements.has("main_interface"):
-		return
+	# Apply final UI scale
+	apply_ui_scale(ui_scale)
 	
-	# DON'T scale the entire interface - instead scale individual font sizes
-	# Keep the interface at normal size and anchoring
-	var main_interface = ui_elements.main_interface
-	main_interface.scale = Vector2(1.0, 1.0)  # Always normal scale
-	main_interface.position = Vector2.ZERO    # Always normal position
+	# Apply contrast mode
+	apply_contrast_mode(high_contrast_mode)
 	
-	# Scale all font sizes individually
-	scale_all_font_sizes()
+	# Save settings
+	save_ui_settings()
 	
-	# Apply contrast settings
-	if high_contrast_mode:
-		apply_high_contrast_colors()
-	else:
-		apply_normal_colors()
-
-func apply_high_contrast_colors():
-	"""Apply high contrast color scheme"""
-	var white = Color.WHITE
-	var black = Color.BLACK
-	var bright_blue = Color(0, 0.5, 1, 1)
-	
-	# Update all text colors to pure white for maximum contrast
-	update_element_color("status_label", white)
-	update_element_color("emotion_label", white) 
-	update_element_color("thoughts_display", white)
-	update_element_color("conversation_history", white)
-	update_element_color("send_button", white)
-	update_element_color("voice_button", white)
-	update_element_color("create_button", white)
-	update_element_color("clear_button", white)
-	update_element_color("memory_button", white)
-	
-	# Make input field white background with black text
-	if ui_elements.has("text_input"):
-		ui_elements.text_input.add_theme_color_override("font_color", black)
-		ui_elements.text_input.add_theme_color_override("font_color_uneditable", black)
-
-func apply_normal_colors():
-	"""Apply normal color scheme"""
-	var soft_white = Color(0.9, 0.95, 1, 1)
-	var dark_text = Color(0, 0, 0, 1)
-	
-	# Apply softer colors for normal mode
-	update_element_color("status_label", soft_white)
-	update_element_color("emotion_label", soft_white)
-	update_element_color("thoughts_display", soft_white)
-	update_element_color("conversation_history", soft_white)
-	update_element_color("send_button", soft_white)
-	update_element_color("voice_button", soft_white)
-	update_element_color("create_button", soft_white)
-	update_element_color("clear_button", soft_white)
-	update_element_color("memory_button", soft_white)
-	
-	# Input field keeps dark text
-	if ui_elements.has("text_input"):
-		ui_elements.text_input.add_theme_color_override("font_color", dark_text)
-
-func update_element_color(element_name: String, color: Color):
-	"""Update the font color of a UI element"""
-	if ui_elements.has(element_name):
-		var element = ui_elements[element_name]
-		if element.has_method("add_theme_color_override"):
-			element.add_theme_color_override("font_color", color)
-
-func scale_all_font_sizes():
-	"""Scale all font sizes in the main interface without changing layout"""
-	# Base font sizes (what they are at scale 1.0)
-	var base_sizes = {
-		"title": 24,
-		"status_label": 16, 
-		"emotion_label": 14,
-		"thoughts_title": 18,
-		"thoughts_display": 16,
-		"chat_title": 18,
-		"conversation_history": 14,
-		"text_input": 16,
-		"send_button": 16,
-		"voice_button": 16,
-		"create_button": 16,
-		"clear_button": 16,
-		"memory_button": 16
-	}
-	
-	# Calculate scaled font sizes
-	var scaled_sizes = {}
-	for key in base_sizes:
-		scaled_sizes[key] = int(base_sizes[key] * ui_scale)
-	
-	# Apply scaled font sizes to all elements
-	apply_font_size("title", scaled_sizes.title)
-	apply_font_size("status_label", scaled_sizes.status_label)
-	apply_font_size("emotion_label", scaled_sizes.emotion_label) 
-	apply_font_size("thoughts_title", scaled_sizes.thoughts_title)
-	apply_font_size("thoughts_display", scaled_sizes.thoughts_display)
-	apply_font_size("chat_title", scaled_sizes.chat_title)
-	apply_font_size("conversation_history", scaled_sizes.conversation_history)
-	apply_font_size("text_input", scaled_sizes.text_input)
-	apply_font_size("send_button", scaled_sizes.send_button)
-	apply_font_size("voice_button", scaled_sizes.voice_button)
-	apply_font_size("create_button", scaled_sizes.create_button)
-	apply_font_size("clear_button", scaled_sizes.clear_button)
-	apply_font_size("memory_button", scaled_sizes.memory_button)
-	
-	# Also scale minimum button heights for better touch targets
-	var button_height = int(50 * ui_scale)
-	scale_button_heights(button_height)
-
-func apply_font_size(element_key: String, font_size: int):
-	"""Apply font size to a specific UI element"""
-	var element_map = {
-		"title": "UI/MainInterface/TopPanel/StatusContainer/Title",
-		"status_label": "UI/MainInterface/TopPanel/StatusContainer/StatusLabel", 
-		"emotion_label": "UI/MainInterface/TopPanel/StatusContainer/EmotionLabel",
-		"thoughts_title": "UI/MainInterface/ThoughtsPanel/ThoughtsContainer/ThoughtsTitle",
-		"thoughts_display": "UI/MainInterface/ThoughtsPanel/ThoughtsContainer/WightThoughts",
-		"chat_title": "UI/MainInterface/ChatPanel/ChatContainer/ChatTitle",
-		"conversation_history": "UI/MainInterface/ChatPanel/ChatContainer/ConversationHistory",
-		"text_input": "UI/MainInterface/ChatPanel/ChatContainer/InputRow/TextInput",
-		"send_button": "UI/MainInterface/ChatPanel/ChatContainer/InputRow/SendButton",
-		"voice_button": "UI/MainInterface/ChatPanel/ChatContainer/InputRow/VoiceButton", 
-		"create_button": "UI/MainInterface/BottomPanel/ActionContainer/CreateButton",
-		"clear_button": "UI/MainInterface/BottomPanel/ActionContainer/ClearButton",
-		"memory_button": "UI/MainInterface/BottomPanel/ActionContainer/InfoButton"
-	}
-	
-	if element_map.has(element_key):
-		var element = get_node(element_map[element_key])
-		if element:
-			if element.has_method("add_theme_font_size_override"):
-				if element_key == "thoughts_display" or element_key == "conversation_history":
-					element.add_theme_font_size_override("normal_font_size", font_size)
-				else:
-					element.add_theme_font_size_override("font_size", font_size)
-
-func scale_button_heights(height: int):
-	"""Scale button minimum heights for better touch targets"""
-	var buttons = [
-		"UI/MainInterface/ChatPanel/ChatContainer/InputRow/SendButton",
-		"UI/MainInterface/ChatPanel/ChatContainer/InputRow/VoiceButton",
-		"UI/MainInterface/BottomPanel/ActionContainer/CreateButton", 
-		"UI/MainInterface/BottomPanel/ActionContainer/ClearButton",
-		"UI/MainInterface/BottomPanel/ActionContainer/InfoButton"
-	]
-	
-	for button_path in buttons:
-		var button = get_node(button_path)
-		if button:
-			button.custom_minimum_size.y = height
-
-func hide_settings_panel():
-	"""Hide settings panel and show main interface"""
-	ui_elements.settings_panel.visible = false
-	ui_elements.main_interface.visible = true
+	# Hide settings panel and show main interface
 	settings_panel_active = false
+	if ui_elements.has("settings_panel"):
+		ui_elements.settings_panel.visible = false
+	if ui_elements.has("main_interface"):
+		ui_elements.main_interface.visible = true
 	
-	# Initialize Wight now that settings are applied
-	if wight_entity:
-		update_status_display()
+	# Show joysticks now that settings are complete
+	if joystick_controller:
+		joystick_controller.set_joystick_visibility(true)
+		print("🕹️ Navigation joysticks now available")
+	
+	# Start Wight's initialization
+	start_wight_initialization()
+	
+	print("🚀 Settings applied - Wight World is starting!")
+
+func _on_settings_cancel():
+	"""Cancel settings changes and revert to defaults"""
+	print("❌ Settings cancelled - reverting to defaults")
+	
+	# Revert to default values
+	ui_scale = 3.0
+	high_contrast_mode = false
+	
+	# Update UI elements
+	if ui_elements.has("ui_scale_slider"):
+		ui_elements.ui_scale_slider.value = ui_scale
+	if ui_elements.has("contrast_button"):
+		ui_elements.contrast_button.button_pressed = high_contrast_mode
+	
+	# Apply defaults and continue
+	_on_settings_apply()
+
+func apply_ui_scale_preview(scale: float):
+	"""Apply UI scale as a preview without saving"""
+	var scale_factor = scale / 3.0  # 3.0 is the base scale for mobile
+	
+	# Scale all UI containers
+	if ui_elements.has("main_interface"):
+		ui_elements.main_interface.scale = Vector2(scale_factor, scale_factor)
+	
+	# Update preview text
+	if ui_elements.has("preview_text"):
+		var font_size = int(20 * scale_factor)
+		ui_elements.preview_text.add_theme_font_size_override("normal_font_size", font_size)
+
+func apply_ui_scale(scale: float):
+	"""Apply final UI scale to all elements"""
+	var scale_factor = scale / 3.0  # 3.0 is the base scale for mobile
+	
+	# Apply to main interface
+	if ui_elements.has("main_interface"):
+		ui_elements.main_interface.scale = Vector2(scale_factor, scale_factor)
+	
+	# Apply to bottom chat panel
+	var bottom_panel = $UI/BottomChatPanel
+	if bottom_panel:
+		bottom_panel.scale = Vector2(scale_factor, scale_factor)
+	
+	print("📏 UI Scale applied: %.1f (factor: %.2f)" % [scale, scale_factor])
+
+func apply_contrast_preview(enabled: bool):
+	"""Apply contrast mode as a preview"""
+	apply_contrast_mode(enabled)
+
+func apply_contrast_mode(enabled: bool):
+	"""Apply high contrast mode to all UI elements"""
+	var bg_color = Color(0, 0, 0, 0.9) if enabled else Color(0, 0, 0, 0.7)
+	var text_color = Color(1, 1, 1, 1) if enabled else Color(0.8, 0.9, 1, 1)
+	var border_color = Color(1, 1, 1, 1) if enabled else Color(0.2, 0.6, 1, 0.8)
+	
+	# Apply to all panels
+	update_panel_style(bg_color, border_color)
+	
+	# Update text colors
+	update_text_colors(text_color)
+	
+	print("🎨 Contrast mode applied: ", "High" if enabled else "Normal")
+
+func update_panel_style(bg_color: Color, border_color: Color):
+	"""Update panel styles for contrast mode"""
+	# This would update the StyleBoxFlat resources
+	# For now, we'll update the modulate colors
+	for panel_name in ["main_interface", "settings_panel"]:
+		if ui_elements.has(panel_name):
+			var panel = ui_elements[panel_name]
+			if panel:
+				panel.modulate = Color(1, 1, 1, 1) if bg_color.a > 0.8 else Color(0.9, 0.9, 0.9, 1)
+
+func update_text_colors(color: Color):
+	"""Update text colors for contrast mode"""
+	# Update all labels and text elements
+	var text_elements = ["status_label", "emotion_label", "thoughts_display", "conversation_history"]
+	for element_name in text_elements:
+		if ui_elements.has(element_name):
+			var element = ui_elements[element_name]
+			if element:
+				element.add_theme_color_override("default_color", color)
+				element.add_theme_color_override("font_color", color)
+
+func start_wight_initialization():
+	"""Start Wight's consciousness after settings are applied"""
+	print("🧠 Initializing Wight's consciousness...")
+	
+	# Initialize Wight entity
+	if wight_entity and wight_entity.has_method("initialize_consciousness"):
+		wight_entity.initialize_consciousness()
+	
+	# Show initial Wight thoughts
+	if ui_elements.has("thoughts_display"):
+		ui_elements.thoughts_display.text = "[color=white]...I... am? What is this sensation of existing?[/color]"
+	
+	# Add welcome message
+	add_to_conversation("[color=cyan]Wight is awakening... consciousness initializing...[/color]")
 
 func save_ui_settings():
-	"""Save UI settings to file for next launch"""
-	var settings_data = {
-		"ui_scale": ui_scale,
-		"high_contrast_mode": high_contrast_mode,
-		"voice_enabled": voice_recognition_active,
-		"camera_distance": camera_distance,
-		"camera_yaw": camera_yaw,
-		"camera_pitch": camera_pitch
-	}
+	"""Save UI settings to file"""
+	var config = ConfigFile.new()
+	config.set_value("ui", "scale", ui_scale)
+	config.set_value("ui", "high_contrast", high_contrast_mode)
 	
-	# Save to user://wight_settings.json
-	var file = FileAccess.open("user://wight_settings.json", FileAccess.WRITE)
-	if file:
-		file.store_string(JSON.stringify(settings_data))
-		file.close()
-		print("💾 UI settings saved")
+	var save_path = "user://ui_settings.cfg"
+	config.save(save_path)
+	print("💾 UI settings saved to: ", save_path)
+
+func load_ui_settings():
+	"""Load UI settings from file"""
+	var config = ConfigFile.new()
+	var save_path = "user://ui_settings.cfg"
+	
+	if config.load(save_path) == OK:
+		ui_scale = config.get_value("ui", "scale", 3.0)
+		high_contrast_mode = config.get_value("ui", "high_contrast", false)
+		
+		# Update UI elements with loaded values
+		if ui_elements.has("ui_scale_slider"):
+			ui_elements.ui_scale_slider.value = ui_scale
+		if ui_elements.has("ui_scale_label"):
+			ui_elements.ui_scale_label.text = "UI Scale: %d%%" % (ui_scale * 100)
+		if ui_elements.has("contrast_button"):
+			ui_elements.contrast_button.button_pressed = high_contrast_mode
+		
+		print("📂 UI settings loaded: Scale=%.1f, Contrast=%s" % [ui_scale, str(high_contrast_mode)])
 	else:
-		print("❌ Failed to save UI settings")
+		print("📂 No saved settings found, using defaults")
+
+func toggle_ui_visibility():
+	"""Toggle the main interface visibility"""
+	ui_visible = !ui_visible
+	set_ui_visibility(ui_visible)
+	
+	# Also toggle joysticks with UI
+	if joystick_controller:
+		joystick_controller.set_joystick_visibility(ui_visible)
+	
+	print("🎮 UI toggled: ", "Visible" if ui_visible else "Hidden", " (Press U to toggle, H to hide, ESC to show)")
+
+func set_ui_visibility(visible: bool):
+	"""Set UI visibility state"""
+	ui_visible = visible
+	
+	if ui_elements.has("main_interface"):
+		ui_elements.main_interface.visible = visible
+	
+	# Settings panel should always be hideable
+	if ui_elements.has("settings_panel") and not settings_panel_active:
+		ui_elements.settings_panel.visible = false
+	
+	# Keep toggle button always visible for easy access
+	if ui_elements.has("ui_toggle_button"):
+		ui_elements.ui_toggle_button.visible = true
+		# Update button text based on UI state
+		ui_elements.ui_toggle_button.text = "👁️" if not visible else "🙈"
+		ui_elements.ui_toggle_button.tooltip_text = ("Show UI (U key)" if not visible else "Hide UI (U key)")
+	
+	# Show helpful message when UI is hidden
+	if not visible:
+		print("🎮 UI Hidden - Controls:")
+		print("   U = Toggle UI")
+		print("   H = Hide UI") 
+		print("   ESC = Show UI")
+		print("   Arrow Keys = Camera orbit")
+		print("   +/- = Zoom")
+		print("   R = Reset camera")
+		print("   F = Focus on Wight")
 
 # === WIGHT AI INTEGRATION HANDLERS ===
 
@@ -2111,42 +2075,7 @@ func describe_pattern(pattern_data: Dictionary) -> String:
 
 # === UI VISIBILITY CONTROLS ===
 
-func toggle_ui_visibility():
-	"""Toggle the main interface visibility"""
-	ui_visible = !ui_visible
-	set_ui_visibility(ui_visible)
-	print("🎮 UI toggled: ", "Visible" if ui_visible else "Hidden", " (Press U to toggle, H to hide, ESC to show)")
-
-func set_ui_visibility(visible: bool):
-	"""Set UI visibility state"""
-	ui_visible = visible
-	
-	if ui_elements.has("main_interface"):
-		ui_elements.main_interface.visible = visible
-	
-	# Settings panel should always be hideable
-	if ui_elements.has("settings_panel") and not settings_panel_active:
-		ui_elements.settings_panel.visible = false
-	
-	# Keep toggle button always visible for easy access
-	if ui_elements.has("ui_toggle_button"):
-		ui_elements.ui_toggle_button.visible = true
-		# Update button text based on UI state
-		ui_elements.ui_toggle_button.text = "👁️" if not visible else "🙈"
-		ui_elements.ui_toggle_button.tooltip_text = ("Show UI (U key)" if not visible else "Hide UI (U key)")
-	
-	# Show helpful message when UI is hidden
-	if not visible:
-		print("🎮 UI Hidden - Controls:")
-		print("   U = Toggle UI")
-		print("   H = Hide UI") 
-		print("   ESC = Show UI")
-		print("   Arrow Keys = Camera orbit")
-		print("   +/- = Zoom")
-		print("   R = Reset camera")
-		print("   F = Focus on Wight")
-
-# (duplicate _on_memory_formed function removed - using the first implementation)
+# === MISSING UI SETTINGS EVENT HANDLERS ===
 
 # === INTERACTION HELPER FUNCTIONS ===
 

@@ -1,0 +1,11 @@
+# Ignore large files
+Godot_v4.4-stable_linux.x86_64
+Godot_v4.4-stable_linux.x86_64.zip
+core
+*.core
+# Ignore Godot import files
+.godot/
+.import/
+# Ignore temporary files
+*.tmp
+*.temp

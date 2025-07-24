@@ -20,6 +20,8 @@ var personality_weights: Dictionary = {}
 var emotional_memory: Dictionary = {}
 var interaction_memory: Array[Dictionary] = []
 var pattern_effectiveness: Dictionary = {}
+var emotional_weights: Dictionary = {}
+var personality_traits: Dictionary = {}
 
 # Neural network simulation
 var input_layer_size: int = 64

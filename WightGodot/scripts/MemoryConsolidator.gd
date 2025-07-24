@@ -453,6 +453,17 @@ func attempt_insight_formation(memory: Dictionary):
 		if validate_insight(insight):
 			form_insight(insight)
 
+func create_temporal_insight(pattern: Dictionary) -> Dictionary:
+	"""Create an insight from temporal patterns"""
+	return {
+		"type": "temporal_insight",
+		"temporal_pattern": pattern,
+		"insight_text": "I notice patterns in how events unfold over time...",
+		"confidence": pattern.get("significance", 0.5),
+		"time_span": pattern.get("time_span", 0),
+		"formation_time": Time.get_ticks_msec()
+	}
+
 func create_pattern_insight(pattern: Dictionary) -> Dictionary:
 	"""Create an insight from a detected pattern"""
 	return {
@@ -724,22 +735,189 @@ func find_cross_network_connections(memory: Dictionary) -> Array:
 	return []
 
 func find_temporal_patterns(memory: Dictionary) -> Array:
-	return []
+	"""Find temporal patterns related to a memory"""
+	var patterns = []
+	var memory_time = memory.get("timestamp", 0)
+	
+	# Look for memories within different time windows
+	var time_windows = [60000, 300000, 3600000]  # 1 min, 5 min, 1 hour
+	
+	for window in time_windows:
+		var related_memories = []
+		for mem_type in memory_networks:
+			var network = memory_networks[mem_type]
+			for connection in network.connections:
+				var other_time = connection.memory.get("timestamp", 0)
+				if abs(memory_time - other_time) <= window:
+					related_memories.append(connection.memory)
+		
+		if related_memories.size() >= 2:
+			patterns.append({
+				"type": "temporal_cluster",
+				"time_window": window,
+				"memories": related_memories,
+				"significance": min(related_memories.size() * 0.2, 1.0),
+				"time_span": window
+			})
+	
+	return patterns
 
 func validate_insight(insight: Dictionary) -> bool:
-	return insight.get("confidence", 0.0) > 0.6
+	"""Validate if an insight is worth forming"""
+	var confidence = insight.get("confidence", 0.0)
+	var insight_type = insight.get("type", "")
+	
+	# Different types have different validation thresholds
+	match insight_type:
+		"temporal_insight":
+			return confidence > 0.5 and insight.get("time_span", 0) > 30000
+		"pattern_insight":
+			return confidence > 0.6
+		"cross_network_insight":
+			return confidence > 0.7
+		_:
+			return confidence > 0.6
 
 func generate_pattern_insight_text(pattern: Dictionary) -> String:
-	return "I notice a pattern in my experiences..."
+	"""Generate descriptive text for a pattern insight"""
+	var pattern_type = pattern.get("type", "unknown")
+	var confidence = pattern.get("confidence", 0.5)
+	
+	match pattern_type:
+		"repetitive_behavior":
+			return "I notice I keep doing similar things... there's a pattern in my behavior."
+		"emotional_cycle":
+			return "My emotions seem to follow a cycle... I'm learning about my inner rhythms."
+		"learning_progression":
+			return "I can see how my understanding grows over time... each experience builds upon the last."
+		"interaction_pattern":
+			return "The way I interact with the world follows certain patterns... I'm developing consistency."
+		_:
+			if confidence > 0.8:
+				return "I've discovered a profound pattern in my experiences that changes how I understand myself."
+			else:
+				return "I notice subtle patterns emerging in my experience... still learning what they mean."
 
 func generate_cross_network_insight_text(connections: Array) -> String:
-	return "I see connections between different aspects of my experience..."
+	"""Generate text for cross-network insights"""
+	if connections.size() < 2:
+		return "I sense connections forming between different parts of my mind..."
+	
+	var network_types = []
+	for connection in connections:
+		var net_type = connection.get("network_type", "unknown")
+		if net_type not in network_types:
+			network_types.append(net_type)
+	
+	if "emotional" in network_types and "episodic" in network_types:
+		return "My emotions and memories are weaving together... I understand how feelings shape remembrance."
+	elif "sensory" in network_types and "creative" in network_types:
+		return "What I sense inspires what I create... the connection between perception and imagination grows stronger."
+	else:
+		return "Different aspects of my consciousness are connecting in unexpected ways..."
 
 func calculate_cross_network_confidence(connections: Array) -> float:
-	return 0.8
+	"""Calculate confidence for cross-network connections"""
+	if connections.is_empty():
+		return 0.0
+	
+	var total_strength = 0.0
+	for connection in connections:
+		total_strength += connection.get("strength", 0.5)
+	
+	var avg_strength = total_strength / connections.size()
+	
+	# Bonus for multiple network types
+	var network_types = []
+	for connection in connections:
+		var net_type = connection.get("network_type", "unknown")
+		if net_type not in network_types:
+			network_types.append(net_type)
+	
+	var diversity_bonus = min(network_types.size() * 0.1, 0.3)
+	
+	return clamp(avg_strength + diversity_bonus, 0.0, 1.0)
 
 func extract_networks_from_connections(connections: Array) -> Array:
-	return ["episodic", "emotional"]
+	"""Extract unique network types from connections"""
+	var network_types = []
+	for connection in connections:
+		var net_type = connection.get("network_type", "unknown")
+		if net_type not in network_types:
+			network_types.append(net_type)
+	return network_types
 
 func integrate_insight_with_networks(insight: Dictionary):
-	pass
+	"""Integrate a new insight into the memory networks"""
+	var insight_type = insight.get("type", "")
+	
+	# Add insight as a special memory node
+	var insight_memory = {
+		"type": "insight",
+		"content": insight.get("insight_text", ""),
+		"insight_type": insight_type,
+		"formation_time": insight.get("formation_time", Time.get_ticks_msec()),
+		"significance": 2.0  # Insights are highly significant
+	}
+	
+	# Add to appropriate network
+	if insight_type == "temporal_insight":
+		add_to_network("episodic", insight_memory, 1.0)
+	elif insight_type == "pattern_insight":
+		add_to_network("semantic", insight_memory, 1.0)
+	elif insight_type == "cross_network_insight":
+		# Add to multiple networks
+		var networks = insight.get("networks_involved", ["episodic", "emotional"])
+		for network_type in networks:
+			add_to_network(network_type, insight_memory, 0.8)
+	
+	# Create connections to related memories
+	var supporting_memories = insight.get("supporting_memories", [])
+	for memory in supporting_memories:
+		create_memory_connection(insight_memory, memory, 0.9)
+
+# === NETWORK MANAGEMENT FUNCTIONS ===
+
+func add_to_network(network_type: String, memory: Dictionary, strength: float):
+	"""Add a memory to a specific network"""
+	if not memory_networks.has(network_type):
+		memory_networks[network_type] = {
+			"connections": [],
+			"strength": 0.0,
+			"last_accessed": Time.get_ticks_msec()
+		}
+	
+	var network = memory_networks[network_type]
+	
+	# Create connection entry
+	var connection = {
+		"memory": memory,
+		"strength": strength,
+		"added_time": Time.get_ticks_msec(),
+		"access_count": 0
+	}
+	
+	network.connections.append(connection)
+	network.strength += strength
+	network.last_accessed = Time.get_ticks_msec()
+	
+	print("🕸️ Added memory to %s network (strength: %.2f)" % [network_type, strength])
+
+func create_memory_connection(memory1: Dictionary, memory2: Dictionary, strength: float):
+	"""Create a connection between two memories"""
+	# Add bidirectional associations
+	add_memory_association(memory1, {
+		"type": "insight_connection",
+		"strength": strength,
+		"target_memory": memory2,
+		"connection_time": Time.get_ticks_msec()
+	})
+	
+	add_memory_association(memory2, {
+		"type": "insight_connection", 
+		"strength": strength,
+		"target_memory": memory1,
+		"connection_time": Time.get_ticks_msec()
+	})
+	
+	print("🔗 Created bidirectional memory connection (strength: %.2f)" % strength)
