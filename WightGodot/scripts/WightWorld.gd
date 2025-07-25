@@ -47,7 +47,7 @@ var ambient_light_cycle_speed: float = 0.1
 # UI Settings
 var ui_scale: float = 1.0
 var high_contrast_mode: bool = false
-var settings_panel_active: bool = true
+var settings_panel_active: bool = false  # Skip settings panel at startup
 var ui_visible: bool = true
 
 # User Experience Management
@@ -92,10 +92,32 @@ func ensure_settings_visibility():
 	var screen_size = get_viewport().get_visible_rect().size
 	print("📱 Screen size: %dx%d" % [screen_size.x, screen_size.y])
 	
+	# Force the UI/SettingsPanel to be visible
+	var settings_panel = $UI/SettingsPanel
+	if settings_panel:
+		settings_panel.visible = true
+		settings_panel.modulate = Color.WHITE
+		settings_panel.self_modulate = Color.WHITE
+		settings_panel.z_index = 1000
+		print("✅ DIRECT ACCESS: Settings panel made visible")
+		print("📏 Settings panel size: %s" % settings_panel.size)
+		print("📍 Settings panel position: %s" % settings_panel.position)
+		print("🎨 Settings panel modulate: %s" % settings_panel.modulate)
+		print("🔢 Settings panel z_index: %d" % settings_panel.z_index)
+		
+		# Also check the title to ensure the whole panel works
+		var title = settings_panel.get_node("SettingsContainer/SettingsTitle")
+		if title:
+			print("📝 Settings title text: '%s'" % title.text)
+		else:
+			print("❌ Settings title not found!")
+	else:
+		print("❌ CRITICAL: Could not find $UI/SettingsPanel directly!")
+	
 	if ui_elements.has("settings_panel"):
 		ui_elements.settings_panel.visible = true
 		ui_elements.settings_panel.modulate = Color.WHITE
-		print("✅ Settings panel made visible")
+		print("✅ Settings panel made visible via ui_elements")
 		print("📏 Settings panel size: %s" % ui_elements.settings_panel.size)
 		print("📍 Settings panel position: %s" % ui_elements.settings_panel.position)
 	
@@ -302,14 +324,53 @@ func setup_ui():
 	if ui_elements.has("ui_toggle_button"):
 		ui_elements.ui_toggle_button.pressed.connect(toggle_ui_visibility)
 	
-	# Show settings panel initially, hide main interface
-	if ui_elements.has("main_interface"):
-		ui_elements.main_interface.visible = false
-	if ui_elements.has("settings_panel"):
-		ui_elements.settings_panel.visible = true
-		# Ensure settings panel is properly styled and visible
-		ui_elements.settings_panel.modulate = Color.WHITE
-		ui_elements.settings_panel.self_modulate = Color.WHITE
+	# CRITICAL: Hide main interface COMPLETELY at startup
+	var main_interface = $UI/MainInterface
+	if main_interface:
+		main_interface.visible = false
+		main_interface.modulate = Color.TRANSPARENT
+		print("❌ Main interface forcibly hidden and made transparent")
+	
+	# Force dual joystick controller to be hidden at startup
+	if ui_elements.has("dual_joystick_controller"):
+		ui_elements.dual_joystick_controller.visible = false
+		print("❌ Dual joystick controller hidden")
+	
+	# BYPASS SETTINGS - Go directly to main interface
+	if settings_panel_active:
+		# Show settings panel initially, hide main interface
+		if ui_elements.has("main_interface"):
+			ui_elements.main_interface.visible = false
+			ui_elements.main_interface.modulate = Color.TRANSPARENT
+			print("❌ Main interface hidden via ui_elements")
+		if ui_elements.has("settings_panel"):
+			ui_elements.settings_panel.visible = true
+			ui_elements.settings_panel.modulate = Color.WHITE
+			ui_elements.settings_panel.self_modulate = Color.WHITE
+			ui_elements.settings_panel.z_index = 1000  # Force high z-index
+			print("✅ Settings panel forced visible with high z-index")
+			print("📏 Settings panel size: %s" % ui_elements.settings_panel.size)
+			print("📍 Settings panel position: %s" % ui_elements.settings_panel.position)
+			print("🎨 Settings panel modulate: %s" % ui_elements.settings_panel.modulate)
+		else:
+			print("❌ CRITICAL: Settings panel not found in ui_elements!")
+			print("Available UI elements: %s" % ui_elements.keys())
+	else:
+		# Skip settings panel - go directly to main interface
+		print("🚀 BYPASSING SETTINGS PANEL - Going directly to main interface")
+		if ui_elements.has("settings_panel"):
+			ui_elements.settings_panel.visible = false
+		if ui_elements.has("main_interface"):
+			ui_elements.main_interface.visible = true
+			ui_elements.main_interface.modulate = Color.WHITE
+			print("✅ Main interface shown directly")
+		
+		# Apply default settings
+		apply_ui_scale(3.0)  # Default UI scale
+		apply_contrast_mode(false)  # Default contrast
+		
+		# Show dual joystick system
+		call_deferred("show_dual_joystick_system")
 	
 	# Load saved settings if any
 	load_ui_settings()
