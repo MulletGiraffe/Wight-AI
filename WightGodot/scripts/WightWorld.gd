@@ -88,14 +88,22 @@ func ensure_settings_visibility():
 	"""Ensure the settings panel is visible and the 3D world is lit"""
 	print("🎮 Ensuring UI visibility...")
 	
+	# Get screen size for debugging
+	var screen_size = get_viewport().get_visible_rect().size
+	print("📱 Screen size: %dx%d" % [screen_size.x, screen_size.y])
+	
 	if ui_elements.has("settings_panel"):
 		ui_elements.settings_panel.visible = true
 		ui_elements.settings_panel.modulate = Color.WHITE
 		print("✅ Settings panel made visible")
+		print("📏 Settings panel size: %s" % ui_elements.settings_panel.size)
+		print("📍 Settings panel position: %s" % ui_elements.settings_panel.position)
 	
 	if ui_elements.has("main_interface"):
 		ui_elements.main_interface.visible = false
 		print("📱 Main interface hidden (will show after settings applied)")
+		print("📏 Main interface size: %s" % ui_elements.main_interface.size)
+		print("📍 Main interface position: %s" % ui_elements.main_interface.position)
 	
 	# Update the camera position to show the 3D world
 	update_camera_position()
@@ -1803,6 +1811,10 @@ func _on_settings_apply():
 	"""Apply settings and close the settings panel"""
 	print("✅ Applying UI settings...")
 	
+	# Get screen size for debugging
+	var screen_size = get_viewport().get_visible_rect().size
+	print("📱 Screen size during apply: %dx%d" % [screen_size.x, screen_size.y])
+	
 	# Apply final UI scale
 	apply_ui_scale(ui_scale)
 	
@@ -1816,8 +1828,29 @@ func _on_settings_apply():
 	settings_panel_active = false
 	if ui_elements.has("settings_panel"):
 		ui_elements.settings_panel.visible = false
+		print("❌ Settings panel hidden")
+	
 	if ui_elements.has("main_interface"):
 		ui_elements.main_interface.visible = true
+		print("✅ Main interface now visible")
+		print("📏 Main interface size: %s" % ui_elements.main_interface.size)
+		print("📍 Main interface position: %s" % ui_elements.main_interface.position)
+		
+		# Ensure main interface is properly positioned and sized
+		ui_elements.main_interface.anchor_left = 0.0
+		ui_elements.main_interface.anchor_top = 0.0
+		ui_elements.main_interface.anchor_right = 0.4  # Increased from 0.25 for better visibility
+		ui_elements.main_interface.anchor_bottom = 0.6  # Increased from 0.35 for better visibility
+		print("📐 Adjusted main interface anchors for better visibility")
+	
+	# Show bottom chat panel
+	if ui_elements.has("text_input"):
+		var bottom_panel = $UI/BottomChatPanel
+		if bottom_panel:
+			bottom_panel.visible = true
+			print("✅ Bottom chat panel now visible")
+			print("📏 Bottom panel size: %s" % bottom_panel.size)
+			print("📍 Bottom panel position: %s" % bottom_panel.position)
 	
 	# Show joysticks now that settings are complete
 	if joystick_controller:
@@ -1828,6 +1861,7 @@ func _on_settings_apply():
 	start_wight_initialization()
 	
 	print("🚀 Settings applied - Wight World is starting!")
+	print("👁️ You should now see: consciousness panel (top-left), chat input (bottom), and joysticks")
 
 func _on_settings_cancel():
 	"""Cancel settings changes and revert to defaults"""
