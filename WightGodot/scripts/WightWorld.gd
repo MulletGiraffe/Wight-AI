@@ -59,17 +59,52 @@ var joystick_controller: DualJoystickController
 func _ready():
 	print("🌍 Wight's world initializing...")
 	print("📊 Setting up debug output for Wight consciousness monitoring...")
+	
+	# Add immediate lighting to prevent dark screen
+	add_initial_lighting()
+	
+	# Create some test objects so world isn't empty
+	create_test_objects()
+	
 	setup_world()
 	setup_ui()
 	setup_wight_entity()
 	setup_sensor_manager()
 	setup_input_handling()
 	
+	# Setup dual joystick system but keep hidden during settings
+	setup_dual_joystick_system()
+	
 	# Start debug monitoring
 	setup_debug_monitoring()
 	
 	# Load saved settings if any
 	load_ui_settings()
+	
+	# Ensure settings panel is visible and properly configured
+	call_deferred("ensure_settings_visibility")
+
+func ensure_settings_visibility():
+	"""Ensure the settings panel is visible and the 3D world is lit"""
+	print("🎮 Ensuring UI visibility...")
+	
+	if ui_elements.has("settings_panel"):
+		ui_elements.settings_panel.visible = true
+		ui_elements.settings_panel.modulate = Color.WHITE
+		print("✅ Settings panel made visible")
+	
+	if ui_elements.has("main_interface"):
+		ui_elements.main_interface.visible = false
+		print("📱 Main interface hidden (will show after settings applied)")
+	
+	# Update the camera position to show the 3D world
+	update_camera_position()
+	
+	# Add some status messages to help user understand what they're seeing
+	if ui_elements.has("status_label"):
+		ui_elements.status_label.text = "🎛️ Adjust settings then tap Apply"
+	
+	print("🌟 World ready! You should see the settings panel and 3D environment")
 
 func _notification(what):
 	"""Handle system notifications"""
@@ -260,11 +295,18 @@ func setup_ui():
 		ui_elements.ui_toggle_button.pressed.connect(toggle_ui_visibility)
 	
 	# Show settings panel initially, hide main interface
-	ui_elements.main_interface.visible = false
-	ui_elements.settings_panel.visible = true
+	if ui_elements.has("main_interface"):
+		ui_elements.main_interface.visible = false
+	if ui_elements.has("settings_panel"):
+		ui_elements.settings_panel.visible = true
+		# Ensure settings panel is properly styled and visible
+		ui_elements.settings_panel.modulate = Color.WHITE
+		ui_elements.settings_panel.self_modulate = Color.WHITE
 	
 	# Load saved settings if any
 	load_ui_settings()
+	
+	print("🎛️ Settings panel should now be visible on screen")
 
 func setup_wight_entity():
 	"""Initialize and connect the Wight AI entity"""
